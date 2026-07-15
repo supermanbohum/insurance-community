@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { generateAnonName } from '@/lib/anon-name';
 import { ImageUploader, type ExistingImage } from '@/components/post/ImageUploader';
 import {
   POST_TITLE_MAX_LENGTH,
@@ -34,7 +33,6 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [authorNameType, setAuthorNameType] = useState<'random' | 'custom'>('random');
-  const [randomName, setRandomName] = useState(() => generateAnonName());
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,8 +41,11 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
 
     if (mode === 'create') {
       formData.set('authorNameType', authorNameType);
+      // random 모드에서는 authorDisplayName을 비워서 제출한다.
+      // 실제 "익명____" 이름 생성은 서버(createPostAction)가 제출 시점에 한 번만 수행한다
+      // (렌더링 중에 미리 생성해서 보여주면 서버/클라이언트 값이 달라져 hydration 오류가 난다).
       if (authorNameType === 'random') {
-        formData.set('authorDisplayName', randomName);
+        formData.set('authorDisplayName', '');
       }
     }
 
@@ -133,18 +134,9 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
           </div>
 
           {authorNameType === 'random' ? (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-                {randomName}
-              </span>
-              <button
-                type="button"
-                onClick={() => setRandomName(generateAnonName())}
-                className="text-xs text-brand-600 underline"
-              >
-                다시 생성
-              </button>
-            </div>
+            <p className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+              작성자명을 입력하지 않으면 &ldquo;익명0000&rdquo; 형태로 자동 생성됩니다.
+            </p>
           ) : (
             <input
               name="authorDisplayName"

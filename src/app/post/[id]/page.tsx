@@ -9,6 +9,11 @@ import { DeletePostButton } from '@/components/post/DeletePostButton';
 export const dynamic = 'force-dynamic';
 
 export default async function PostDetailPage({ params }: { params: { id: string } }) {
+  const supabase = createServerSupabaseClient();
+  // 조회수 집계(중복 방지 포함)를 먼저 반영한 뒤 게시글을 조회해야,
+  // 이번 진입으로 증가한 값이 같은 렌더링에서 바로 표시된다.
+  await supabase.rpc('record_post_view', { p_post_id: params.id });
+
   const result = await getPostDetail(params.id);
 
   if (!result) {
@@ -16,9 +21,6 @@ export default async function PostDetailPage({ params }: { params: { id: string 
   }
 
   const { post, images, isOwner } = result;
-
-  const supabase = createServerSupabaseClient();
-  await supabase.rpc('record_post_view', { p_post_id: params.id });
 
   const imageUrls = images.map((image) => ({
     id: image.id,
