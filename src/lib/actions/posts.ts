@@ -92,7 +92,9 @@ export async function createPostAction(formData: FormData): Promise<PostActionRe
 
   const authorNameType = formData.get('authorNameType') === 'custom' ? 'custom' : 'random';
   const rawAuthorName = String(formData.get('authorDisplayName') ?? '').trim();
-  const authorDisplayName = authorNameType === 'custom' && rawAuthorName ? rawAuthorName : generateAnonName();
+  // 자동생성 모드에서도 클라이언트에 실제로 표시된 이름을 그대로 사용한다
+  // (여기서 다시 생성하면 사용자가 화면에서 본 이름과 실제 저장되는 이름이 달라짐).
+  const authorDisplayName = rawAuthorName || generateAnonName();
 
   const parsed = postFormSchema.safeParse({
     categoryId: formData.get('categoryId'),
