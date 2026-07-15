@@ -104,7 +104,10 @@ begin
     raise exception 'INVALID_AUTHOR_NAME';
   end if;
 
-  if not exists (select 1 from public.categories where id = p_category_id and is_active = true) then
+  if not exists (
+    select 1 from public.categories
+    where id = p_category_id and is_active = true and admin_only_write = false
+  ) then
     raise exception 'INVALID_CATEGORY';
   end if;
 

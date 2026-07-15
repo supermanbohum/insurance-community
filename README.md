@@ -2,8 +2,9 @@
 
 보험설계사를 위한 완전 익명 커뮤니티. Next.js App Router + Supabase 기반.
 
-> 현재 상태: **Phase 1 완료** (프로젝트 생성 / Supabase 연결 / 익명 인증 / DB 스키마 / RLS / 기본 레이아웃)
-> 게시글 작성·댓글·추천·베스트·관리자 기능은 Phase 2~5에서 순차적으로 추가됩니다.
+> 현재 상태: **Phase 1 완료** (프로젝트 생성 / Supabase 연결 / 익명 인증 / DB 스키마 / RLS / 기본 레이아웃) +
+> **Phase 2 완료** (게시글 목록 / 작성 / 상세 / 수정·삭제 / 이미지 첨부)
+> 댓글·추천·베스트·관리자 기능은 Phase 3~5에서 순차적으로 추가됩니다.
 
 ## 1. 로컬 실행 방법
 
@@ -35,6 +36,8 @@ Supabase 대시보드 > **SQL Editor** 에서 아래 파일을 **순서대로** 
 1. `supabase/migrations/0001_init_schema.sql` — 테이블/인덱스/타입 생성
 2. `supabase/migrations/0002_rls_policies.sql` — RLS 정책, 익명 프로필 자동 생성 트리거, 헬퍼 함수
 3. `supabase/migrations/0003_seed_data.sql` — 기본 카테고리(공지사항/보험이슈/자유게시판), 기본 운영 설정값
+4. `supabase/migrations/0004_post_write_functions.sql` — 게시글 작성/수정/삭제/조회수 집계용 SECURITY DEFINER 함수
+5. `supabase/migrations/0005_storage_post_images.sql` — 게시글 이미지용 Storage 버킷(`post-images`) 생성 + 정책
 
 각 파일은 재실행해도 안전하도록 `if not exists` / `on conflict do nothing`을 사용했습니다.
 
@@ -86,6 +89,43 @@ Phase 1 기준으로는 `banners` 테이블에 직접 SQL로 등록해야 합니
 - `posts`/`comments`/`reactions` 테이블은 RLS에서 직접 INSERT/UPDATE 정책을 열어두지 않았습니다. 모든 쓰기는 Phase 2~4에서 추가되는 `SECURITY DEFINER` DB 함수 또는 Route Handler를 통해서만 이루어지며, 이를 통해 조회수·추천수 등 민감 수치를 클라이언트가 직접 조작할 수 없도록 원천 차단합니다.
 - 관리자의 수치 보정(`imported_*`, `correction_*`)과 운영자 추천(`editor_pick_*`) 변경은 모두 `audit_logs`에 사유와 함께 기록되며, 실제 사용자 반응(`organic_*`, `reactions` 테이블)은 관리자가 직접 생성·수정할 수 없습니다.
 
+## 10. Phase 2: 게시글 이미지(Storage) 설정 및 테스트
+
+### 10.1 Storage 버킷 생성 방법
+
+`0005_storage_post_images.sql` 마이그레이션이 `post-images` 버킷과 업로드/삭제 정책을
+SQL만으로 전부 생성합니다. **대시보드에서 버킷을 별도로 만들 필요는 없습니다.**
+(4번의 SQL 적용 순서대로 0001~0005를 실행하면 끝)
+
+수동으로 확인하고 싶다면: Supabase 대시보드 > **Storage** 에서 `post-images` 버킷이
+public으로 생성되어 있고, 허용 MIME 타입이 `image/jpeg, image/png, image/webp`,
+용량 제한이 5MB로 설정되어 있는지 확인합니다.
+
+### 10.2 필요한 환경변수
+
+이미지 업로드 기능을 위해 **새로 추가되는 환경변수는 없습니다.** 기존
+`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`만으로 동작합니다.
+
+### 10.3 업로드 테스트 방법
+
+1. `npm run dev` 로 로컬 서버 실행
+2. `/write`에서 카테고리 선택 후 제목/본문 입력, 이미지 1~5장 첨부 후 "작성 완료"
+3. 정상 작성되면 `/post/{id}`로 이동하며 첨부한 이미지가 표시되는지 확인
+4. Supabase 대시보드 > Storage > `post-images` 버킷에서 `{postId}/{uuid}.{ext}` 경로로
+   파일이 실제로 업로드되었는지 확인
+5. 이미지 6장 이상 첨부를 시도하면 클라이언트 단에서 "최대 5장" 안내와 함께 초과분이 거부되는지 확인
+
+### 10.4 업로드 실패 / 삭제 테스트 방법
+
+1. **실패 롤백 확인**: 네트워크를 끊거나 매우 큰 파일(허용 용량 초과)을 억지로 업로드해 실패를
+   유도한 뒤, 글이 목록에 노출되지 않고(작성 자체가 취소됨) Storage에도 파일이 남지 않는지 확인
+   (내부적으로 `create_post`가 `status='hidden'`으로 생성 → 이미지 처리 실패 시 `delete_post_hard`로
+   게시글/이미지 행과 Storage 객체를 함께 정리합니다)
+2. **본인 글 삭제 확인**: `/post/{id}`에서 본인 글의 "삭제" 버튼 클릭 → 목록에서 사라지고,
+   Storage 대시보드에서 해당 `post-images/{postId}/` 하위 파일이 삭제되었는지 확인
+3. **권한 확인**: 다른 브라우저(또는 시크릿 모드 - 별도의 익명 세션)로 타인의 글 URL에
+   `/edit`로 접근 시 상세 페이지로 리다이렉트되는지 확인
+
 ## 폴더 구조
 
 ```
@@ -96,8 +136,12 @@ src/
     supabase/          # client / server / admin(service role) 클라이언트
     config/            # 사이트 브랜딩, 기본 운영 설정 상수
     security/          # IP 해시 등
-    moderation/        # 금지어/개인정보 패턴 감지 (Phase 2에서 구현)
-    anon-name/         # 랜덤 익명명 생성 (Phase 2에서 구현)
+    moderation/        # 금지어/개인정보 패턴 감지
+    anon-name/         # 랜덤 익명명 생성
+    validation/        # 게시글 폼 zod 스키마, 이미지 검증
+    errors/            # RPC 예외 코드 -> 한국어 메시지 매핑
+    posts/             # 게시글 목록/상세 조회, 표시값 포맷
+    actions/           # 게시글 작성/수정/삭제 서버 액션
   types/               # DB 타입
 supabase/migrations/   # SQL 마이그레이션 (순서대로 실행)
 ```
