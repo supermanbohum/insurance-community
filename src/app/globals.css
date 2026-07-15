@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #2f6bff;
+}
+
+html, body {
+  background-color: #ffffff;
+  color: #171717;
+}
+
+/* 모바일 하단 내비게이션 높이만큼 본문 하단 여백 확보 */
+.pb-mobile-nav {
+  padding-bottom: 64px;
+}
+
+@media (min-width: 1024px) {
+  .pb-mobile-nav {
+    padding-bottom: 0;
+  }
+}
