@@ -7,13 +7,13 @@
  * 최초 배포 시 기본값만 여기서 바꾸면 된다.
  */
 export const SITE_CONFIG = {
-  name: process.env.NEXT_PUBLIC_SITE_NAME ?? '보험설계사 익명 커뮤니티',
-  shortName: '보슈 커뮤니티',
-  description:
-    '보험설계사들이 신분과 소속을 밝히지 않고 자유롭게 정보를 나누는 완전 익명 커뮤니티',
+  name: process.env.NEXT_PUBLIC_SITE_NAME ?? '보험인사이드',
+  shortName: '보험인사이드',
+  englishName: 'Insurance Inside',
+  description: '보험설계사들의 솔직한 익명 커뮤니티',
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
   logoPath: '/logo.svg',
-  themeColor: '#2f6bff',
+  themeColor: '#152d70',
 } as const;
 
 export const DEFAULT_CATEGORIES = [

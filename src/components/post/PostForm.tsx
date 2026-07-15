@@ -61,14 +61,14 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 px-4 py-6">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-white px-4 py-5 lg:rounded-md lg:border lg:border-gray-200">
       {mode === 'create' ? (
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">카테고리</label>
           <select
             name="categoryId"
             required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
           >
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -80,30 +80,6 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
       ) : (
         <p className="text-sm text-gray-500">카테고리: {initialValues?.categoryName}</p>
       )}
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">제목</label>
-        <input
-          name="title"
-          type="text"
-          required
-          maxLength={POST_TITLE_MAX_LENGTH}
-          defaultValue={initialValues?.title}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">본문</label>
-        <textarea
-          name="content"
-          required
-          rows={10}
-          maxLength={POST_CONTENT_MAX_LENGTH}
-          defaultValue={initialValues?.content}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
-        />
-      </div>
 
       {mode === 'create' ? (
         <div>
@@ -134,7 +110,7 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
           </div>
 
           {authorNameType === 'random' ? (
-            <p className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+            <p className="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
               작성자명을 입력하지 않으면 &ldquo;익명0000&rdquo; 형태로 자동 생성됩니다.
             </p>
           ) : (
@@ -143,13 +119,37 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
               type="text"
               maxLength={DEFAULT_OPERATION_SETTINGS.authorNameMaxLength}
               placeholder="작성자명을 입력해주세요"
-              className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
           )}
         </div>
       ) : (
         <p className="text-sm text-gray-500">작성자: {initialValues?.authorDisplayName}</p>
       )}
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">제목</label>
+        <input
+          name="title"
+          type="text"
+          required
+          maxLength={POST_TITLE_MAX_LENGTH}
+          defaultValue={initialValues?.title}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">본문</label>
+        <textarea
+          name="content"
+          required
+          rows={10}
+          maxLength={POST_CONTENT_MAX_LENGTH}
+          defaultValue={initialValues?.content}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+        />
+      </div>
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">이미지</label>
@@ -161,9 +161,9 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-lg bg-brand-600 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+        className="w-full rounded-md bg-brand-600 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
       >
-        {isPending ? '처리 중...' : mode === 'create' ? '작성 완료' : '수정 완료'}
+        {isPending ? '처리 중...' : mode === 'create' ? '등록' : '수정 완료'}
       </button>
     </form>
   );

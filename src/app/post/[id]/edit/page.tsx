@@ -27,8 +27,8 @@ export default async function EditPostPage({ params }: { params: { id: string } 
   const boundUpdateAction = updatePostAction.bind(null, params.id);
 
   return (
-    <div>
-      <h1 className="px-4 pt-4 text-xl font-bold text-gray-900">글 수정</h1>
+    <div className="mx-auto max-w-2xl px-0 py-3 lg:px-6 lg:py-6">
+      <h1 className="px-4 pb-2 text-lg font-bold text-gray-900 lg:px-0">글 수정</h1>
       <PostForm
         mode="edit"
         initialValues={{

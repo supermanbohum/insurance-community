@@ -33,7 +33,7 @@ export function Pagination({ basePath, currentPage, totalPages }: PaginationProp
           href={pageHref(basePath, page)}
           className={clsx(
             'rounded px-3 py-1',
-            page === currentPage ? 'bg-brand-600 font-semibold text-white' : 'text-gray-600 hover:bg-gray-100'
+            page === currentPage ? 'bg-brand-700 font-semibold text-white' : 'text-gray-600 hover:bg-gray-100'
           )}
         >
           {page}

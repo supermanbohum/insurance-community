@@ -5,26 +5,30 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { SITE_CONFIG } from '@/lib/config/site';
 
-const ITEMS = [
-  { href: '/', label: '전체' },
-  { href: '/board/issue', label: '보험이슈' },
-  { href: '/board/free', label: '자유게시판' },
-  { href: '/best', label: '베스트' },
-];
+interface Category {
+  slug: string;
+  name: string;
+}
 
-export function DesktopNav() {
+export function DesktopNav({ categories }: { categories: Category[] }) {
   const pathname = usePathname();
 
   if (pathname.startsWith('/admin')) return null;
 
+  const items = [
+    { href: '/', label: '전체' },
+    ...categories.map((c) => ({ href: `/board/${c.slug}`, label: c.name })),
+    { href: '/best', label: '베스트' },
+  ];
+
   return (
-    <header className="hidden border-b border-gray-200 bg-white lg:block">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-6">
-        <Link href="/" className="text-lg font-bold text-brand-600">
+    <header className="sticky top-0 z-30 hidden border-b border-gray-200 bg-white lg:block">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-8 px-6">
+        <Link href="/" className="whitespace-nowrap text-lg font-bold text-brand-800">
           {SITE_CONFIG.shortName}
         </Link>
-        <nav className="flex items-center gap-6">
-          {ITEMS.map((item) => {
+        <nav className="flex items-center gap-5">
+          {items.map((item) => {
             const active = pathname === item.href;
             return (
               <Link
@@ -32,7 +36,7 @@ export function DesktopNav() {
                 href={item.href}
                 className={clsx(
                   'text-sm',
-                  active ? 'font-semibold text-brand-600' : 'text-gray-600 hover:text-gray-900'
+                  active ? 'font-semibold text-brand-700' : 'text-gray-600 hover:text-gray-900'
                 )}
               >
                 {item.label}
@@ -48,6 +52,12 @@ export function DesktopNav() {
             className="w-full rounded-full border border-gray-300 px-4 py-1.5 text-sm outline-none focus:border-brand-500"
           />
         </form>
+        <Link
+          href="/write"
+          className="whitespace-nowrap rounded-md bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
+        >
+          글쓰기
+        </Link>
       </div>
     </header>
   );
