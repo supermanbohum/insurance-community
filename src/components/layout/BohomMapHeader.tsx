@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, Search, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, ShieldCheck } from 'lucide-react';
+import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, ShieldCheck } from 'lucide-react';
+import { SearchCombobox } from '@/components/search/SearchCombobox';
 
 const MENU_GROUPS = [
   {
@@ -50,15 +51,13 @@ export function BohomMapHeader() {
           </span>
           <span className="text-lg font-extrabold tracking-tight text-ink">보험맵</span>
         </Link>
-        <form action="/search" className="relative ml-1 flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
-          <input
-            type="text"
-            name="q"
+        <div className="relative ml-1 flex-1">
+          <SearchCombobox
             placeholder="지역, GA명, 지점명 검색"
-            className="w-full rounded-full border border-transparent bg-surface-sunken py-2 pl-9 pr-3 text-sm text-ink outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:bg-white focus:shadow-card"
+            iconClassName="left-3.5"
+            inputClassName="w-full rounded-full border border-transparent bg-surface-sunken py-2 pl-9 pr-3 text-sm text-ink outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:bg-white focus:shadow-card"
           />
-        </form>
+        </div>
       </div>
 
       {menuOpen && (

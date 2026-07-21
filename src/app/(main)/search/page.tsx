@@ -3,6 +3,7 @@ import { listPublicGaCompanies } from '@/lib/public/ga';
 import { listPublicBranches } from '@/lib/public/branch';
 import { BranchCard } from '@/components/branch/BranchCard';
 import { GaCard } from '@/components/ga/GaCard';
+import { SearchCombobox } from '@/components/search/SearchCombobox';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,17 +18,12 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-4">
-      <form action="/search" className="relative">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
-        <input
-          type="text"
-          name="q"
-          defaultValue={q}
-          placeholder="지역, GA명, 지점명으로 검색"
-          autoFocus
-          className="w-full rounded-2xl border border-line bg-white py-3 pl-10 pr-4 text-sm text-ink shadow-card outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:shadow-card-hover"
-        />
-      </form>
+      <SearchCombobox
+        defaultValue={q}
+        placeholder="지역, GA명, 지점명으로 검색"
+        autoFocus={!q}
+        inputClassName="w-full rounded-2xl border border-line bg-white py-3 pl-10 pr-4 text-sm text-ink shadow-card outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:shadow-card-hover"
+      />
 
       {!q ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line py-20 text-ink-faint">
