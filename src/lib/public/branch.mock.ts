@@ -77,12 +77,19 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
   if (!branch || !isPubliclyVisible(branch)) return null;
 
   const company = mockStore.gaCompanies.find((c) => c.id === branch.ga_company_id);
+  const region = mockStore.regions.find((r) => r.id === branch.region_id) ?? null;
+  const gaBranchCount = mockStore.branches.filter(
+    (b) => b.ga_company_id === branch.ga_company_id && isPubliclyVisible(b)
+  ).length;
 
   return {
     id: branch.id,
     name: branch.name,
     address: branch.address,
     addressDetail: branch.address_detail,
+    sidoName: region?.sido_name ?? null,
+    sigunguName: region?.sigungu_name ?? null,
+    gaBranchCount,
     lat: branch.lat,
     lng: branch.lng,
     introText: branch.intro_text,

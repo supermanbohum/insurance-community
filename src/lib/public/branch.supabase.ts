@@ -97,6 +97,9 @@ export interface BranchDetail {
   name: string;
   address: string;
   addressDetail: string | null;
+  sidoName: string | null;
+  sigunguName: string | null;
+  gaBranchCount: number;
   lat: number | null;
   lng: number | null;
   introText: string | null;
@@ -130,29 +133,13 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
        db_support_info, settlement_support_info, planner_count, parking_available, visit_consult_available,
        business_hours, updated_at, organic_view_count, imported_view_count,
        correction_view_count, is_recommended,
-       ga_company:ga_company_id ( id, name, slug, is_verified, ceo_name, description )`
+       ga_company:ga_company_id ( id, name, slug, is_verified, ceo_name, description ),
+       region:region_id ( sido_name, sigungu_name )`
     )
     .eq('id', branchId)
     .single();
 
   if (error || !branch) return null;
-
-  const [mediaRes, contactsRes, insurerLinksRes, recruitsRes] = await Promise.all([
-    supabase.from('branch_media').select('id, media_type, source, value, sort_order').eq('branch_id', branchId).order('sort_order'),
-    supabase.from('branch_contacts').select('id, type, value, label, sort_order').eq('branch_id', branchId).order('sort_order'),
-    supabase.from('branch_insurers').select('insurer_id, insurers:insurer_id(name)').eq('branch_id', branchId),
-    supabase
-      .from('branch_recruit')
-      .select('id, title, content, employment_type')
-      .eq('branch_id', branchId)
-      .eq('is_active', true),
-  ]);
-  const subError = mediaRes.error || contactsRes.error || insurerLinksRes.error || recruitsRes.error;
-  if (subError) throw subError;
-  const { data: media } = mediaRes;
-  const { data: contacts } = contactsRes;
-  const { data: insurerLinks } = insurerLinksRes;
-  const { data: recruits } = recruitsRes;
 
   const gaCompany = branch.ga_company as unknown as {
     id: string;
@@ -162,12 +149,38 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
     ceo_name: string | null;
     description: string | null;
   } | null;
+  const region = branch.region as unknown as { sido_name: string; sigungu_name: string | null } | null;
+
+  const [mediaRes, contactsRes, insurerLinksRes, recruitsRes, branchCountRes] = await Promise.all([
+    supabase.from('branch_media').select('id, media_type, source, value, sort_order').eq('branch_id', branchId).order('sort_order'),
+    supabase.from('branch_contacts').select('id, type, value, label, sort_order').eq('branch_id', branchId).order('sort_order'),
+    supabase.from('branch_insurers').select('insurer_id, insurers:insurer_id(name)').eq('branch_id', branchId),
+    supabase
+      .from('branch_recruit')
+      .select('id, title, content, employment_type')
+      .eq('branch_id', branchId)
+      .eq('is_active', true),
+    supabase
+      .from('ga_branch')
+      .select('id', { count: 'exact', head: true })
+      .eq('ga_company_id', gaCompany?.id ?? '')
+      .eq('status', 'visible'),
+  ]);
+  const subError = mediaRes.error || contactsRes.error || insurerLinksRes.error || recruitsRes.error || branchCountRes.error;
+  if (subError) throw subError;
+  const { data: media } = mediaRes;
+  const { data: contacts } = contactsRes;
+  const { data: insurerLinks } = insurerLinksRes;
+  const { data: recruits } = recruitsRes;
 
   return {
     id: branch.id,
     name: branch.name,
     address: branch.address,
     addressDetail: branch.address_detail,
+    sidoName: region?.sido_name ?? null,
+    sigunguName: region?.sigungu_name ?? null,
+    gaBranchCount: branchCountRes.count ?? 0,
     lat: branch.lat,
     lng: branch.lng,
     introText: branch.intro_text,

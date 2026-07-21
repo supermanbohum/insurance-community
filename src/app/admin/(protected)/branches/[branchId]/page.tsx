@@ -8,7 +8,7 @@ import {
   listInsurers,
   listRegions,
 } from '@/lib/admin/branch';
-import { getGaCompanyById } from '@/lib/admin/ga';
+import { getGaCompanyById, getBranchesByGaCompanyId } from '@/lib/admin/ga';
 import { computeBranchCompleteness } from '@/lib/admin/completeness';
 import { BranchCompletenessCard } from '@/components/admin/BranchCompletenessCard';
 import { BranchEditWorkspace } from '@/components/admin/BranchEditWorkspace';
@@ -20,7 +20,7 @@ export default async function AdminBranchDetailPage({ params }: { params: { bran
     notFound();
   }
 
-  const [gaCompany, regions, insurers, media, contacts, recruits, insurerIds] = await Promise.all([
+  const [gaCompany, regions, insurers, media, contacts, recruits, insurerIds, gaBranches] = await Promise.all([
     getGaCompanyById(branch.ga_company_id),
     listRegions(),
     listInsurers(),
@@ -28,7 +28,9 @@ export default async function AdminBranchDetailPage({ params }: { params: { bran
     getBranchContacts(branch.id),
     getBranchRecruits(branch.id),
     getBranchInsurerIds(branch.id),
+    getBranchesByGaCompanyId(branch.ga_company_id),
   ]);
+  const gaBranchCount = gaBranches.filter((b) => b.status === 'visible').length;
 
   const completeness = computeBranchCompleteness({
     branch,
@@ -58,6 +60,7 @@ export default async function AdminBranchDetailPage({ params }: { params: { bran
         branch={branch}
         gaCompanyName={gaCompany?.name ?? ''}
         isGaVerified={gaCompany?.is_verified ?? false}
+        gaBranchCount={gaBranchCount}
         regions={regions}
         insurers={insurers}
         media={media}

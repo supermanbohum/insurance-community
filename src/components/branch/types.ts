@@ -28,6 +28,9 @@ export interface BranchPreviewData {
   name: string;
   address: string;
   addressDetail: string | null;
+  sidoName: string | null;
+  sigunguName: string | null;
+  gaBranchCount: number;
   lat: number | null;
   lng: number | null;
   introText: string | null;

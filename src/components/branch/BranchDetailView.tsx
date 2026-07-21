@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  BadgeCheck,
   Building2,
   GraduationCap,
   HeartHandshake,
@@ -12,13 +11,13 @@ import {
   Car,
   UserCheck,
   Clock,
-  RefreshCw,
   type LucideIcon,
 } from 'lucide-react';
 import type { BranchPreviewData } from '@/components/branch/types';
 import { BranchGallery } from '@/components/branch/BranchGallery';
 import { BranchContactList } from '@/components/branch/BranchContactList';
 import { BranchStickyActionBar } from '@/components/branch/BranchStickyActionBar';
+import { BranchPillTags } from '@/components/branch/BranchPillTags';
 import { cn } from '@/lib/utils';
 
 const BLOCK_ICON: Record<string, LucideIcon> = {
@@ -73,27 +72,23 @@ export function BranchDetailView({ data, variant }: { data: BranchPreviewData; v
   return (
     <div className={cn('flex flex-col gap-5', variant === 'public' && 'pb-28 lg:pb-6')}>
       <header className="flex flex-col gap-1.5">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <h1 className="text-xl font-extrabold tracking-tight text-ink">{data.name}</h1>
-          {data.isGaVerified && (
-            <span className="flex items-center gap-0.5 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
-              <BadgeCheck className="h-3.5 w-3.5" />
-              공식 인증 GA
-            </span>
-          )}
-        </div>
+        <h1 className="text-xl font-extrabold tracking-tight text-ink">{data.name}</h1>
         <p className="text-sm font-medium text-ink-soft">{data.gaCompanyName}</p>
         <p className="text-sm text-ink-faint">
           {data.address}
           {data.addressDetail ? ` ${data.addressDetail}` : ''}
         </p>
-        <p className="flex items-center gap-1 text-xs text-ink-faint">
-          <RefreshCw className="h-3 w-3" />
-          최근 업데이트 {new Date(data.updatedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
-        </p>
       </header>
 
       <BranchGallery media={data.media} />
+
+      <BranchPillTags
+        isGaVerified={data.isGaVerified}
+        sidoName={data.sidoName}
+        sigunguName={data.sigunguName}
+        gaBranchCount={data.gaBranchCount}
+        updatedAt={data.updatedAt}
+      />
 
       <BranchStickyActionBar
         name={data.name}

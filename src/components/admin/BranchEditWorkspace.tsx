@@ -16,6 +16,7 @@ export function BranchEditWorkspace({
   branch,
   gaCompanyName,
   isGaVerified,
+  gaBranchCount,
   regions,
   insurers,
   media,
@@ -27,6 +28,7 @@ export function BranchEditWorkspace({
   branch: BranchRow;
   gaCompanyName: string;
   isGaVerified: boolean;
+  gaBranchCount: number;
   regions: RegionRow[];
   insurers: InsurerRow[];
   media: BranchMediaRow[];
@@ -35,6 +37,7 @@ export function BranchEditWorkspace({
   insurerIds: string[];
   imageBaseUrl: string;
 }) {
+  const region = regions.find((r) => r.id === branch.region_id) ?? null;
   const [draft, setDraft] = useState<BranchInfoDraft>({
     name: branch.name,
     address: branch.address,
@@ -52,6 +55,9 @@ export function BranchEditWorkspace({
     name: draft.name,
     address: draft.address,
     addressDetail: draft.addressDetail || null,
+    sidoName: region?.sido_name ?? null,
+    sigunguName: region?.sigungu_name ?? null,
+    gaBranchCount,
     lat: branch.lat,
     lng: branch.lng,
     introText: draft.introText || null,
