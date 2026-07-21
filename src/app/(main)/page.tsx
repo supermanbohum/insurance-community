@@ -2,7 +2,10 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { listPublicBranches } from '@/lib/public/branch';
 import { IconMenuGrid } from '@/components/home/IconMenuGrid';
-import { BannerPlaceholder } from '@/components/home/BannerPlaceholder';
+import { HeroSearch } from '@/components/home/HeroSearch';
+import { RegionQuickLinks } from '@/components/home/RegionQuickLinks';
+import { MapPreviewSection } from '@/components/home/MapPreviewSection';
+import { HomeFooter } from '@/components/home/HomeFooter';
 import { BranchCard } from '@/components/branch/BranchCard';
 
 export const dynamic = 'force-dynamic';
@@ -47,7 +50,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-9 px-4 pb-6 pt-4">
-      <BannerPlaceholder />
+      <HeroSearch />
 
       <IconMenuGrid />
 
@@ -62,6 +65,10 @@ export default async function HomePage() {
           </div>
         )}
       </Section>
+
+      <RegionQuickLinks />
+
+      <MapPreviewSection />
 
       <Section title="추천 GA" subtitle="보험맵이 선정한 우수 지점" moreHref="/ga">
         {recommended.length === 0 ? (
@@ -86,6 +93,8 @@ export default async function HomePage() {
           </div>
         )}
       </Section>
+
+      <HomeFooter />
     </div>
   );
 }
