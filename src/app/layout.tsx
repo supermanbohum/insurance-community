@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from 'next';
+import { Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
-import { DesktopNav } from '@/components/layout/DesktopNav';
-import { MobileTopBar } from '@/components/layout/MobileTopBar';
-import { MobileNav } from '@/components/layout/MobileNav';
 import { SITE_CONFIG } from '@/lib/config/site';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+
+const notoSansKr = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['400', '500', '700', '900'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: SITE_CONFIG.name,
@@ -29,27 +33,14 @@ export const viewport: Viewport = {
   themeColor: SITE_CONFIG.themeColor,
 };
 
-async function getNavCategories() {
-  const supabase = createServerSupabaseClient();
-  const { data } = await supabase
-    .from('categories')
-    .select('slug, name')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true });
-  return data ?? [];
-}
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const categories = await getNavCategories();
-
+/**
+ * 최소 루트 레이아웃. 공개 페이지 chrome(헤더/하단탭)은 (main)/layout.tsx,
+ * 관리자 chrome은 admin/layout.tsx, ga-admin/layout.tsx가 각자 담당한다.
+ */
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
-        <DesktopNav categories={categories} />
-        <MobileTopBar categories={categories} />
-        <main className="pb-mobile-nav w-full">{children}</main>
-        <MobileNav />
-      </body>
+    <html lang="ko" className={notoSansKr.variable}>
+      <body className="min-h-screen bg-surface font-sans text-ink antialiased">{children}</body>
     </html>
   );
 }
