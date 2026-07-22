@@ -7,6 +7,7 @@ import { APPROVAL_STATUS_BADGE_VARIANT, APPROVAL_STATUS_LABEL } from '@/lib/admi
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChangeHistoryList } from '@/components/partner/ChangeHistoryList';
+import { PartnerStepIndicator } from '@/components/partner/PartnerStepIndicator';
 
 export default async function PartnerDashboardPage() {
   const partner = await requirePartner();
@@ -21,6 +22,12 @@ export default async function PartnerDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <Card>
+        <CardContent className="pt-6">
+          <PartnerStepIndicator status={company.approval_status} />
+        </CardContent>
+      </Card>
+
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold">{company.name}</h1>

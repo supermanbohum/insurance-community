@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { requirePartner } from '@/lib/partner/session';
 import { listRegions } from '@/lib/admin/branch';
 import { OnboardingForm } from '@/components/partner/OnboardingForm';
+import { PartnerStepIndicator } from '@/components/partner/PartnerStepIndicator';
 
 export default async function PartnerOnboardingPage() {
   const partner = await requirePartner();
@@ -12,7 +13,8 @@ export default async function PartnerOnboardingPage() {
   const regions = await listRegions();
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-4 px-4 py-10">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 px-4 py-10">
+      <PartnerStepIndicator status="onboarding" />
       <div>
         <h1 className="text-xl font-bold">GA 등록 신청</h1>
         <p className="mt-1 text-sm text-muted-foreground">

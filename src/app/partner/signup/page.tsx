@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentPartner } from '@/lib/partner/session';
 import { PartnerSignupForm } from '@/components/partner/PartnerSignupForm';
+import { PartnerStepIndicator } from '@/components/partner/PartnerStepIndicator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default async function PartnerSignupPage() {
@@ -11,7 +12,10 @@ export default async function PartnerSignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 py-10">
+      <div className="w-full max-w-sm">
+        <PartnerStepIndicator status="signup" />
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-xl">GA 등록 신청</CardTitle>
