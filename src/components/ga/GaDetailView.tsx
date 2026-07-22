@@ -19,6 +19,7 @@ import { GaGallery } from '@/components/ga/GaGallery';
 import { GaStickyActionBar } from '@/components/ga/GaStickyActionBar';
 import { GaSnsLinks } from '@/components/ga/GaSnsLinks';
 import { GaLocationMap } from '@/components/ga/GaLocationMap';
+import { GaFavoriteButton } from '@/components/ga/GaFavoriteButton';
 import { cn } from '@/lib/utils';
 
 const BLOCK_ICON: Record<string, LucideIcon> = {
@@ -54,7 +55,16 @@ function youtubeEmbedUrl(url: string): string | null {
  * 미리보기가 동일하게 이 컴포넌트를 렌더링한다 - "회사 홈페이지처럼" 배너/로고/소개/
  * 갤러리/지도/길찾기·전화·홈페이지/SNS/채용정보를 한 화면에 구성한다.
  */
-export function GaDetailView({ data, variant }: { data: GaPreviewData; variant: 'public' | 'preview' }) {
+export function GaDetailView({
+  data,
+  variant,
+  favorite,
+}: {
+  data: GaPreviewData;
+  variant: 'public' | 'preview';
+  /** 공개 페이지에서만 넘겨준다 - 관리자 미리보기에는 "지금 보는 사람의 즐겨찾기"라는 개념이 없다. */
+  favorite?: { gaId: string; initialFavorited: boolean };
+}) {
   const introBlocks = [
     { label: '회사소개', value: data.description },
     { label: '교육 소개', value: data.educationInfo },
@@ -110,6 +120,7 @@ export function GaDetailView({ data, variant }: { data: GaPreviewData; variant: 
             전국 {data.branchCount}개 지점 · {formatDistanceToNow(new Date(data.updatedAt), { addSuffix: true, locale: ko })} 업데이트
           </p>
         </div>
+        {favorite && <GaFavoriteButton gaId={favorite.gaId} initialFavorited={favorite.initialFavorited} />}
       </header>
 
       <GaStickyActionBar

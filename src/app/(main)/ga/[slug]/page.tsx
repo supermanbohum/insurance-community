@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getPublicGaDetailBySlug } from '@/lib/public/ga';
+import { getCurrentUser } from '@/lib/auth/session';
+import { isGaFavorited } from '@/lib/user/favorites';
 import { GaDetailView } from '@/components/ga/GaDetailView';
 import type { GaPreviewData } from '@/components/ga/types';
 
@@ -10,6 +12,9 @@ export default async function GaDetailPage({ params }: { params: { slug: string 
   if (!ga) {
     notFound();
   }
+
+  const user = await getCurrentUser();
+  const initialFavorited = user ? await isGaFavorited(user.id, ga.id) : false;
 
   const data: GaPreviewData = {
     name: ga.name,
@@ -46,7 +51,7 @@ export default async function GaDetailPage({ params }: { params: { slug: string 
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-4">
-      <GaDetailView data={data} variant="public" />
+      <GaDetailView data={data} variant="public" favorite={{ gaId: ga.id, initialFavorited }} />
     </div>
   );
 }
