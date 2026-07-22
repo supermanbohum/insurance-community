@@ -456,6 +456,84 @@ const branches: MockBranch[] = [
   },
 ];
 
+// 검색 필터(GA 선택) UI 데모용으로 추가된 52개 GA사. 각각 대표 지점 1개씩 자동 생성한다.
+const EXTRA_GA_NAMES = [
+  '한화생명금융서비스', 'GA Korea', '인카금융서비스', '에이플러스에셋', '굿리치', '프라임에셋', '피플라이프',
+  '엠금융서비스', '리치앤코', '메가(Mega)', '글로벌금융판매', '리더스금융판매', '한국보험금융', '유퍼스트보험대리점',
+  'KGA에셋', '메리츠금융서비스', 'IFA', '한국재무설계', 'DB금융서비스', '삼성생명금융서비스', '신한금융플러스',
+  '농협생명금융서비스', '원금융서비스', '영진에셋', 'GS손해사정', 'GSMNS', '리더스에셋', 'FR자산관리',
+  '에즈금융서비스', '코어인슈어런스', 'BQ자산관리', 'LK자산관리', '키움에셋플래너', 'HS컨설팅', 'W에셋',
+  'SK증권보험서비스', 'JS자산관리', 'KB라이프파트너스', 'CM보험대리점', '아이파트너스', 'VIP파트너스',
+  'US보험대리점', '더휴먼보험대리점', 'GN보험대리점', '퍼스트에셋', '조은보험대리점', '인스팜', '베스트파트너스',
+  '리더스파트너스', '인슈코리아', '스카이블루에셋', '메타리치',
+];
+
+// 각 시/도의 첫 번째 시/군/구로 지점 지역을 순환 배정한다 (regionIdBySigunguName 조회용).
+const SIDO_FIRST_SIGUNGU: [string, string, string][] = [
+  ['11', '서울특별시', '종로구'], ['26', '부산광역시', '중구'], ['27', '대구광역시', '중구'],
+  ['28', '인천광역시', '중구'], ['29', '광주광역시', '동구'], ['30', '대전광역시', '동구'],
+  ['31', '울산광역시', '중구'], ['41', '경기도', '수원시'], ['42', '강원특별자치도', '춘천시'],
+  ['43', '충청북도', '청주시'], ['44', '충청남도', '천안시'], ['45', '전북특별자치도', '전주시'],
+  ['46', '전라남도', '목포시'], ['47', '경상북도', '포항시'], ['48', '경상남도', '창원시'],
+  ['50', '제주특별자치도', '제주시'],
+];
+
+const extraGaCompanies: MockGaCompany[] = EXTRA_GA_NAMES.map((name, i) => ({
+  id: `ga-extra-${i + 1}`,
+  slug: `ga-extra-${i + 1}`,
+  name,
+  ceo_name: null,
+  description: `${name}의 보험 상담 및 설계 서비스를 제공하는 GA입니다.`,
+  logo_path: null,
+  is_verified: i % 5 === 0,
+  verified_at: i % 5 === 0 ? daysAgo(30 + i) : null,
+  verified_by_admin_id: i % 5 === 0 ? 'mock-admin-1' : null,
+  approval_status: 'approved',
+  approval_reason: null,
+  reviewed_by_admin_id: 'mock-admin-1',
+  reviewed_at: daysAgo(40 + i),
+  created_at: daysAgo(90 + i),
+  updated_at: daysAgo(i % 20),
+  display_priority: 0,
+}));
+
+const extraBranches: MockBranch[] = EXTRA_GA_NAMES.map((name, i) => {
+  const [, sidoName, sigunguName] = SIDO_FIRST_SIGUNGU[i % SIDO_FIRST_SIGUNGU.length];
+  const [sidoCode] = SIDO_FIRST_SIGUNGU[i % SIDO_FIRST_SIGUNGU.length];
+  return {
+    id: `branch-extra-${i + 1}`,
+    ga_company_id: `ga-extra-${i + 1}`,
+    region_id: regionIdBySigunguName(sidoCode, sigunguName),
+    name: `${name} 본점`,
+    address: `${sidoName} ${sigunguName} 중앙로 ${100 + i}`,
+    address_detail: null,
+    lat: null,
+    lng: null,
+    intro_text: `${name}의 대표 지점입니다.`,
+    education_info: null,
+    welfare_info: null,
+    db_support_info: null,
+    settlement_support_info: null,
+    planner_count: 15 + ((i * 37) % 380),
+    parking_available: i % 3 !== 0,
+    visit_consult_available: true,
+    business_hours: '평일 09:00-18:00',
+    organic_view_count: 5 + ((i * 3) % 50),
+    imported_view_count: 0,
+    correction_view_count: 0,
+    is_recommended: false,
+    recommended_rank: null,
+    status: 'visible',
+    created_at: daysAgo(90 + i),
+    updated_at: daysAgo(i % 20),
+    deleted_at: null,
+    display_priority: 0,
+  };
+});
+
+gaCompanies.push(...extraGaCompanies);
+branches.push(...extraBranches);
+
 const branchMedia: MockBranchMedia[] = [
   { id: 'media-1', branch_id: 'branch-1', media_type: 'video', source: 'external', value: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', sort_order: 0, created_at: daysAgo(100) },
   // 홈 화면 카드/지점 상세 대표사진 - 로고 이미지를 대표사진으로도 재사용한다(실사진 없는 mock 지점용).
