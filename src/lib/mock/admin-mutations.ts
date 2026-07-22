@@ -1,20 +1,44 @@
 import 'server-only';
 import { mockStore } from '@/lib/mock/store';
 import type { ChangeFieldDiff, ChangeRequestAction, ChangeRequestStatus, ChangeRequestTargetType, MockBranch } from '@/lib/mock/store';
-import type { BranchMediaSource, BranchMediaType, GaApprovalStatus, GaStatus } from '@/types/database';
+import type { BranchMediaSource, BranchMediaType, GaApprovalStatus, GaDisplayStatus, GaMediaType, GaStatus } from '@/types/database';
+import type { GaOperationType } from '@/lib/mock/store';
 import { diffFields, GA_FIELD_LABELS, BRANCH_FIELD_LABELS, BRANCH_FIELD_FORMATTERS } from '@/lib/partner/diff';
 
 function slugTaken(slug: string): boolean {
   return mockStore.gaCompanies.some((c) => c.slug === slug);
 }
 
-export function mockCreateGaCompany(input: {
-  slug: string;
+export interface MockGaCompanyFormInput {
   name: string;
   ceoName?: string;
   description?: string;
   logoPath?: string;
-}): { id: string } | { error: string } {
+  operationType?: GaOperationType;
+  isHeadquarters?: boolean;
+  isRecruiting?: boolean;
+  status?: GaDisplayStatus;
+  phone?: string;
+  homepageUrl?: string;
+  address?: string;
+  addressDetail?: string;
+  zonecode?: string;
+  lat?: number;
+  lng?: number;
+  educationInfo?: string;
+  welfareInfo?: string;
+  strengthsInfo?: string;
+  promoVideoUrl?: string;
+  snsBlogUrl?: string;
+  snsInstagramUrl?: string;
+  snsYoutubeUrl?: string;
+  snsKakaoChannelUrl?: string;
+  snsOpenChatUrl?: string;
+}
+
+export function mockCreateGaCompany(
+  input: { slug: string } & MockGaCompanyFormInput
+): { id: string } | { error: string } {
   if (slugTaken(input.slug)) return { error: '이미 사용 중인 slug입니다.' };
   const id = mockStore.genId('ga');
   const now = mockStore.nowIso();
@@ -25,7 +49,26 @@ export function mockCreateGaCompany(input: {
     ceo_name: input.ceoName ?? null,
     description: input.description ?? null,
     logo_path: input.logoPath ?? null,
-    operation_type: 'branch',
+    operation_type: input.operationType ?? 'branch',
+    is_headquarters: input.isHeadquarters ?? true,
+    is_recruiting: input.isRecruiting ?? false,
+    status: input.status ?? 'visible',
+    address: input.address ?? null,
+    address_detail: input.addressDetail ?? null,
+    zonecode: input.zonecode ?? null,
+    lat: input.lat ?? null,
+    lng: input.lng ?? null,
+    phone: input.phone ?? null,
+    homepage_url: input.homepageUrl ?? null,
+    education_info: input.educationInfo ?? null,
+    welfare_info: input.welfareInfo ?? null,
+    strengths_info: input.strengthsInfo ?? null,
+    promo_video_url: input.promoVideoUrl ?? null,
+    sns_blog_url: input.snsBlogUrl ?? null,
+    sns_instagram_url: input.snsInstagramUrl ?? null,
+    sns_youtube_url: input.snsYoutubeUrl ?? null,
+    sns_kakao_channel_url: input.snsKakaoChannelUrl ?? null,
+    sns_open_chat_url: input.snsOpenChatUrl ?? null,
     is_verified: false,
     verified_at: null,
     verified_by_admin_id: null,
@@ -40,17 +83,60 @@ export function mockCreateGaCompany(input: {
   return { id };
 }
 
-export function mockUpdateGaCompany(
-  id: string,
-  input: { name: string; ceoName?: string; description?: string; logoPath?: string }
-): void {
+export function mockUpdateGaCompany(id: string, input: MockGaCompanyFormInput): void {
   const company = mockStore.gaCompanies.find((c) => c.id === id);
   if (!company) throw new Error('GA_COMPANY_NOT_FOUND');
   company.name = input.name;
   company.ceo_name = input.ceoName ?? null;
   company.description = input.description ?? null;
   if (input.logoPath) company.logo_path = input.logoPath;
+  if (input.operationType) company.operation_type = input.operationType;
+  if (input.isHeadquarters !== undefined) company.is_headquarters = input.isHeadquarters;
+  if (input.isRecruiting !== undefined) company.is_recruiting = input.isRecruiting;
+  if (input.status) company.status = input.status;
+  company.address = input.address ?? null;
+  company.address_detail = input.addressDetail ?? null;
+  company.zonecode = input.zonecode ?? null;
+  company.lat = input.lat ?? null;
+  company.lng = input.lng ?? null;
+  company.phone = input.phone ?? null;
+  company.homepage_url = input.homepageUrl ?? null;
+  company.education_info = input.educationInfo ?? null;
+  company.welfare_info = input.welfareInfo ?? null;
+  company.strengths_info = input.strengthsInfo ?? null;
+  company.promo_video_url = input.promoVideoUrl ?? null;
+  company.sns_blog_url = input.snsBlogUrl ?? null;
+  company.sns_instagram_url = input.snsInstagramUrl ?? null;
+  company.sns_youtube_url = input.snsYoutubeUrl ?? null;
+  company.sns_kakao_channel_url = input.snsKakaoChannelUrl ?? null;
+  company.sns_open_chat_url = input.snsOpenChatUrl ?? null;
   company.updated_at = mockStore.nowIso();
+}
+
+export function mockAddGaMedia(input: {
+  gaCompanyId: string;
+  mediaType: GaMediaType;
+  source: BranchMediaSource;
+  value: string;
+  sortOrder?: number;
+}): { id: string } {
+  const id = mockStore.genId('ga-media');
+  mockStore.gaMedia.push({
+    id,
+    ga_company_id: input.gaCompanyId,
+    media_type: input.mediaType,
+    source: input.source,
+    value: input.value,
+    sort_order: input.sortOrder ?? mockStore.gaMedia.filter((m) => m.ga_company_id === input.gaCompanyId).length,
+    created_at: mockStore.nowIso(),
+  });
+  return { id };
+}
+
+export function mockDeleteGaMedia(mediaId: string): void {
+  const idx = mockStore.gaMedia.findIndex((m) => m.id === mediaId);
+  if (idx === -1) return;
+  mockStore.gaMedia.splice(idx, 1);
 }
 
 export function mockVerifyGaCompany(id: string, verified: boolean, adminId: string): void {

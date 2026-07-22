@@ -14,6 +14,9 @@ export type GaStatus = 'visible' | 'hidden' | 'deleted';
 export type GaApprovalStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 export type BranchMediaType = 'image_main' | 'image_office' | 'video';
 export type BranchMediaSource = 'storage' | 'external';
+export type GaMediaType = 'banner' | 'gallery';
+/** ga_company의 노출 상태 - approval_status(심사)와 별개로 승인 이후에도 관리자가 임시로 내릴 수 있는 스위치. */
+export type GaDisplayStatus = 'visible' | 'hidden';
 /** branch_contacts.type - enum이 아닌 자유 문자열. 알려진 값 기준 UI 매핑용 참고 목록. */
 export type KnownBranchContactType =
   | 'phone'
@@ -224,6 +227,25 @@ export interface Database {
           description: string | null;
           logo_path: string | null;
           operation_type: 'direct' | 'branch';
+          is_headquarters: boolean;
+          is_recruiting: boolean;
+          status: GaDisplayStatus;
+          address: string | null;
+          address_detail: string | null;
+          zonecode: string | null;
+          lat: number | null;
+          lng: number | null;
+          phone: string | null;
+          homepage_url: string | null;
+          education_info: string | null;
+          welfare_info: string | null;
+          strengths_info: string | null;
+          promo_video_url: string | null;
+          sns_blog_url: string | null;
+          sns_instagram_url: string | null;
+          sns_youtube_url: string | null;
+          sns_kakao_channel_url: string | null;
+          sns_open_chat_url: string | null;
           is_verified: boolean;
           verified_at: string | null;
           verified_by_admin_id: string | null;
@@ -237,6 +259,28 @@ export interface Database {
         Insert: Partial<Database['public']['Tables']['ga_company']['Row']>;
         Update: Partial<Database['public']['Tables']['ga_company']['Row']>;
         Relationships: [];
+      };
+      ga_media: {
+        Row: {
+          id: string;
+          ga_company_id: string;
+          media_type: GaMediaType;
+          source: BranchMediaSource;
+          value: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['ga_media']['Row']>;
+        Update: Partial<Database['public']['Tables']['ga_media']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'ga_media_ga_company_id_fkey';
+            columns: ['ga_company_id'];
+            isOneToOne: false;
+            referencedRelation: 'ga_company';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       ga_branch: {
         Row: {
@@ -519,11 +563,52 @@ export interface Database {
         Returns: boolean;
       };
       create_ga_company: {
-        Args: { p_slug: string; p_name: string; p_ceo_name?: string; p_description?: string; p_logo_path?: string };
+        Args: {
+          p_slug: string;
+          p_name: string;
+          p_ceo_name?: string;
+          p_description?: string;
+          p_logo_path?: string;
+          p_operation_type?: 'direct' | 'branch';
+          p_is_headquarters?: boolean;
+          p_phone?: string;
+          p_homepage_url?: string;
+          p_address?: string;
+          p_address_detail?: string;
+          p_zonecode?: string;
+          p_lat?: number;
+          p_lng?: number;
+        };
         Returns: string;
       };
       update_ga_company: {
-        Args: { p_ga_company_id: string; p_name: string; p_ceo_name?: string; p_description?: string; p_logo_path?: string };
+        Args: {
+          p_ga_company_id: string;
+          p_name: string;
+          p_ceo_name?: string;
+          p_description?: string;
+          p_logo_path?: string;
+          p_operation_type?: 'direct' | 'branch';
+          p_is_headquarters?: boolean;
+          p_is_recruiting?: boolean;
+          p_status?: GaDisplayStatus;
+          p_phone?: string;
+          p_homepage_url?: string;
+          p_address?: string;
+          p_address_detail?: string;
+          p_zonecode?: string;
+          p_lat?: number;
+          p_lng?: number;
+          p_education_info?: string;
+          p_welfare_info?: string;
+          p_strengths_info?: string;
+          p_promo_video_url?: string;
+          p_sns_blog_url?: string;
+          p_sns_instagram_url?: string;
+          p_sns_youtube_url?: string;
+          p_sns_kakao_channel_url?: string;
+          p_sns_open_chat_url?: string;
+        };
         Returns: void;
       };
       verify_ga_company: {
@@ -533,6 +618,20 @@ export interface Database {
       set_ga_company_approval_status: {
         Args: { p_ga_company_id: string; p_status: GaApprovalStatus; p_reason?: string };
         Returns: void;
+      };
+      add_ga_media: {
+        Args: {
+          p_ga_company_id: string;
+          p_media_type: GaMediaType;
+          p_source: BranchMediaSource;
+          p_value: string;
+          p_sort_order?: number;
+        };
+        Returns: string;
+      };
+      delete_ga_media: {
+        Args: { p_media_id: string };
+        Returns: string;
       };
       create_branch: {
         Args: {
