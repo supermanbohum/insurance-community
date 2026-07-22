@@ -704,4 +704,6 @@ export interface PublicBranchSummary {
   viewCount: number;
   isRecommended: boolean;
   createdAt: string;
+  updatedAt: string;
+  gaBranchCount: number;
 }

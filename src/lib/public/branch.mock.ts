@@ -27,6 +27,8 @@ function toSummary(branch: (typeof mockStore.branches)[number]): PublicBranchSum
     viewCount: branch.organic_view_count + branch.imported_view_count + branch.correction_view_count,
     isRecommended: branch.is_recommended,
     createdAt: branch.created_at,
+    updatedAt: branch.updated_at,
+    gaBranchCount: mockStore.branches.filter((b) => b.ga_company_id === branch.ga_company_id && isPubliclyVisible(b)).length,
   };
 }
 

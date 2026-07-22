@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { BadgeCheck, MapPin, Eye, Building2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { BadgeCheck, MapPin, Eye, Building2, RefreshCw } from 'lucide-react';
 import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
 import { HighlightText } from '@/components/search/HighlightText';
@@ -15,11 +17,14 @@ export function BranchCard({
   rank,
   className,
   highlightQuery,
+  showMeta,
 }: {
   branch: PublicBranchSummary;
   rank?: number;
   className?: string;
   highlightQuery?: string;
+  /** 지점 수 / 최근 업데이트 정보를 추가로 표시한다 (홈 "인기 GA" 슬라이드 등 여백이 있는 곳에서만 사용). */
+  showMeta?: boolean;
 }) {
   return (
     <Link
@@ -74,16 +79,29 @@ export function BranchCard({
         <p className="truncate text-[15px] font-bold leading-tight text-ink">
           <HighlightText text={branch.name} query={highlightQuery} />
         </p>
-        <div className="mt-auto flex items-center justify-between pt-1">
-          <p className="flex min-w-0 items-center gap-1 truncate text-xs text-ink-faint">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
+        <div className="mt-auto flex items-center justify-between gap-1.5 pt-1">
+          <span className="flex min-w-0 items-center gap-1 truncate rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-soft">
+            <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{branch.sidoName ? `${branch.sidoName} ${branch.sigunguName ?? ''}` : branch.address}</span>
-          </p>
+          </span>
           <p className="flex shrink-0 items-center gap-0.5 text-[11px] text-ink-faint">
             <Eye className="h-3 w-3" />
             {branch.viewCount.toLocaleString('ko-KR')}
           </p>
         </div>
+
+        {showMeta && (
+          <div className="flex items-center justify-between gap-1.5 text-[11px] text-ink-faint">
+            <span className="flex items-center gap-1">
+              <Building2 className="h-3 w-3" />
+              전국 {branch.gaBranchCount}개 지점
+            </span>
+            <span className="flex items-center gap-1">
+              <RefreshCw className="h-3 w-3" />
+              {formatDistanceToNow(new Date(branch.updatedAt), { addSuffix: true, locale: ko })}
+            </span>
+          </div>
+        )}
       </div>
     </Link>
   );

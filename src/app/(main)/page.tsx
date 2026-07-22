@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { listPublicBranches } from '@/lib/public/branch';
 import { IconMenuGrid } from '@/components/home/IconMenuGrid';
 import { HeroSearch } from '@/components/home/HeroSearch';
+import { PlatformStats } from '@/components/home/PlatformStats';
 import { RegionQuickLinks } from '@/components/home/RegionQuickLinks';
 import { MapPreviewSection } from '@/components/home/MapPreviewSection';
 import { HomeFooter } from '@/components/home/HomeFooter';
@@ -52,6 +53,8 @@ export default async function HomePage() {
     <div className="mx-auto flex max-w-2xl flex-col gap-9 px-4 pb-6 pt-4">
       <HeroSearch />
 
+      <PlatformStats />
+
       <IconMenuGrid />
 
       <Section title="이번 주 인기 GA" subtitle="가장 많이 찾아본 지점" moreHref="/ga">
@@ -60,7 +63,7 @@ export default async function HomePage() {
         ) : (
           <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 scrollbar-hide">
             {popular.map((b, i) => (
-              <BranchCard key={b.id} branch={b} rank={i + 1} className="w-[168px] shrink-0 sm:w-[190px]" />
+              <BranchCard key={b.id} branch={b} rank={i + 1} showMeta className="w-[168px] shrink-0 sm:w-[190px]" />
             ))}
           </div>
         )}
