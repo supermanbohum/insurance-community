@@ -34,6 +34,8 @@ export function LeafletMapView({
   onBoundsChanged,
   flyToTarget,
   onMapReady,
+  initialCenter = DEFAULT_CENTER,
+  initialZoom = DEFAULT_ZOOM,
 }: {
   branches: MapBranch[];
   selectedId: string | null;
@@ -41,6 +43,10 @@ export function LeafletMapView({
   onBoundsChanged: (bounds: L.LatLngBounds, userInitiated: boolean) => void;
   flyToTarget: { id: string; token: number } | null;
   onMapReady?: (map: L.Map) => void;
+  /** 지정하지 않으면 전국 중심(DEFAULT_CENTER/ZOOM)으로 시작한다 - GA 상세 미니맵처럼
+   * 특정 지점으로 바로 확대해서 보여주고 싶을 때 사용한다. */
+  initialCenter?: [number, number];
+  initialZoom?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -51,7 +57,7 @@ export function LeafletMapView({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current, { zoomControl: false }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+    const map = L.map(containerRef.current, { zoomControl: false }).setView(initialCenter, initialZoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19,
