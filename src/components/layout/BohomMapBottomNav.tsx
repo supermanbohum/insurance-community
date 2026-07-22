@@ -10,7 +10,7 @@ const TABS = [
   { href: '/search', label: '검색', icon: Search },
   { href: '/jobs', label: '채용', icon: Briefcase },
   { href: '/community', label: '보험인사이드', icon: Users, external: true },
-  { href: '/my/posts', label: '마이페이지', icon: UserRound },
+  { href: '/my', label: '마이페이지', icon: UserRound },
 ] as const;
 
 export function BohomMapBottomNav() {
