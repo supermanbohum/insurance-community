@@ -1,7 +1,7 @@
 import 'server-only';
 import { mockStore } from '@/lib/mock/store';
 import type { GaApprovalStatus } from '@/types/database';
-import type { GaCompanyRow, GaBranchRow } from './ga.supabase';
+import type { GaCompanyRow, GaBranchRow, GaMediaRow } from './ga.supabase';
 
 export async function listGaCompanies(options: { status?: GaApprovalStatus; q?: string }): Promise<GaCompanyRow[]> {
   let list = [...mockStore.gaCompanies];
@@ -21,4 +21,8 @@ export async function getBranchesByGaCompanyId(gaCompanyId: string): Promise<GaB
   return mockStore.branches
     .filter((b) => b.ga_company_id === gaCompanyId && b.status !== 'deleted')
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export async function getGaMedia(gaCompanyId: string): Promise<GaMediaRow[]> {
+  return mockStore.gaMedia.filter((m) => m.ga_company_id === gaCompanyId).sort((a, b) => a.sort_order - b.sort_order);
 }
