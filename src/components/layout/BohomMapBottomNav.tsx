@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Briefcase, Users, UserRound } from 'lucide-react';
+import { Home, Search, Briefcase, Users, UserRound, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
   { href: '/', label: '홈', icon: Home, exact: true },
   { href: '/search', label: '검색', icon: Search },
   { href: '/jobs', label: '채용', icon: Briefcase },
-  { href: '/community', label: '커뮤니티', icon: Users },
+  { href: '/community', label: '보험인사이드', icon: Users, external: true },
   { href: '/my/posts', label: '마이페이지', icon: UserRound },
 ] as const;
 
@@ -30,11 +30,14 @@ export function BohomMapBottomNav() {
           >
             <span
               className={cn(
-                'flex h-7 w-11 items-center justify-center rounded-full transition-all duration-200',
+                'relative flex h-7 w-11 items-center justify-center rounded-full transition-all duration-200',
                 active ? 'bg-brand-50 text-brand-600' : 'text-ink-faint'
               )}
             >
               <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.4 : 2} />
+              {'external' in tab && tab.external && (
+                <ExternalLink className="absolute right-1.5 top-0.5 h-2.5 w-2.5 text-ink-faint" strokeWidth={2.5} />
+              )}
             </span>
             <span className={cn('transition-colors', active ? 'font-bold text-brand-600' : 'font-medium text-ink-faint')}>
               {tab.label}

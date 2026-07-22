@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, ShieldCheck } from 'lucide-react';
+import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, ShieldCheck, ExternalLink } from 'lucide-react';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 
 const MENU_GROUPS = [
@@ -25,7 +25,7 @@ const MENU_GROUPS = [
   {
     label: '커뮤니티',
     items: [
-      { href: '/community', label: '커뮤니티', icon: Users, tile: 'bg-cyan-50 text-cyan-600' },
+      { href: '/community', label: '보험인사이드', icon: Users, tile: 'bg-cyan-50 text-cyan-600', external: true },
       { href: '/board/notice', label: '공지사항', icon: Megaphone, tile: 'bg-slate-100 text-slate-600' },
     ],
   },
@@ -102,6 +102,7 @@ export function BohomMapHeader() {
                           <Icon className="h-4 w-4" />
                         </span>
                         {item.label}
+                        {'external' in item && item.external && <ExternalLink className="h-3.5 w-3.5 text-ink-faint" />}
                       </Link>
                     );
                   })}
