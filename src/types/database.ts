@@ -17,6 +17,8 @@ export type BranchMediaSource = 'storage' | 'external';
 export type GaMediaType = 'banner' | 'gallery';
 /** ga_company의 노출 상태 - approval_status(심사)와 별개로 승인 이후에도 관리자가 임시로 내릴 수 있는 스위치. */
 export type GaDisplayStatus = 'visible' | 'hidden';
+/** 일반 회원(users)의 로그인 수단. 실제 소셜 로그인 연동 전까지는 Mock Auth에서만 쓰인다. */
+export type AuthProviderType = 'kakao' | 'google' | 'email';
 /** branch_contacts.type - enum이 아닌 자유 문자열. 알려진 값 기준 UI 매핑용 참고 목록. */
 export type KnownBranchContactType =
   | 'phone'
@@ -487,6 +489,73 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['ga_admin_users']['Row']>;
         Update: Partial<Database['public']['Tables']['ga_admin_users']['Row']>;
+        Relationships: [];
+      };
+      users: {
+        Row: {
+          id: string;
+          auth_user_id: string;
+          email: string | null;
+          nickname: string;
+          profile_image: string | null;
+          provider: AuthProviderType;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['users']['Row']>;
+        Update: Partial<Database['public']['Tables']['users']['Row']>;
+        Relationships: [];
+      };
+      favorites: {
+        Row: {
+          id: string;
+          user_id: string;
+          ga_id: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['favorites']['Row']>;
+        Update: Partial<Database['public']['Tables']['favorites']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'favorites_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'favorites_ga_id_fkey';
+            columns: ['ga_id'];
+            isOneToOne: false;
+            referencedRelation: 'ga_company';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      /** 향후 확장용 - 이번 스코프에서는 타입만 정의하고 CRUD/UI는 구현하지 않는다. */
+      reviews: {
+        Row: {
+          id: string;
+          user_id: string;
+          ga_id: string;
+          rating: number;
+          content: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['reviews']['Row']>;
+        Update: Partial<Database['public']['Tables']['reviews']['Row']>;
+        Relationships: [];
+      };
+      /** 향후 확장용 - 이번 스코프에서는 타입만 정의하고 CRUD/UI는 구현하지 않는다. */
+      recent_views: {
+        Row: {
+          id: string;
+          user_id: string;
+          ga_id: string;
+          viewed_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['recent_views']['Row']>;
+        Update: Partial<Database['public']['Tables']['recent_views']['Row']>;
         Relationships: [];
       };
     };

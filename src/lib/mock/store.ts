@@ -1,6 +1,6 @@
 import 'server-only';
 import { randomUUID } from 'crypto';
-import type { GaApprovalStatus, GaStatus } from '@/types/database';
+import type { AuthProviderType, GaApprovalStatus, GaStatus } from '@/types/database';
 
 /**
  * 인메모리 Mock "DB". 서버 프로세스가 살아있는 동안만 유지된다(재시작하면 초기화).
@@ -132,6 +132,43 @@ export interface MockGaAdminUser {
 export interface MockAdminUser {
   id: string;
   display_name: string;
+}
+
+/** 일반 회원(비회원과 구분되는 로그인 사용자). admin_users/ga_admin_users와 완전히 분리된 별도 역할. */
+export interface MockUser {
+  id: string;
+  auth_user_id: string;
+  email: string | null;
+  nickname: string;
+  profile_image: string | null;
+  provider: AuthProviderType;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MockFavorite {
+  id: string;
+  user_id: string;
+  ga_id: string;
+  created_at: string;
+}
+
+/** 향후 확장용 - 이번 스코프에서는 타입만 정의하고 CRUD/UI는 구현하지 않는다. */
+export interface MockReview {
+  id: string;
+  user_id: string;
+  ga_id: string;
+  rating: number;
+  content: string;
+  created_at: string;
+}
+
+/** 향후 확장용 - 이번 스코프에서는 타입만 정의하고 CRUD/UI는 구현하지 않는다. */
+export interface MockRecentView {
+  id: string;
+  user_id: string;
+  ga_id: string;
+  viewed_at: string;
 }
 
 export type ChangeRequestStatus = 'pending' | 'approved' | 'rejected' | 'changes_requested';
@@ -812,6 +849,13 @@ const changeRequests: MockChangeRequest[] = [
   },
 ];
 
+// 일반 회원/즐겨찾기 - 로그인 버튼을 누르는 순간 채워지므로 시드 데이터가 필요 없다.
+const users: MockUser[] = [];
+const favorites: MockFavorite[] = [];
+// 리뷰/최근 본 GA는 이번 스코프에서 타입만 정의한다(향후 확장용, 아직 아무도 채우지 않음).
+const reviews: MockReview[] = [];
+const recentViews: MockRecentView[] = [];
+
 return {
     regions,
     insurers,
@@ -827,6 +871,10 @@ return {
     adminUsers,
     gaAdminUsers,
     changeRequests,
+    users,
+    favorites,
+    reviews,
+    recentViews,
 
     genId(prefix: string): string {
       return `${prefix}-${randomUUID().slice(0, 8)}`;
