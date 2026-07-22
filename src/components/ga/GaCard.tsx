@@ -2,8 +2,17 @@ import Link from 'next/link';
 import { BadgeCheck } from 'lucide-react';
 import type { PublicGaListItem } from '@/lib/public/ga';
 import { avatarGradient, cn } from '@/lib/utils';
+import { HighlightText } from '@/components/search/HighlightText';
 
-export function GaCard({ ga, className }: { ga: PublicGaListItem; className?: string }) {
+export function GaCard({
+  ga,
+  className,
+  highlightQuery,
+}: {
+  ga: PublicGaListItem;
+  className?: string;
+  highlightQuery?: string;
+}) {
   return (
     <Link
       href={`/ga/${ga.slug}`}
@@ -29,7 +38,9 @@ export function GaCard({ ga, className }: { ga: PublicGaListItem; className?: st
       </div>
       <div className="flex min-w-0 flex-col items-center gap-1">
         <span className="flex min-w-0 items-center gap-1">
-          <span className="truncate text-[13px] font-bold text-ink">{ga.name}</span>
+          <span className="truncate text-[13px] font-bold text-ink">
+            <HighlightText text={ga.name} query={highlightQuery} />
+          </span>
           {ga.isVerified && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-brand-500" />}
         </span>
         {ga.ceoName && <span className="truncate text-[11px] text-ink-faint">대표 {ga.ceoName}</span>}

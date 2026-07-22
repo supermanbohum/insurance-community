@@ -1,18 +1,34 @@
 import { Search, SearchX } from 'lucide-react';
 import { listPublicGaCompanies } from '@/lib/public/ga';
-import { listPublicBranches } from '@/lib/public/branch';
+import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
+import { listSidoGroups } from '@/lib/public/region';
 import { BranchCard } from '@/components/branch/BranchCard';
 import { GaCard } from '@/components/ga/GaCard';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
+import { SearchFilters } from '@/components/search/SearchFilters';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
-  const q = searchParams.q?.trim();
+const VALID_SORTS: BranchSortOption[] = ['recommended', 'newest', 'views'];
 
-  const [gaResults, branchResults] = q
-    ? await Promise.all([listPublicGaCompanies({ q }), listPublicBranches({ q, sort: 'recommended' })])
-    : [[], []];
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: { q?: string; sort?: string; region?: string };
+}) {
+  const q = searchParams.q?.trim();
+  const sort: BranchSortOption = VALID_SORTS.includes(searchParams.sort as BranchSortOption)
+    ? (searchParams.sort as BranchSortOption)
+    : 'recommended';
+  const region = searchParams.region?.trim() ?? '';
+
+  const [gaResults, branchResults, regions] = q
+    ? await Promise.all([
+        listPublicGaCompanies({ q }),
+        listPublicBranches({ q, sort, sidoCode: region || undefined }),
+        listSidoGroups(),
+      ])
+    : [[], [], []];
 
   const totalCount = gaResults.length + branchResults.length;
 
@@ -43,10 +59,13 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
         </div>
       ) : (
         <>
-          <p className="text-xs text-ink-faint">
-            <span className="font-semibold text-ink">&ldquo;{q}&rdquo;</span> 검색 결과{' '}
-            <span className="font-semibold text-brand-600">{totalCount}</span>건
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-ink-faint">
+              <span className="font-semibold text-ink">&ldquo;{q}&rdquo;</span> 검색 결과{' '}
+              <span className="font-semibold text-brand-600">{totalCount}</span>건
+            </p>
+            <SearchFilters query={q} sort={sort} region={region} regions={regions} />
+          </div>
 
           {gaResults.length > 0 && (
             <section className="flex flex-col gap-3">
@@ -56,7 +75,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
               </h2>
               <div className="grid grid-cols-3 gap-2.5">
                 {gaResults.map((ga) => (
-                  <GaCard key={ga.id} ga={ga} />
+                  <GaCard key={ga.id} ga={ga} highlightQuery={q} />
                 ))}
               </div>
             </section>
@@ -74,7 +93,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {branchResults.map((branch) => (
-                  <BranchCard key={branch.id} branch={branch} />
+                  <BranchCard key={branch.id} branch={branch} highlightQuery={q} />
                 ))}
               </div>
             </section>

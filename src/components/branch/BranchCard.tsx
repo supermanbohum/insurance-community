@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { BadgeCheck, MapPin, Eye, Building2 } from 'lucide-react';
 import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
+import { HighlightText } from '@/components/search/HighlightText';
 
 const RANK_STYLE: Record<number, string> = {
   1: 'bg-gradient-to-br from-amber-300 to-gold-500',
@@ -13,10 +14,12 @@ export function BranchCard({
   branch,
   rank,
   className,
+  highlightQuery,
 }: {
   branch: PublicBranchSummary;
   rank?: number;
   className?: string;
+  highlightQuery?: string;
 }) {
   return (
     <Link
@@ -68,7 +71,9 @@ export function BranchCard({
           {branch.isGaVerified && <BadgeCheck className="h-3 w-3 shrink-0 text-brand-500" />}
           <span className="truncate">{branch.gaCompanyName}</span>
         </p>
-        <p className="truncate text-[15px] font-bold leading-tight text-ink">{branch.name}</p>
+        <p className="truncate text-[15px] font-bold leading-tight text-ink">
+          <HighlightText text={branch.name} query={highlightQuery} />
+        </p>
         <div className="mt-auto flex items-center justify-between pt-1">
           <p className="flex min-w-0 items-center gap-1 truncate text-xs text-ink-faint">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
