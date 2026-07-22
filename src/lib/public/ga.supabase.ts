@@ -10,7 +10,7 @@ export interface PublicGaListItem {
   branchCount: number;
 }
 
-export async function listPublicGaCompanies(options: { q?: string }): Promise<PublicGaListItem[]> {
+export async function listPublicGaCompanies(options: { q?: string; gaCompanyIds?: string[] }): Promise<PublicGaListItem[]> {
   const supabase = createServerSupabaseClient();
   const logoBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/company-logos`;
 
@@ -21,6 +21,10 @@ export async function listPublicGaCompanies(options: { q?: string }): Promise<Pu
 
   if (options.q) {
     query = query.ilike('name', `%${options.q}%`);
+  }
+
+  if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
+    query = query.in('id', options.gaCompanyIds);
   }
 
   const { data, error } = await query;

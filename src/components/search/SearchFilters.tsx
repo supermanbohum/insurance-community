@@ -12,53 +12,41 @@ export function SearchFilters({
   query,
   sort,
   region,
-  regions,
+  gaIds,
+  minPlanners,
+  parking,
 }: {
   query: string;
   sort: string;
   region: string;
-  regions: { sidoCode: string; sidoName: string }[];
+  gaIds: string[];
+  minPlanners: number;
+  parking: string;
 }) {
   const router = useRouter();
 
-  function updateParam(key: 'sort' | 'region', value: string) {
-    const params = new URLSearchParams({ q: query });
-    if (key === 'sort') {
-      if (value !== 'recommended') params.set('sort', value);
-      if (region) params.set('region', region);
-    } else {
-      if (sort !== 'recommended') params.set('sort', sort);
-      if (value) params.set('region', value);
-    }
+  function updateSort(value: string) {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (value !== 'recommended') params.set('sort', value);
+    if (region) params.set('region', region);
+    if (gaIds.length > 0) params.set('ga', gaIds.join(','));
+    if (minPlanners > 0) params.set('minPlanners', String(minPlanners));
+    if (parking) params.set('parking', parking);
     router.push(`/search?${params.toString()}`);
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <select
-        value={region}
-        onChange={(e) => updateParam('region', e.target.value)}
-        className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink-soft outline-none focus:border-brand-300"
-      >
-        <option value="">전체 지역</option>
-        {regions.map((r) => (
-          <option key={r.sidoCode} value={r.sidoCode}>
-            {r.sidoName}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={sort}
-        onChange={(e) => updateParam('sort', e.target.value)}
-        className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink-soft outline-none focus:border-brand-300"
-      >
-        {SORT_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <select
+      value={sort}
+      onChange={(e) => updateSort(e.target.value)}
+      className="shrink-0 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink-soft outline-none focus:border-brand-300"
+    >
+      {SORT_OPTIONS.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
   );
 }

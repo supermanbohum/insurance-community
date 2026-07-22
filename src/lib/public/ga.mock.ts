@@ -2,11 +2,14 @@ import 'server-only';
 import { mockStore } from '@/lib/mock/store';
 import type { PublicGaListItem, PublicGaDetail } from './ga.supabase';
 
-export async function listPublicGaCompanies(options: { q?: string }): Promise<PublicGaListItem[]> {
+export async function listPublicGaCompanies(options: { q?: string; gaCompanyIds?: string[] }): Promise<PublicGaListItem[]> {
   let list = mockStore.gaCompanies.filter((c) => c.approval_status === 'approved');
   if (options.q) {
     const q = options.q.toLowerCase();
     list = list.filter((c) => c.name.toLowerCase().includes(q));
+  }
+  if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
+    list = list.filter((c) => options.gaCompanyIds!.includes(c.id));
   }
   list = [...list].sort((a, b) => b.display_priority - a.display_priority || a.name.localeCompare(b.name, 'ko'));
 

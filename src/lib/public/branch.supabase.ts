@@ -54,6 +54,9 @@ export async function listPublicBranches(options: {
   q?: string;
   sort?: BranchSortOption;
   limit?: number;
+  gaCompanyIds?: string[];
+  minPlannerCount?: number;
+  parkingAvailable?: boolean;
 }): Promise<PublicBranchSummary[]> {
   const supabase = createServerSupabaseClient();
   const imageBaseUrl = getImageBaseUrl();
@@ -73,6 +76,18 @@ export async function listPublicBranches(options: {
 
   if (options.q) {
     query = query.ilike('name', `%${options.q}%`);
+  }
+
+  if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
+    query = query.in('ga_company_id', options.gaCompanyIds);
+  }
+
+  if (options.minPlannerCount) {
+    query = query.gte('planner_count', options.minPlannerCount);
+  }
+
+  if (options.parkingAvailable !== undefined) {
+    query = query.eq('parking_available', options.parkingAvailable);
   }
 
   if (options.sort === 'newest') {

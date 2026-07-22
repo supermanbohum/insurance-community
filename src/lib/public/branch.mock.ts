@@ -36,6 +36,9 @@ export async function listPublicBranches(options: {
   q?: string;
   sort?: BranchSortOption;
   limit?: number;
+  gaCompanyIds?: string[];
+  minPlannerCount?: number;
+  parkingAvailable?: boolean;
 }): Promise<PublicBranchSummary[]> {
   let list = mockStore.branches.filter(isPubliclyVisible);
 
@@ -49,6 +52,18 @@ export async function listPublicBranches(options: {
   if (options.q) {
     const q = options.q.toLowerCase();
     list = list.filter((b) => b.name.toLowerCase().includes(q));
+  }
+
+  if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
+    list = list.filter((b) => options.gaCompanyIds!.includes(b.ga_company_id));
+  }
+
+  if (options.minPlannerCount) {
+    list = list.filter((b) => (b.planner_count ?? 0) >= options.minPlannerCount!);
+  }
+
+  if (options.parkingAvailable !== undefined) {
+    list = list.filter((b) => b.parking_available === options.parkingAvailable);
   }
 
   if (options.sort === 'newest') {
