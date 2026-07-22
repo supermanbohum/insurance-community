@@ -17,14 +17,17 @@ export function SearchCombobox({
   inputClassName,
   iconClassName,
   navigateOnFocus = false,
+  basePath = '/search',
 }: {
   defaultValue?: string;
   placeholder?: string;
   autoFocus?: boolean;
   inputClassName: string;
   iconClassName?: string;
-  /** true면 입력 대신 포커스 즉시 /search로 이동한다 (홈/헤더처럼 검색 페이지 진입 용도로만 쓰는 곳). */
+  /** true면 입력 대신 포커스 즉시 검색 페이지로 이동한다 (홈/헤더처럼 검색 페이지 진입 용도로만 쓰는 곳). */
   navigateOnFocus?: boolean;
+  /** 검색 제출/최근·인기검색 클릭 시 이동할 경로. 지도 페이지 등에서 재사용할 때 지정한다. */
+  basePath?: string;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState(defaultValue);
@@ -61,7 +64,7 @@ export function SearchCombobox({
   function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
     if (navigateOnFocus) {
       e.target.blur();
-      router.push('/search');
+      router.push(basePath);
       return;
     }
     if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
@@ -79,7 +82,7 @@ export function SearchCombobox({
   const showRecentPanel = query.trim().length === 0;
 
   return (
-    <form action="/search" className="relative" onSubmit={() => commitSearch(query)}>
+    <form action={basePath} className="relative" onSubmit={() => commitSearch(query)}>
       <Search className={cn('pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint', iconClassName)} />
       <input
         type="text"
@@ -113,7 +116,7 @@ export function SearchCombobox({
                         className="flex items-center gap-1 rounded-full border border-line bg-surface-sunken py-1 pl-3 pr-1.5 text-xs font-medium text-ink-soft"
                       >
                         <Link
-                          href={`/search?q=${encodeURIComponent(keyword)}`}
+                          href={`${basePath}?q=${encodeURIComponent(keyword)}`}
                           onMouseDown={() => commitSearch(keyword)}
                           className="hover:text-brand-600"
                         >
@@ -145,7 +148,7 @@ export function SearchCombobox({
                   {POPULAR_KEYWORDS.map((keyword, i) => (
                     <Link
                       key={keyword}
-                      href={`/search?q=${encodeURIComponent(keyword)}`}
+                      href={`${basePath}?q=${encodeURIComponent(keyword)}`}
                       onMouseDown={() => commitSearch(keyword)}
                       className="flex items-center gap-1 rounded-full border border-line bg-surface-sunken px-3 py-1 text-xs font-medium text-ink-soft hover:border-brand-200 hover:text-brand-600"
                     >

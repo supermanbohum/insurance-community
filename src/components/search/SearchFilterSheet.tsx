@@ -40,10 +40,12 @@ export function SearchFilterButton({
   current,
   regionOptions,
   gaOptions,
+  basePath = '/search',
 }: {
   current: SearchFilterCurrent;
   regionOptions: { sidoCode: string; sidoName: string }[];
   gaOptions: { id: string; name: string }[];
+  basePath?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -83,7 +85,7 @@ export function SearchFilterButton({
     if (draftMinPlanners > 0) params.set('minPlanners', String(draftMinPlanners));
     if (draftParking) params.set('parking', draftParking);
     if (draftStructure) params.set('structure', draftStructure);
-    router.push(`/search?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
     setOpen(false);
   }
 
