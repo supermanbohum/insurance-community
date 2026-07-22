@@ -113,30 +113,30 @@ export function mockUpdateGaCompany(id: string, input: MockGaCompanyFormInput): 
   company.updated_at = mockStore.nowIso();
 }
 
-export function mockAddGaMedia(input: {
-  gaCompanyId: string;
-  mediaType: GaMediaType;
-  source: BranchMediaSource;
-  value: string;
-  sortOrder?: number;
-}): { id: string } {
+export function mockAddGaMedia(
+  gaCompanyId: string,
+  mediaType: GaMediaType,
+  source: BranchMediaSource,
+  value: string
+): { id: string } {
   const id = mockStore.genId('ga-media');
   mockStore.gaMedia.push({
     id,
-    ga_company_id: input.gaCompanyId,
-    media_type: input.mediaType,
-    source: input.source,
-    value: input.value,
-    sort_order: input.sortOrder ?? mockStore.gaMedia.filter((m) => m.ga_company_id === input.gaCompanyId).length,
+    ga_company_id: gaCompanyId,
+    media_type: mediaType,
+    source,
+    value,
+    sort_order: mockStore.gaMedia.filter((m) => m.ga_company_id === gaCompanyId).length,
     created_at: mockStore.nowIso(),
   });
   return { id };
 }
 
-export function mockDeleteGaMedia(mediaId: string): void {
-  const idx = mockStore.gaMedia.findIndex((m) => m.id === mediaId);
-  if (idx === -1) return;
-  mockStore.gaMedia.splice(idx, 1);
+export function mockDeleteGaMedia(mediaId: string): string | null {
+  const media = mockStore.gaMedia.find((m) => m.id === mediaId);
+  if (!media) return null;
+  mockStore.gaMedia = mockStore.gaMedia.filter((m) => m.id !== mediaId);
+  return media.value;
 }
 
 export function mockVerifyGaCompany(id: string, verified: boolean, adminId: string): void {

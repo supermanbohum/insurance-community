@@ -11,9 +11,14 @@ import {
   mockSetGaApprovalStatus,
   mockUpdateGaCompany,
   mockVerifyGaCompany,
+  type MockGaCompanyFormInput,
 } from '@/lib/mock/admin-mutations';
 
 export type ActionResult = { success: true } | { success: false; error: string };
+
+/** GA 생성/수정 폼 공통 입력. 지금은 관리자만 이 액션을 호출하지만, 필드 구성은
+ * 향후 파트너 셀프등록/수정 폼이 그대로 재사용할 수 있도록 맞춰뒀다. */
+export type GaCompanyActionInput = MockGaCompanyFormInput;
 
 const LOGO_BUCKET = 'company-logos';
 const LOGO_MIME_EXTENSIONS: Record<string, string> = {
@@ -101,25 +106,15 @@ export async function setGaApprovalStatusAction(
   return { success: true };
 }
 
-export async function createGaCompanyAction(input: {
-  slug: string;
-  name: string;
-  ceoName?: string;
-  description?: string;
-  logoPath?: string;
-}): Promise<ActionResult & { gaCompanyId?: string }> {
+export async function createGaCompanyAction(
+  input: { slug: string } & GaCompanyActionInput
+): Promise<ActionResult & { gaCompanyId?: string }> {
   if (!input.slug.trim() || !input.name.trim()) {
     return { success: false, error: 'GA명과 slug를 입력해주세요.' };
   }
 
   if (IS_MOCK_MODE) {
-    const result = mockCreateGaCompany({
-      slug: input.slug.trim(),
-      name: input.name.trim(),
-      ceoName: input.ceoName?.trim(),
-      description: input.description?.trim(),
-      logoPath: input.logoPath,
-    });
+    const result = mockCreateGaCompany({ ...input, slug: input.slug.trim(), name: input.name.trim() });
     if ('error' in result) {
       return { success: false, error: result.error };
     }
@@ -134,6 +129,15 @@ export async function createGaCompanyAction(input: {
     p_ceo_name: input.ceoName?.trim() || undefined,
     p_description: input.description?.trim() || undefined,
     p_logo_path: input.logoPath || undefined,
+    p_operation_type: input.operationType,
+    p_is_headquarters: input.isHeadquarters,
+    p_phone: input.phone || undefined,
+    p_homepage_url: input.homepageUrl || undefined,
+    p_address: input.address || undefined,
+    p_address_detail: input.addressDetail || undefined,
+    p_zonecode: input.zonecode || undefined,
+    p_lat: input.lat,
+    p_lng: input.lng,
   });
 
   if (error || !data) {
@@ -147,22 +151,14 @@ export async function createGaCompanyAction(input: {
   return { success: true, gaCompanyId: data };
 }
 
-export async function updateGaCompanyAction(
-  gaCompanyId: string,
-  input: { name: string; ceoName?: string; description?: string; logoPath?: string }
-): Promise<ActionResult> {
+export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompanyActionInput): Promise<ActionResult> {
   if (!input.name.trim()) {
     return { success: false, error: 'GA명을 입력해주세요.' };
   }
 
   if (IS_MOCK_MODE) {
     try {
-      mockUpdateGaCompany(gaCompanyId, {
-        name: input.name.trim(),
-        ceoName: input.ceoName?.trim(),
-        description: input.description?.trim(),
-        logoPath: input.logoPath,
-      });
+      mockUpdateGaCompany(gaCompanyId, { ...input, name: input.name.trim() });
     } catch {
       return { success: false, error: '수정하지 못했습니다.' };
     }
@@ -178,6 +174,26 @@ export async function updateGaCompanyAction(
     p_ceo_name: input.ceoName?.trim() || undefined,
     p_description: input.description?.trim() || undefined,
     p_logo_path: input.logoPath || undefined,
+    p_operation_type: input.operationType,
+    p_is_headquarters: input.isHeadquarters,
+    p_is_recruiting: input.isRecruiting,
+    p_status: input.status,
+    p_phone: input.phone || undefined,
+    p_homepage_url: input.homepageUrl || undefined,
+    p_address: input.address || undefined,
+    p_address_detail: input.addressDetail || undefined,
+    p_zonecode: input.zonecode || undefined,
+    p_lat: input.lat,
+    p_lng: input.lng,
+    p_education_info: input.educationInfo || undefined,
+    p_welfare_info: input.welfareInfo || undefined,
+    p_strengths_info: input.strengthsInfo || undefined,
+    p_promo_video_url: input.promoVideoUrl || undefined,
+    p_sns_blog_url: input.snsBlogUrl || undefined,
+    p_sns_instagram_url: input.snsInstagramUrl || undefined,
+    p_sns_youtube_url: input.snsYoutubeUrl || undefined,
+    p_sns_kakao_channel_url: input.snsKakaoChannelUrl || undefined,
+    p_sns_open_chat_url: input.snsOpenChatUrl || undefined,
   });
 
   if (error) {
