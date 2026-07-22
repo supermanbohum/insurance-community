@@ -83,33 +83,38 @@ export function mockCreateGaCompany(
   return { id };
 }
 
-export function mockUpdateGaCompany(id: string, input: MockGaCompanyFormInput): void {
+/**
+ * 부분 업데이트 - GA 수정 화면은 탭(기본정보/홍보/SNS/노출설정)마다 독립적으로 저장하므로,
+ * input에 실제로 포함된 키만 반영하고 나머지 필드는 건드리지 않는다(diffFields의
+ * "next에 없는 키는 비교 대상 아님" 철학과 동일 - 한 탭 저장이 다른 탭 값을 지우면 안 된다).
+ */
+export function mockUpdateGaCompany(id: string, input: Partial<MockGaCompanyFormInput> & { name?: string }): void {
   const company = mockStore.gaCompanies.find((c) => c.id === id);
   if (!company) throw new Error('GA_COMPANY_NOT_FOUND');
-  company.name = input.name;
-  company.ceo_name = input.ceoName ?? null;
-  company.description = input.description ?? null;
+  if (input.name !== undefined) company.name = input.name;
+  if (input.ceoName !== undefined) company.ceo_name = input.ceoName || null;
+  if (input.description !== undefined) company.description = input.description || null;
   if (input.logoPath) company.logo_path = input.logoPath;
-  if (input.operationType) company.operation_type = input.operationType;
+  if (input.operationType !== undefined) company.operation_type = input.operationType;
   if (input.isHeadquarters !== undefined) company.is_headquarters = input.isHeadquarters;
   if (input.isRecruiting !== undefined) company.is_recruiting = input.isRecruiting;
-  if (input.status) company.status = input.status;
-  company.address = input.address ?? null;
-  company.address_detail = input.addressDetail ?? null;
-  company.zonecode = input.zonecode ?? null;
-  company.lat = input.lat ?? null;
-  company.lng = input.lng ?? null;
-  company.phone = input.phone ?? null;
-  company.homepage_url = input.homepageUrl ?? null;
-  company.education_info = input.educationInfo ?? null;
-  company.welfare_info = input.welfareInfo ?? null;
-  company.strengths_info = input.strengthsInfo ?? null;
-  company.promo_video_url = input.promoVideoUrl ?? null;
-  company.sns_blog_url = input.snsBlogUrl ?? null;
-  company.sns_instagram_url = input.snsInstagramUrl ?? null;
-  company.sns_youtube_url = input.snsYoutubeUrl ?? null;
-  company.sns_kakao_channel_url = input.snsKakaoChannelUrl ?? null;
-  company.sns_open_chat_url = input.snsOpenChatUrl ?? null;
+  if (input.status !== undefined) company.status = input.status;
+  if (input.address !== undefined) company.address = input.address || null;
+  if (input.addressDetail !== undefined) company.address_detail = input.addressDetail || null;
+  if (input.zonecode !== undefined) company.zonecode = input.zonecode || null;
+  if (input.lat !== undefined) company.lat = input.lat;
+  if (input.lng !== undefined) company.lng = input.lng;
+  if (input.phone !== undefined) company.phone = input.phone || null;
+  if (input.homepageUrl !== undefined) company.homepage_url = input.homepageUrl || null;
+  if (input.educationInfo !== undefined) company.education_info = input.educationInfo || null;
+  if (input.welfareInfo !== undefined) company.welfare_info = input.welfareInfo || null;
+  if (input.strengthsInfo !== undefined) company.strengths_info = input.strengthsInfo || null;
+  if (input.promoVideoUrl !== undefined) company.promo_video_url = input.promoVideoUrl || null;
+  if (input.snsBlogUrl !== undefined) company.sns_blog_url = input.snsBlogUrl || null;
+  if (input.snsInstagramUrl !== undefined) company.sns_instagram_url = input.snsInstagramUrl || null;
+  if (input.snsYoutubeUrl !== undefined) company.sns_youtube_url = input.snsYoutubeUrl || null;
+  if (input.snsKakaoChannelUrl !== undefined) company.sns_kakao_channel_url = input.snsKakaoChannelUrl || null;
+  if (input.snsOpenChatUrl !== undefined) company.sns_open_chat_url = input.snsOpenChatUrl || null;
   company.updated_at = mockStore.nowIso();
 }
 

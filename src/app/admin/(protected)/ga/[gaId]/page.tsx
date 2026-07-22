@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Plus, MapPin } from 'lucide-react';
-import { getGaCompanyById, getBranchesByGaCompanyId } from '@/lib/admin/ga';
+import { getGaCompanyById, getBranchesByGaCompanyId, getGaMedia } from '@/lib/admin/ga';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { IS_MOCK_MODE } from '@/lib/mock/config';
 import { listChangeRequests, countPendingChangeRequests } from '@/lib/change-requests';
 import { APPROVAL_STATUS_BADGE_VARIANT, APPROVAL_STATUS_LABEL } from '@/lib/admin/approval-status';
 import { GaApprovalActions } from '@/components/admin/GaApprovalActions';
-import { GaEditForm } from '@/components/admin/GaEditForm';
+import { GaEditWorkspace } from '@/components/admin/GaEditWorkspace';
 import { ChangeHistoryList } from '@/components/partner/ChangeHistoryList';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,8 +19,9 @@ export default async function AdminGaDetailPage({ params }: { params: { gaId: st
     notFound();
   }
 
-  const [branches, logoUrlResult, pendingCount, history] = await Promise.all([
+  const [branches, media, logoUrlResult, pendingCount, history] = await Promise.all([
     getBranchesByGaCompanyId(ga.id),
+    getGaMedia(ga.id),
     (async () => {
       if (!ga.logo_path) return null;
       // Mock 모드는 logo_path 자체가 이미 /public 기준 경로(예: /mock-logos/x.png)라 그대로 쓴다.
@@ -31,6 +32,10 @@ export default async function AdminGaDetailPage({ params }: { params: { gaId: st
     countPendingChangeRequests(ga.id),
     listChangeRequests({ gaCompanyId: ga.id }),
   ]);
+
+  // GA 배너/갤러리는 버킷이 두 개(company-banners/company-gallery)라 media_type별로 base URL이 다르다.
+  // resolveMediaUrl 쪽에서 절대경로 값은 그대로 쓰므로, 실제 업로드 값만 이 base가 붙는다.
+  const imageBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/company-gallery`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,40 +60,38 @@ export default async function AdminGaDetailPage({ params }: { params: { gaId: st
         <GaApprovalActions gaCompanyId={ga.id} gaName={ga.name} status={ga.approval_status} size="default" />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-        <GaEditForm ga={ga} logoUrl={logoUrlResult} />
+      <GaEditWorkspace ga={ga} media={media} branches={branches} logoUrl={logoUrlResult} imageBaseUrl={imageBaseUrl} />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-            <CardTitle className="text-base">지점 ({branches.length})</CardTitle>
-            <Link href={`/admin/branches/new?gaCompanyId=${ga.id}`}>
-              <Button size="sm" variant="outline">
-                <Plus className="h-4 w-4" />
-                지점 추가
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {branches.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">등록된 지점이 없습니다.</p>
-            ) : (
-              branches.map((branch) => (
-                <Link
-                  key={branch.id}
-                  href={`/admin/branches/${branch.id}`}
-                  className="flex items-center gap-2 rounded-md border p-2.5 text-sm hover:bg-accent"
-                >
-                  <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate">{branch.name}</span>
-                  <Badge variant={branch.status === 'visible' ? 'success' : 'secondary'}>
-                    {branch.status === 'visible' ? '공개' : branch.status === 'hidden' ? '비공개' : '삭제됨'}
-                  </Badge>
-                </Link>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+          <CardTitle className="text-base">지점 ({branches.length})</CardTitle>
+          <Link href={`/admin/branches/new?gaCompanyId=${ga.id}`}>
+            <Button size="sm" variant="outline">
+              <Plus className="h-4 w-4" />
+              지점 추가
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          {branches.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">등록된 지점이 없습니다.</p>
+          ) : (
+            branches.map((branch) => (
+              <Link
+                key={branch.id}
+                href={`/admin/branches/${branch.id}`}
+                className="flex items-center gap-2 rounded-md border p-2.5 text-sm hover:bg-accent"
+              >
+                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate">{branch.name}</span>
+                <Badge variant={branch.status === 'visible' ? 'success' : 'secondary'}>
+                  {branch.status === 'visible' ? '공개' : branch.status === 'hidden' ? '비공개' : '삭제됨'}
+                </Badge>
+              </Link>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

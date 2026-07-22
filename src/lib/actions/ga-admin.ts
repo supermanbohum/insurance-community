@@ -19,6 +19,9 @@ export type ActionResult = { success: true } | { success: false; error: string }
 /** GA 생성/수정 폼 공통 입력. 지금은 관리자만 이 액션을 호출하지만, 필드 구성은
  * 향후 파트너 셀프등록/수정 폼이 그대로 재사용할 수 있도록 맞춰뒀다. */
 export type GaCompanyActionInput = MockGaCompanyFormInput;
+/** 수정 화면은 탭별로 독립 저장되므로, 각 탭은 자신이 다루는 필드만 보내면 된다
+ * (보내지 않은 필드는 그대로 유지된다 - mockUpdateGaCompany의 부분 업데이트 참고). */
+export type GaCompanyUpdateInput = Partial<GaCompanyActionInput>;
 
 const LOGO_BUCKET = 'company-logos';
 const LOGO_MIME_EXTENSIONS: Record<string, string> = {
@@ -151,14 +154,14 @@ export async function createGaCompanyAction(
   return { success: true, gaCompanyId: data };
 }
 
-export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompanyActionInput): Promise<ActionResult> {
-  if (!input.name.trim()) {
+export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompanyUpdateInput): Promise<ActionResult> {
+  if (input.name !== undefined && !input.name.trim()) {
     return { success: false, error: 'GA명을 입력해주세요.' };
   }
 
   if (IS_MOCK_MODE) {
     try {
-      mockUpdateGaCompany(gaCompanyId, { ...input, name: input.name.trim() });
+      mockUpdateGaCompany(gaCompanyId, { ...input, name: input.name?.trim() });
     } catch {
       return { success: false, error: '수정하지 못했습니다.' };
     }
@@ -170,7 +173,7 @@ export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompan
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('update_ga_company', {
     p_ga_company_id: gaCompanyId,
-    p_name: input.name.trim(),
+    p_name: input.name?.trim() ?? '',
     p_ceo_name: input.ceoName?.trim() || undefined,
     p_description: input.description?.trim() || undefined,
     p_logo_path: input.logoPath || undefined,
