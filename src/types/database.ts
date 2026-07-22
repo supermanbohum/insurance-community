@@ -223,6 +223,7 @@ export interface Database {
           ceo_name: string | null;
           description: string | null;
           logo_path: string | null;
+          operation_type: 'direct' | 'branch';
           is_verified: boolean;
           verified_at: string | null;
           verified_by_admin_id: string | null;
@@ -706,4 +707,5 @@ export interface PublicBranchSummary {
   createdAt: string;
   updatedAt: string;
   gaBranchCount: number;
+  operationType: 'direct' | 'branch';
 }

@@ -1,5 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
+export type GaOperationType = 'direct' | 'branch';
+
 export interface PublicGaListItem {
   id: string;
   slug: string;
@@ -8,15 +10,20 @@ export interface PublicGaListItem {
   isVerified: boolean;
   logoUrl: string | null;
   branchCount: number;
+  operationType: GaOperationType;
 }
 
-export async function listPublicGaCompanies(options: { q?: string; gaCompanyIds?: string[] }): Promise<PublicGaListItem[]> {
+export async function listPublicGaCompanies(options: {
+  q?: string;
+  gaCompanyIds?: string[];
+  operationType?: GaOperationType;
+}): Promise<PublicGaListItem[]> {
   const supabase = createServerSupabaseClient();
   const logoBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/company-logos`;
 
   let query = supabase
     .from('ga_company')
-    .select('id, slug, name, ceo_name, is_verified, logo_path, ga_branch(id)')
+    .select('id, slug, name, ceo_name, is_verified, logo_path, operation_type, ga_branch(id)')
     .order('name', { ascending: true });
 
   if (options.q) {
@@ -25,6 +32,10 @@ export async function listPublicGaCompanies(options: { q?: string; gaCompanyIds?
 
   if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
     query = query.in('id', options.gaCompanyIds);
+  }
+
+  if (options.operationType) {
+    query = query.eq('operation_type', options.operationType);
   }
 
   const { data, error } = await query;
@@ -38,6 +49,7 @@ export async function listPublicGaCompanies(options: { q?: string; gaCompanyIds?
     isVerified: row.is_verified,
     logoUrl: row.logo_path ? `${logoBaseUrl}/${row.logo_path}` : null,
     branchCount: Array.isArray(row.ga_branch) ? row.ga_branch.length : 0,
+    operationType: row.operation_type as GaOperationType,
   }));
 }
 
@@ -50,6 +62,7 @@ export interface PublicGaDetail {
   isVerified: boolean;
   logoUrl: string | null;
   updatedAt: string;
+  operationType: GaOperationType;
   branches: { id: string; name: string; address: string; sidoName: string | null; sigunguName: string | null }[];
 }
 
@@ -59,7 +72,7 @@ export async function getPublicGaDetailBySlug(slug: string): Promise<PublicGaDet
 
   const { data: company, error } = await supabase
     .from('ga_company')
-    .select('id, slug, name, ceo_name, description, is_verified, logo_path, updated_at')
+    .select('id, slug, name, ceo_name, description, is_verified, logo_path, updated_at, operation_type')
     .eq('slug', slug)
     .single();
 
@@ -81,6 +94,7 @@ export async function getPublicGaDetailBySlug(slug: string): Promise<PublicGaDet
     isVerified: company.is_verified,
     logoUrl: company.logo_path ? `${logoBaseUrl}/${company.logo_path}` : null,
     updatedAt: company.updated_at,
+    operationType: company.operation_type as GaOperationType,
     branches: (branches ?? []).map((b) => {
       const region = b.region as unknown as { sido_name: string; sigungu_name: string | null } | null;
       return {

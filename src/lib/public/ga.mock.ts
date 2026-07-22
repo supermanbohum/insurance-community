@@ -1,8 +1,12 @@
 import 'server-only';
 import { mockStore } from '@/lib/mock/store';
-import type { PublicGaListItem, PublicGaDetail } from './ga.supabase';
+import type { PublicGaListItem, PublicGaDetail, GaOperationType } from './ga.supabase';
 
-export async function listPublicGaCompanies(options: { q?: string; gaCompanyIds?: string[] }): Promise<PublicGaListItem[]> {
+export async function listPublicGaCompanies(options: {
+  q?: string;
+  gaCompanyIds?: string[];
+  operationType?: GaOperationType;
+}): Promise<PublicGaListItem[]> {
   let list = mockStore.gaCompanies.filter((c) => c.approval_status === 'approved');
   if (options.q) {
     const q = options.q.toLowerCase();
@@ -10,6 +14,9 @@ export async function listPublicGaCompanies(options: { q?: string; gaCompanyIds?
   }
   if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
     list = list.filter((c) => options.gaCompanyIds!.includes(c.id));
+  }
+  if (options.operationType) {
+    list = list.filter((c) => c.operation_type === options.operationType);
   }
   list = [...list].sort((a, b) => b.display_priority - a.display_priority || a.name.localeCompare(b.name, 'ko'));
 
@@ -21,6 +28,7 @@ export async function listPublicGaCompanies(options: { q?: string; gaCompanyIds?
     isVerified: c.is_verified,
     logoUrl: c.logo_path,
     branchCount: mockStore.branches.filter((b) => b.ga_company_id === c.id && b.status !== 'deleted').length,
+    operationType: c.operation_type,
   }));
 }
 
@@ -51,6 +59,7 @@ export async function getPublicGaDetailBySlug(slug: string): Promise<PublicGaDet
     isVerified: company.is_verified,
     logoUrl: company.logo_path,
     updatedAt: company.updated_at,
+    operationType: company.operation_type,
     branches,
   };
 }

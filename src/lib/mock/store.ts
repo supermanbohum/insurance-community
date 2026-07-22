@@ -28,6 +28,8 @@ export interface MockInsurer {
   created_at: string;
 }
 
+export type GaOperationType = 'direct' | 'branch';
+
 export interface MockGaCompany {
   id: string;
   slug: string;
@@ -35,6 +37,8 @@ export interface MockGaCompany {
   ceo_name: string | null;
   description: string | null;
   logo_path: string | null;
+  /** GA 운영 형태 - 'direct'(직영, 보험사 계열 본부) | 'branch'(지사, 독립 GA 대리점) */
+  operation_type: GaOperationType;
   is_verified: boolean;
   verified_at: string | null;
   /** 향후 인증 정책이 바뀌어도(예: 등급제, 재인증 만료 등) 누가/언제 부여했는지 추적할 수 있도록 남겨둔다. */
@@ -232,77 +236,77 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-1', slug: 'kb-insure-partners', name: 'KB인슈어런스파트너스',
     ceo_name: '김보험', description: '고객 중심의 종합보험 컨설팅을 지향하는 GA입니다. 전국 12개 지점, 850명의 설계사가 함께합니다.',
-    logo_path: null, is_verified: true, verified_at: daysAgo(120), verified_by_admin_id: 'mock-admin-1',
+    logo_path: null, operation_type: 'direct', is_verified: true, verified_at: daysAgo(120), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(150),
     created_at: daysAgo(200), updated_at: daysAgo(10), display_priority: 0,
   },
   {
     id: 'ga-2', slug: 'good-insurance-partners', name: '굿인슈런스파트너스',
     ceo_name: '이대표', description: '신입 설계사 정착 지원과 체계적인 교육 시스템이 강점인 GA입니다.',
-    logo_path: null, is_verified: true, verified_at: daysAgo(80), verified_by_admin_id: 'mock-admin-1',
+    logo_path: null, operation_type: 'branch', is_verified: true, verified_at: daysAgo(80), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(90),
     created_at: daysAgo(140), updated_at: daysAgo(5), display_priority: 0,
   },
   {
     id: 'ga-3', slug: 'hanwha-total-insure', name: '한화토탈인슈어런스',
     ceo_name: '박대표', description: null,
-    logo_path: null, is_verified: false, verified_at: null, verified_by_admin_id: null,
+    logo_path: null, operation_type: 'direct', is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: null, reviewed_at: daysAgo(30),
     created_at: daysAgo(60), updated_at: daysAgo(2), display_priority: 0,
   },
   {
     id: 'ga-4', slug: 'first-insure-group', name: '퍼스트인슈어그룹',
     ceo_name: '최대표', description: '이제 막 입점을 신청한 신규 GA입니다.',
-    logo_path: null, is_verified: false, verified_at: null, verified_by_admin_id: null,
+    logo_path: null, operation_type: 'branch', is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'pending', approval_reason: null, reviewed_by_admin_id: null, reviewed_at: null,
     created_at: daysAgo(1), updated_at: daysAgo(1), display_priority: 0,
   },
   {
     id: 'ga-5', slug: 'suspended-sample', name: '중지테스트GA',
     ceo_name: null, description: null,
-    logo_path: null, is_verified: false, verified_at: null, verified_by_admin_id: null,
+    logo_path: null, operation_type: 'branch', is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'suspended', approval_reason: '자료 확인 필요', reviewed_by_admin_id: null, reviewed_at: daysAgo(3),
     created_at: daysAgo(45), updated_at: daysAgo(3), display_priority: 0,
   },
   {
     id: 'ga-6', slug: 'jeongdo', name: '정도',
     ceo_name: '정도현', description: '원칙과 정도(正道)를 지키는 정직한 보험 컨설팅을 지향하는 GA입니다.',
-    logo_path: '/mock-logos/jeongdo.png', is_verified: true, verified_at: daysAgo(60), verified_by_admin_id: 'mock-admin-1',
+    logo_path: '/mock-logos/jeongdo.png', operation_type: 'branch', is_verified: true, verified_at: daysAgo(60), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(70),
     created_at: daysAgo(100), updated_at: daysAgo(4), display_priority: 106,
   },
   {
     id: 'ga-7', slug: 'route-logistics', name: '루트',
     ceo_name: '노선일', description: '고객에게 맞는 최적의 보장 루트를 설계하는 GA입니다.',
-    logo_path: '/mock-logos/route.png', is_verified: false, verified_at: null, verified_by_admin_id: null,
+    logo_path: '/mock-logos/route.png', operation_type: 'branch', is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(40),
     created_at: daysAgo(70), updated_at: daysAgo(6), display_priority: 105,
   },
   {
     id: 'ga-8', slug: 'map-group', name: '맵그룹',
     ceo_name: '김지도', description: '데이터 기반 컨설팅으로 고객의 보장 지도를 그리는 GA입니다.',
-    logo_path: '/mock-logos/mapgroup.png', is_verified: true, verified_at: daysAgo(30), verified_by_admin_id: 'mock-admin-1',
+    logo_path: '/mock-logos/mapgroup.png', operation_type: 'direct', is_verified: true, verified_at: daysAgo(30), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(35),
     created_at: daysAgo(50), updated_at: daysAgo(8), display_priority: 104,
   },
   {
     id: 'ga-9', slug: 'insurance-superman', name: '보험슈퍼맨',
     ceo_name: '강슈퍼', description: '빠르고 강력한 보장 설계로 고객을 지키는 GA입니다.',
-    logo_path: '/mock-logos/insurance-superman.png', is_verified: false, verified_at: null, verified_by_admin_id: null,
+    logo_path: '/mock-logos/insurance-superman.png', operation_type: 'branch', is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(20),
     created_at: daysAgo(40), updated_at: daysAgo(3), display_priority: 103,
   },
   {
     id: 'ga-10', slug: 'essential-insurance', name: '에센셜',
     ceo_name: '오필수', description: '꼭 필요한 보장만 담은 에센셜(Essential) 설계를 지향하는 GA입니다.',
-    logo_path: '/mock-logos/essential.png', is_verified: true, verified_at: daysAgo(15), verified_by_admin_id: 'mock-admin-1',
+    logo_path: '/mock-logos/essential.png', operation_type: 'branch', is_verified: true, verified_at: daysAgo(15), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(18),
     created_at: daysAgo(30), updated_at: daysAgo(1), display_priority: 102,
   },
   {
     id: 'ga-11', slug: 'apdo-insurance', name: 'APDO(압도)',
     ceo_name: '전압도', description: '압도적인 상품 비교와 설계 역량을 갖춘 GA입니다.',
-    logo_path: '/mock-logos/apdo.png', is_verified: false, verified_at: null, verified_by_admin_id: null,
+    logo_path: '/mock-logos/apdo.png', operation_type: 'branch', is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(10),
     created_at: daysAgo(20), updated_at: daysAgo(2), display_priority: 101,
   },
@@ -478,6 +482,9 @@ const SIDO_FIRST_SIGUNGU: [string, string, string][] = [
   ['50', '제주특별자치도', '제주시'],
 ];
 
+// 보험사 계열 브랜드명이 포함된 GA는 '직영'(direct), 나머지 독립 GA 대리점은 '지사'(branch)로 분류한다.
+const DIRECT_NAME_KEYWORDS = ['한화생명', '삼성생명', '신한금융플러스', '농협생명', 'DB금융서비스', 'KB라이프', '메리츠금융서비스'];
+
 const extraGaCompanies: MockGaCompany[] = EXTRA_GA_NAMES.map((name, i) => ({
   id: `ga-extra-${i + 1}`,
   slug: `ga-extra-${i + 1}`,
@@ -485,6 +492,7 @@ const extraGaCompanies: MockGaCompany[] = EXTRA_GA_NAMES.map((name, i) => ({
   ceo_name: null,
   description: `${name}의 보험 상담 및 설계 서비스를 제공하는 GA입니다.`,
   logo_path: null,
+  operation_type: DIRECT_NAME_KEYWORDS.some((k) => name.includes(k)) ? 'direct' : 'branch',
   is_verified: i % 5 === 0,
   verified_at: i % 5 === 0 ? daysAgo(30 + i) : null,
   verified_by_admin_id: i % 5 === 0 ? 'mock-admin-1' : null,

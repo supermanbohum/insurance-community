@@ -20,6 +20,12 @@ const PARKING_OPTIONS: { value: '' | 'true' | 'false'; label: string }[] = [
   { value: 'false', label: '주차 불가' },
 ];
 
+const STRUCTURE_OPTIONS: { value: '' | 'direct' | 'branch'; label: string }[] = [
+  { value: '', label: '전체' },
+  { value: 'direct', label: '직영' },
+  { value: 'branch', label: '지사' },
+];
+
 export interface SearchFilterCurrent {
   query: string;
   sort: string;
@@ -27,6 +33,7 @@ export interface SearchFilterCurrent {
   gaIds: string[];
   minPlanners: number;
   parking: '' | 'true' | 'false';
+  structure: '' | 'direct' | 'branch';
 }
 
 export function SearchFilterButton({
@@ -44,6 +51,7 @@ export function SearchFilterButton({
   const [draftGaIds, setDraftGaIds] = useState<string[]>(current.gaIds);
   const [draftMinPlanners, setDraftMinPlanners] = useState(current.minPlanners);
   const [draftParking, setDraftParking] = useState<'' | 'true' | 'false'>(current.parking);
+  const [draftStructure, setDraftStructure] = useState<'' | 'direct' | 'branch'>(current.structure);
 
   useEffect(() => {
     if (open) {
@@ -51,11 +59,16 @@ export function SearchFilterButton({
       setDraftGaIds(current.gaIds);
       setDraftMinPlanners(current.minPlanners);
       setDraftParking(current.parking);
+      setDraftStructure(current.structure);
     }
-  }, [open, current.region, current.gaIds, current.minPlanners, current.parking]);
+  }, [open, current.region, current.gaIds, current.minPlanners, current.parking, current.structure]);
 
   const activeCount =
-    (current.region ? 1 : 0) + current.gaIds.length + (current.minPlanners > 0 ? 1 : 0) + (current.parking ? 1 : 0);
+    (current.region ? 1 : 0) +
+    current.gaIds.length +
+    (current.minPlanners > 0 ? 1 : 0) +
+    (current.parking ? 1 : 0) +
+    (current.structure ? 1 : 0);
 
   function toggleGa(id: string) {
     setDraftGaIds((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
@@ -69,6 +82,7 @@ export function SearchFilterButton({
     if (draftGaIds.length > 0) params.set('ga', draftGaIds.join(','));
     if (draftMinPlanners > 0) params.set('minPlanners', String(draftMinPlanners));
     if (draftParking) params.set('parking', draftParking);
+    if (draftStructure) params.set('structure', draftStructure);
     router.push(`/search?${params.toString()}`);
     setOpen(false);
   }
@@ -78,6 +92,7 @@ export function SearchFilterButton({
     setDraftGaIds([]);
     setDraftMinPlanners(0);
     setDraftParking('');
+    setDraftStructure('');
   }
 
   return (
@@ -141,6 +156,17 @@ export function SearchFilterButton({
                         />
                         {ga.name}
                       </label>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="flex flex-col gap-2.5">
+                  <h3 className="text-sm font-bold text-ink">GA 구조</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {STRUCTURE_OPTIONS.map((s) => (
+                      <FilterPill key={s.value} active={draftStructure === s.value} onClick={() => setDraftStructure(s.value)}>
+                        {s.label}
+                      </FilterPill>
                     ))}
                   </div>
                 </section>

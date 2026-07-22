@@ -15,6 +15,7 @@ export function SearchFilters({
   gaIds,
   minPlanners,
   parking,
+  structure,
 }: {
   query: string;
   sort: string;
@@ -22,6 +23,7 @@ export function SearchFilters({
   gaIds: string[];
   minPlanners: number;
   parking: string;
+  structure: string;
 }) {
   const router = useRouter();
 
@@ -33,6 +35,7 @@ export function SearchFilters({
     if (gaIds.length > 0) params.set('ga', gaIds.join(','));
     if (minPlanners > 0) params.set('minPlanners', String(minPlanners));
     if (parking) params.set('parking', parking);
+    if (structure) params.set('structure', structure);
     router.push(`/search?${params.toString()}`);
   }
 

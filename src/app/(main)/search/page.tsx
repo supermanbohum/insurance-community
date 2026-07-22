@@ -17,7 +17,15 @@ const PLANNER_TIER_LABELS: Record<number, string> = { 30: '30명 이상', 50: '5
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: { q?: string; sort?: string; region?: string; ga?: string; minPlanners?: string; parking?: string };
+  searchParams: {
+    q?: string;
+    sort?: string;
+    region?: string;
+    ga?: string;
+    minPlanners?: string;
+    parking?: string;
+    structure?: string;
+  };
 }) {
   const q = searchParams.q?.trim() ?? '';
   const sort: BranchSortOption = VALID_SORTS.includes(searchParams.sort as BranchSortOption)
@@ -28,12 +36,20 @@ export default async function SearchPage({
   const minPlanners = Number(searchParams.minPlanners) > 0 ? Number(searchParams.minPlanners) : 0;
   const parking: '' | 'true' | 'false' =
     searchParams.parking === 'true' ? 'true' : searchParams.parking === 'false' ? 'false' : '';
+  const structure: '' | 'direct' | 'branch' =
+    searchParams.structure === 'direct' ? 'direct' : searchParams.structure === 'branch' ? 'branch' : '';
 
-  const hasFilters = Boolean(region) || gaIds.length > 0 || minPlanners > 0 || Boolean(parking);
+  const hasFilters = Boolean(region) || gaIds.length > 0 || minPlanners > 0 || Boolean(parking) || Boolean(structure);
   const shouldSearch = Boolean(q) || hasFilters;
 
   const [gaResults, branchResults, regions, allGaOptions] = await Promise.all([
-    shouldSearch ? listPublicGaCompanies({ q: q || undefined, gaCompanyIds: gaIds.length > 0 ? gaIds : undefined }) : Promise.resolve([]),
+    shouldSearch
+      ? listPublicGaCompanies({
+          q: q || undefined,
+          gaCompanyIds: gaIds.length > 0 ? gaIds : undefined,
+          operationType: structure || undefined,
+        })
+      : Promise.resolve([]),
     shouldSearch
       ? listPublicBranches({
           q: q || undefined,
@@ -42,6 +58,7 @@ export default async function SearchPage({
           gaCompanyIds: gaIds.length > 0 ? gaIds : undefined,
           minPlannerCount: minPlanners || undefined,
           parkingAvailable: parking === 'true' ? true : parking === 'false' ? false : undefined,
+          operationType: structure || undefined,
         })
       : Promise.resolve([]),
     listSidoGroups(),
@@ -53,7 +70,7 @@ export default async function SearchPage({
   const gaNameById = new Map(allGaOptions.map((ga) => [ga.id, ga.name]));
   const regionNameByCode = new Map(regions.map((r) => [r.sidoCode, r.sidoName]));
 
-  function paramsWithout(exclude: 'region' | 'ga' | 'minPlanners' | 'parking', excludeGaId?: string): string {
+  function paramsWithout(exclude: 'region' | 'ga' | 'minPlanners' | 'parking' | 'structure', excludeGaId?: string): string {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (sort !== 'recommended') params.set('sort', sort);
@@ -62,12 +79,16 @@ export default async function SearchPage({
     if (nextGaIds.length > 0) params.set('ga', nextGaIds.join(','));
     if (minPlanners > 0 && exclude !== 'minPlanners') params.set('minPlanners', String(minPlanners));
     if (parking && exclude !== 'parking') params.set('parking', parking);
+    if (structure && exclude !== 'structure') params.set('structure', structure);
     return params.toString();
   }
 
   const chips: FilterChip[] = [
     ...(region
       ? [{ key: 'region', label: regionNameByCode.get(region) ?? region, href: `/search?${paramsWithout('region')}` }]
+      : []),
+    ...(structure
+      ? [{ key: 'structure', label: structure === 'direct' ? '직영' : '지사', href: `/search?${paramsWithout('structure')}` }]
       : []),
     ...gaIds.map((id) => ({
       key: `ga-${id}`,
@@ -94,7 +115,7 @@ export default async function SearchPage({
           />
         </div>
         <SearchFilterButton
-          current={{ query: q, sort, region, gaIds, minPlanners, parking }}
+          current={{ query: q, sort, region, gaIds, minPlanners, parking, structure }}
           regionOptions={regions}
           gaOptions={allGaOptions.map((ga) => ({ id: ga.id, name: ga.name }))}
         />
@@ -135,7 +156,15 @@ export default async function SearchPage({
               )}
               검색 결과 <span className="font-semibold text-brand-600">{totalCount}</span>건
             </p>
-            <SearchFilters query={q} sort={sort} region={region} gaIds={gaIds} minPlanners={minPlanners} parking={parking} />
+            <SearchFilters
+              query={q}
+              sort={sort}
+              region={region}
+              gaIds={gaIds}
+              minPlanners={minPlanners}
+              parking={parking}
+              structure={structure}
+            />
           </div>
 
           {gaResults.length > 0 && (

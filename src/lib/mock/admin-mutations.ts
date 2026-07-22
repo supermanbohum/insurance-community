@@ -25,6 +25,7 @@ export function mockCreateGaCompany(input: {
     ceo_name: input.ceoName ?? null,
     description: input.description ?? null,
     logo_path: input.logoPath ?? null,
+    operation_type: 'branch',
     is_verified: false,
     verified_at: null,
     verified_by_admin_id: null,

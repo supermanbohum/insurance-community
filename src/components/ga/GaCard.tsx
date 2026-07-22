@@ -44,6 +44,14 @@ export function GaCard({
           {ga.isVerified && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-brand-500" />}
         </span>
         {ga.ceoName && <span className="truncate text-[11px] text-ink-faint">대표 {ga.ceoName}</span>}
+        <span
+          className={cn(
+            'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+            ga.operationType === 'direct' ? 'bg-gold-50 text-gold-600' : 'bg-surface-sunken text-ink-soft'
+          )}
+        >
+          {ga.operationType === 'direct' ? '직영' : '지사'}
+        </span>
       </div>
       <span className="mt-auto rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-bold text-brand-600">
         지점 {ga.branchCount}곳

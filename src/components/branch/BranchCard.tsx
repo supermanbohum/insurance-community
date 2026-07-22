@@ -75,6 +75,14 @@ export function BranchCard({
         <p className="flex items-center gap-1 truncate text-[11px] font-medium text-ink-faint">
           {branch.isGaVerified && <BadgeCheck className="h-3 w-3 shrink-0 text-brand-500" />}
           <span className="truncate">{branch.gaCompanyName}</span>
+          <span
+            className={cn(
+              'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+              branch.operationType === 'direct' ? 'bg-gold-50 text-gold-600' : 'bg-surface-sunken text-ink-soft'
+            )}
+          >
+            {branch.operationType === 'direct' ? '직영' : '지사'}
+          </span>
         </p>
         <p className="truncate text-[15px] font-bold leading-tight text-ink">
           <HighlightText text={branch.name} query={highlightQuery} />

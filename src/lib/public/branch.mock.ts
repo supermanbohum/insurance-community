@@ -29,6 +29,7 @@ function toSummary(branch: (typeof mockStore.branches)[number]): PublicBranchSum
     createdAt: branch.created_at,
     updatedAt: branch.updated_at,
     gaBranchCount: mockStore.branches.filter((b) => b.ga_company_id === branch.ga_company_id && isPubliclyVisible(b)).length,
+    operationType: company?.operation_type ?? 'branch',
   };
 }
 
@@ -41,8 +42,16 @@ export async function listPublicBranches(options: {
   gaCompanyIds?: string[];
   minPlannerCount?: number;
   parkingAvailable?: boolean;
+  operationType?: 'direct' | 'branch';
 }): Promise<PublicBranchSummary[]> {
   let list = mockStore.branches.filter(isPubliclyVisible);
+
+  if (options.operationType) {
+    list = list.filter((b) => {
+      const company = mockStore.gaCompanies.find((c) => c.id === b.ga_company_id);
+      return company?.operation_type === options.operationType;
+    });
+  }
 
   if (options.regionId) {
     list = list.filter((b) => b.region_id === options.regionId);
@@ -128,6 +137,7 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
       isVerified: company?.is_verified ?? false,
       ceoName: company?.ceo_name ?? null,
       description: company?.description ?? null,
+      operationType: company?.operation_type ?? 'branch',
     },
     media: mockStore.branchMedia
       .filter((m) => m.branch_id === branchId)

@@ -1,14 +1,19 @@
-import { Building2, MapPinned, RefreshCw } from 'lucide-react';
+import { Building2, MapPinned, ShieldCheck } from 'lucide-react';
 import { listPublicGaCompanies } from '@/lib/public/ga';
 import { listPublicBranches } from '@/lib/public/branch';
+import { countActiveInsurers } from '@/lib/public/insurer';
 
 export async function PlatformStats() {
-  const [gaCompanies, branches] = await Promise.all([listPublicGaCompanies({}), listPublicBranches({})]);
+  const [gaCompanies, branches, insurerCount] = await Promise.all([
+    listPublicGaCompanies({}),
+    listPublicBranches({}),
+    countActiveInsurers(),
+  ]);
 
   const stats = [
-    { icon: Building2, label: '등록 GA', value: gaCompanies.length.toLocaleString('ko-KR') },
-    { icon: MapPinned, label: '등록 지점', value: branches.length.toLocaleString('ko-KR') },
-    { icon: RefreshCw, label: '업데이트', value: '매일' },
+    { icon: Building2, label: '등록 GA', value: `${gaCompanies.length.toLocaleString('ko-KR')}개사` },
+    { icon: MapPinned, label: '운영 지점', value: `${branches.length.toLocaleString('ko-KR')}곳` },
+    { icon: ShieldCheck, label: '제휴 보험사', value: `${insurerCount.toLocaleString('ko-KR')}개사` },
   ];
 
   return (

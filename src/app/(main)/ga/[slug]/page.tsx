@@ -54,11 +54,21 @@ export default async function GaDetailPage({ params }: { params: { slug: string 
                 공식 인증
               </span>
             )}
+            <span
+              className={cn(
+                'rounded-full px-2 py-0.5 text-xs font-semibold',
+                ga.operationType === 'direct' ? 'bg-gold-50 text-gold-600' : 'bg-surface-sunken text-ink-soft'
+              )}
+            >
+              {ga.operationType === 'direct' ? '직영' : '지사'}
+            </span>
           </div>
           {ga.ceoName && <p className="mt-0.5 text-sm text-ink-faint">대표 {ga.ceoName}</p>}
           <p className="mt-1 flex items-center gap-1 text-xs text-ink-faint">
             <RefreshCw className="h-3 w-3" />
             최근 업데이트 {new Date(ga.updatedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+            <span className="mx-1 text-ink-faint">·</span>
+            운영 형태 {ga.operationType === 'direct' ? '직영' : '지사'}
           </p>
         </div>
       </div>
