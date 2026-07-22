@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, Clock, TrendingUp, Building2, MapPin, X } from 'lucide-react';
 import { getSearchSuggestionsAction, type SearchSuggestion } from '@/lib/actions/public';
 import { addRecentSearch, getRecentSearches, removeRecentSearch } from '@/lib/search/recentSearches';
@@ -15,13 +16,17 @@ export function SearchCombobox({
   autoFocus = false,
   inputClassName,
   iconClassName,
+  navigateOnFocus = false,
 }: {
   defaultValue?: string;
   placeholder?: string;
   autoFocus?: boolean;
   inputClassName: string;
   iconClassName?: string;
+  /** true면 입력 대신 포커스 즉시 /search로 이동한다 (홈/헤더처럼 검색 페이지 진입 용도로만 쓰는 곳). */
+  navigateOnFocus?: boolean;
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState(defaultValue);
   const [open, setOpen] = useState(false);
   const [recent, setRecent] = useState<string[]>([]);
@@ -53,7 +58,12 @@ export function SearchCombobox({
     };
   }, [query]);
 
-  function handleFocus() {
+  function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
+    if (navigateOnFocus) {
+      e.target.blur();
+      router.push('/search');
+      return;
+    }
     if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
     setOpen(true);
   }
