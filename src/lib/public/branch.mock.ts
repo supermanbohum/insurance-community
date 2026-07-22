@@ -15,9 +15,10 @@ function toSummary(branch: (typeof mockStore.branches)[number]): PublicBranchSum
   const mainImage = mockStore.branchMedia.find((m) => m.branch_id === branch.id && m.media_type === 'image_main');
   return {
     id: branch.id,
+    slug: branch.slug,
     gaCompanyId: company?.id ?? '',
     gaCompanyName: company?.name ?? '',
-    gaCompanySlug: company?.slug ?? '',
+    gaCompanyLogoUrl: company?.logo_path ?? null,
     isGaVerified: company?.is_verified ?? false,
     name: branch.name,
     sidoName: region?.sido_name ?? null,
@@ -29,7 +30,8 @@ function toSummary(branch: (typeof mockStore.branches)[number]): PublicBranchSum
     createdAt: branch.created_at,
     updatedAt: branch.updated_at,
     gaBranchCount: mockStore.branches.filter((b) => b.ga_company_id === branch.ga_company_id && isPubliclyVisible(b)).length,
-    operationType: company?.operation_type ?? 'branch',
+    operationType: branch.operation_type,
+    isHeadquarters: branch.is_headquarters,
     lat: branch.lat,
     lng: branch.lng,
     hasActiveRecruit: mockStore.branchRecruits.some((r) => r.branch_id === branch.id && r.is_active),
@@ -43,6 +45,7 @@ export async function listPublicBranches(options: {
   sort?: BranchSortOption;
   limit?: number;
   gaCompanyIds?: string[];
+  branchIds?: string[];
   minPlannerCount?: number;
   parkingAvailable?: boolean;
   operationType?: 'direct' | 'branch';
@@ -50,10 +53,7 @@ export async function listPublicBranches(options: {
   let list = mockStore.branches.filter(isPubliclyVisible);
 
   if (options.operationType) {
-    list = list.filter((b) => {
-      const company = mockStore.gaCompanies.find((c) => c.id === b.ga_company_id);
-      return company?.operation_type === options.operationType;
-    });
+    list = list.filter((b) => b.operation_type === options.operationType);
   }
 
   if (options.regionId) {
@@ -65,11 +65,20 @@ export async function listPublicBranches(options: {
 
   if (options.q) {
     const q = options.q.toLowerCase();
-    list = list.filter((b) => b.name.toLowerCase().includes(q));
+    // 지점명뿐 아니라 소속 GA(회사)명으로도 검색되도록 - GA는 더 이상 별도 상세페이지가 없으므로
+    // 회사명으로 찾아도 그 회사 소속 지점들이 결과에 나와야 한다.
+    const matchingGaCompanyIds = new Set(
+      mockStore.gaCompanies.filter((c) => c.name.toLowerCase().includes(q)).map((c) => c.id)
+    );
+    list = list.filter((b) => b.name.toLowerCase().includes(q) || matchingGaCompanyIds.has(b.ga_company_id));
   }
 
   if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
     list = list.filter((b) => options.gaCompanyIds!.includes(b.ga_company_id));
+  }
+
+  if (options.branchIds && options.branchIds.length > 0) {
+    list = list.filter((b) => options.branchIds!.includes(b.id));
   }
 
   if (options.minPlannerCount) {
@@ -101,8 +110,8 @@ export async function listPublicBranches(options: {
   return list.map(toSummary);
 }
 
-export async function getPublicBranchDetail(branchId: string): Promise<BranchDetail | null> {
-  const branch = mockStore.branches.find((b) => b.id === branchId);
+export async function getPublicBranchDetail(slug: string): Promise<BranchDetail | null> {
+  const branch = mockStore.branches.find((b) => b.slug === slug);
   if (!branch || !isPubliclyVisible(branch)) return null;
 
   const company = mockStore.gaCompanies.find((c) => c.id === branch.ga_company_id);
@@ -113,7 +122,9 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
 
   return {
     id: branch.id,
+    slug: branch.slug,
     name: branch.name,
+    managerName: branch.manager_name,
     address: branch.address,
     addressDetail: branch.address_detail,
     sidoName: region?.sido_name ?? null,
@@ -126,36 +137,38 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
     welfareInfo: branch.welfare_info,
     dbSupportInfo: branch.db_support_info,
     settlementSupportInfo: branch.settlement_support_info,
+    atmosphereInfo: branch.atmosphere_info,
     plannerCount: branch.planner_count,
     parkingAvailable: branch.parking_available,
     visitConsultAvailable: branch.visit_consult_available,
     businessHours: branch.business_hours,
+    operationType: branch.operation_type,
+    isHeadquarters: branch.is_headquarters,
     updatedAt: branch.updated_at,
     viewCount: branch.organic_view_count + branch.imported_view_count + branch.correction_view_count,
     isRecommended: branch.is_recommended,
     gaCompany: {
       id: company?.id ?? '',
       name: company?.name ?? '',
-      slug: company?.slug ?? '',
+      logoUrl: company?.logo_path ?? null,
       isVerified: company?.is_verified ?? false,
       ceoName: company?.ceo_name ?? null,
       description: company?.description ?? null,
-      operationType: company?.operation_type ?? 'branch',
     },
     media: mockStore.branchMedia
-      .filter((m) => m.branch_id === branchId)
+      .filter((m) => m.branch_id === branch.id)
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((m) => ({ id: m.id, type: m.media_type, source: m.source, url: m.value })),
     contacts: mockStore.branchContacts
-      .filter((c) => c.branch_id === branchId)
+      .filter((c) => c.branch_id === branch.id)
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((c) => ({ id: c.id, type: c.type, value: c.value, label: c.label })),
     insurerNames: mockStore.branchInsurers
-      .filter((bi) => bi.branch_id === branchId)
+      .filter((bi) => bi.branch_id === branch.id)
       .map((bi) => mockStore.insurers.find((i) => i.id === bi.insurer_id)?.name)
       .filter((name): name is string => Boolean(name)),
     activeRecruits: mockStore.branchRecruits
-      .filter((r) => r.branch_id === branchId && r.is_active)
+      .filter((r) => r.branch_id === branch.id && r.is_active)
       .map((r) => ({ id: r.id, title: r.title, content: r.content, employmentType: r.employment_type })),
   };
 }

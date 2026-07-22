@@ -57,7 +57,7 @@ export default async function HomePage() {
 
       <IconMenuGrid />
 
-      <Section title="이번 주 인기 GA" subtitle="가장 많이 찾아본 지점" moreHref="/ga">
+      <Section title="이번 주 인기 지점" subtitle="가장 많이 찾아본 지점" moreHref="/search">
         {popular.length === 0 ? (
           <EmptyRow text="아직 조회 데이터가 없습니다." />
         ) : (
@@ -73,7 +73,7 @@ export default async function HomePage() {
 
       <MapPreviewSection />
 
-      <Section title="추천 GA" subtitle="보험맵이 선정한 우수 지점" moreHref="/ga">
+      <Section title="추천 지점" subtitle="보험맵이 선정한 우수 지점" moreHref="/search">
         {recommended.length === 0 ? (
           <EmptyRow text="등록된 추천 지점이 없습니다." />
         ) : (
@@ -85,7 +85,7 @@ export default async function HomePage() {
         )}
       </Section>
 
-      <Section title="신규 등록 GA" subtitle="최근에 새로 올라온 지점" moreHref="/ga">
+      <Section title="신규 등록 지점" subtitle="최근에 새로 올라온 지점" moreHref="/search">
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
         ) : (

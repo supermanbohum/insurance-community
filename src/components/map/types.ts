@@ -1,8 +1,8 @@
 export interface MapBranch {
   id: string;
+  slug: string;
   name: string;
   gaCompanyName: string;
-  gaCompanySlug: string;
   isGaVerified: boolean;
   sidoName: string | null;
   sigunguName: string | null;

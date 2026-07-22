@@ -45,9 +45,9 @@ export default async function MapPage({
 
   const branches: MapBranch[] = branchResults.map((b) => ({
     id: b.id,
+    slug: b.slug,
     name: b.name,
     gaCompanyName: b.gaCompanyName,
-    gaCompanySlug: b.gaCompanySlug,
     isGaVerified: b.isGaVerified,
     sidoName: b.sidoName,
     sigunguName: b.sigunguName,

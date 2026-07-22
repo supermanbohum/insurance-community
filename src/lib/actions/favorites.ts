@@ -7,7 +7,7 @@ import { mockToggleFavorite } from '@/lib/mock/user-mutations';
 
 export type ToggleFavoriteResult = { success: true; favorited: boolean } | { success: false; requireLogin: true };
 
-export async function toggleFavoriteAction(gaId: string): Promise<ToggleFavoriteResult> {
+export async function toggleFavoriteAction(branchId: string): Promise<ToggleFavoriteResult> {
   const user = await getCurrentUser();
   if (!user) {
     return { success: false, requireLogin: true };
@@ -17,8 +17,8 @@ export async function toggleFavoriteAction(gaId: string): Promise<ToggleFavorite
     return { success: false, requireLogin: true };
   }
 
-  const { favorited } = mockToggleFavorite(user.id, gaId);
+  const { favorited } = mockToggleFavorite(user.id, branchId);
   revalidatePath('/my');
-  revalidatePath(`/ga/${gaId}`);
+  revalidatePath(`/branch/${branchId}`);
   return { success: true, favorited };
 }

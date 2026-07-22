@@ -14,16 +14,9 @@ import {
   type MockGaCompanyFormInput,
 } from '@/lib/mock/admin-mutations';
 import { requirePartner } from '@/lib/partner/session';
+import { slugify } from '@/lib/utils';
 
 export type ActionResult = { success: true } | { success: false; error: string };
-
-function slugify(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9가-힣]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-}
 
 /** 가입 직후 GA + 첫 지점을 한 번에 등록(pending). */
 export async function registerGaAction(input: {
@@ -33,6 +26,7 @@ export async function registerGaAction(input: {
   branch: {
     name: string;
     regionId: string | null;
+    managerName?: string;
     address: string;
     addressDetail?: string;
     introText?: string;
@@ -40,6 +34,8 @@ export async function registerGaAction(input: {
     parkingAvailable?: boolean | null;
     visitConsultAvailable?: boolean | null;
     businessHours?: string | null;
+    atmosphereInfo?: string;
+    operationType?: 'direct' | 'branch';
   };
 }): Promise<ActionResult> {
   if (!input.name.trim() || !input.branch.name.trim() || !input.branch.address.trim()) {
@@ -62,6 +58,7 @@ export async function registerGaAction(input: {
     branch: {
       name: input.branch.name.trim(),
       regionId: input.branch.regionId,
+      managerName: input.branch.managerName?.trim(),
       address: input.branch.address.trim(),
       addressDetail: input.branch.addressDetail?.trim(),
       introText: input.branch.introText?.trim(),
@@ -69,6 +66,8 @@ export async function registerGaAction(input: {
       parkingAvailable: input.branch.parkingAvailable ?? undefined,
       visitConsultAvailable: input.branch.visitConsultAvailable ?? undefined,
       businessHours: input.branch.businessHours?.trim() ?? undefined,
+      atmosphereInfo: input.branch.atmosphereInfo?.trim(),
+      operationType: input.branch.operationType,
     },
   });
 
@@ -105,7 +104,6 @@ export async function updateGaCompanyProfileAction(
 
   revalidatePath('/partner/company');
   revalidatePath('/admin/change-requests');
-  revalidatePath('/ga');
   return { success: true, pending: result.status === 'pending' };
 }
 

@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Plus, MapPin } from 'lucide-react';
-import { getGaCompanyById, getBranchesByGaCompanyId, getGaMedia } from '@/lib/admin/ga';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { IS_MOCK_MODE } from '@/lib/mock/config';
+import { getGaCompanyById, getBranchesByGaCompanyId } from '@/lib/admin/ga';
 import { listChangeRequests, countPendingChangeRequests } from '@/lib/change-requests';
 import { APPROVAL_STATUS_BADGE_VARIANT, APPROVAL_STATUS_LABEL } from '@/lib/admin/approval-status';
 import { GaApprovalActions } from '@/components/admin/GaApprovalActions';
@@ -19,23 +17,11 @@ export default async function AdminGaDetailPage({ params }: { params: { gaId: st
     notFound();
   }
 
-  const [branches, media, logoUrlResult, pendingCount, history] = await Promise.all([
+  const [branches, pendingCount, history] = await Promise.all([
     getBranchesByGaCompanyId(ga.id),
-    getGaMedia(ga.id),
-    (async () => {
-      if (!ga.logo_path) return null;
-      // Mock 모드는 logo_path 자체가 이미 /public 기준 경로(예: /mock-logos/x.png)라 그대로 쓴다.
-      if (IS_MOCK_MODE) return ga.logo_path;
-      const supabase = createAdminClient();
-      return supabase.storage.from('company-logos').getPublicUrl(ga.logo_path).data.publicUrl;
-    })(),
     countPendingChangeRequests(ga.id),
     listChangeRequests({ gaCompanyId: ga.id }),
   ]);
-
-  // GA 배너/갤러리는 버킷이 두 개(company-banners/company-gallery)라 media_type별로 base URL이 다르다.
-  // resolveMediaUrl 쪽에서 절대경로 값은 그대로 쓰므로, 실제 업로드 값만 이 base가 붙는다.
-  const imageBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/company-gallery`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,7 +33,7 @@ export default async function AdminGaDetailPage({ params }: { params: { gaId: st
               {APPROVAL_STATUS_LABEL[ga.approval_status]}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">/ga/{ga.slug}</p>
+          <p className="text-sm text-muted-foreground">slug: {ga.slug}</p>
           {ga.approval_reason && (
             <p className="mt-1 text-sm text-destructive">사유: {ga.approval_reason}</p>
           )}
@@ -60,7 +46,7 @@ export default async function AdminGaDetailPage({ params }: { params: { gaId: st
         <GaApprovalActions gaCompanyId={ga.id} gaName={ga.name} status={ga.approval_status} size="default" />
       </div>
 
-      <GaEditWorkspace ga={ga} media={media} branches={branches} logoUrl={logoUrlResult} imageBaseUrl={imageBaseUrl} />
+      <GaEditWorkspace ga={ga} />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">

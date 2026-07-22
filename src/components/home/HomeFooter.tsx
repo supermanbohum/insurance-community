@@ -5,8 +5,8 @@ const LINK_GROUPS = [
   {
     label: '서비스',
     links: [
-      { href: '/ga', label: 'GA 전체보기' },
-      { href: '/region', label: '지역별 GA' },
+      { href: '/search', label: '지점 전체보기' },
+      { href: '/region', label: '지역별 지점' },
       { href: '/jobs', label: '채용정보' },
       { href: '/events', label: '이벤트' },
     ],

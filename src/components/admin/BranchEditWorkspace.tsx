@@ -15,6 +15,7 @@ import { Monitor } from 'lucide-react';
 export function BranchEditWorkspace({
   branch,
   gaCompanyName,
+  gaCompanyLogoUrl,
   isGaVerified,
   gaBranchCount,
   regions,
@@ -27,6 +28,7 @@ export function BranchEditWorkspace({
 }: {
   branch: BranchRow;
   gaCompanyName: string;
+  gaCompanyLogoUrl: string | null;
   isGaVerified: boolean;
   gaBranchCount: number;
   regions: RegionRow[];
@@ -40,6 +42,7 @@ export function BranchEditWorkspace({
   const region = regions.find((r) => r.id === branch.region_id) ?? null;
   const [draft, setDraft] = useState<BranchInfoDraft>({
     name: branch.name,
+    managerName: branch.manager_name ?? '',
     address: branch.address,
     addressDetail: branch.address_detail ?? '',
     introText: branch.intro_text ?? '',
@@ -47,12 +50,17 @@ export function BranchEditWorkspace({
     welfareInfo: branch.welfare_info ?? '',
     dbSupportInfo: branch.db_support_info ?? '',
     settlementSupportInfo: branch.settlement_support_info ?? '',
+    atmosphereInfo: branch.atmosphere_info ?? '',
+    operationType: branch.operation_type,
+    isHeadquarters: branch.is_headquarters,
   });
 
   const selectedInsurerNames = insurers.filter((i) => insurerIds.includes(i.id)).map((i) => i.name);
 
   const previewData: BranchPreviewData = {
     name: draft.name,
+    slug: branch.slug,
+    managerName: draft.managerName || null,
     address: draft.address,
     addressDetail: draft.addressDetail || null,
     sidoName: region?.sido_name ?? null,
@@ -65,12 +73,16 @@ export function BranchEditWorkspace({
     welfareInfo: draft.welfareInfo || null,
     dbSupportInfo: draft.dbSupportInfo || null,
     settlementSupportInfo: draft.settlementSupportInfo || null,
+    atmosphereInfo: draft.atmosphereInfo || null,
     plannerCount: branch.planner_count,
     parkingAvailable: branch.parking_available,
     visitConsultAvailable: branch.visit_consult_available,
     businessHours: branch.business_hours,
+    operationType: draft.operationType,
+    isHeadquarters: draft.isHeadquarters,
     updatedAt: branch.updated_at,
     gaCompanyName,
+    gaCompanyLogoUrl,
     isGaVerified,
     media: media.map((m) => ({
       id: m.id,
@@ -83,6 +95,7 @@ export function BranchEditWorkspace({
     activeRecruits: recruits
       .filter((r) => r.is_active)
       .map((r) => ({ id: r.id, title: r.title, content: r.content, employmentType: r.employment_type })),
+    siblingBranches: [],
   };
 
   return (

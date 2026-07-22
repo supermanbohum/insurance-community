@@ -10,14 +10,14 @@ import { cn } from '@/lib/utils';
  * 즐겨찾기 토글 버튼. 비로그인 상태에서 누르면 toggleFavoriteAction이
  * `{success:false, requireLogin:true}`를 반환하고, 이 컴포넌트가 그걸 보고 /login으로 보낸다.
  */
-export function GaFavoriteButton({ gaId, initialFavorited }: { gaId: string; initialFavorited: boolean }) {
+export function BranchFavoriteButton({ branchId, initialFavorited }: { branchId: string; initialFavorited: boolean }) {
   const router = useRouter();
   const [favorited, setFavorited] = useState(initialFavorited);
   const [isPending, startTransition] = useTransition();
 
   function handleClick() {
     startTransition(async () => {
-      const result = await toggleFavoriteAction(gaId);
+      const result = await toggleFavoriteAction(branchId);
       if (!result.success) {
         router.push('/login');
         return;

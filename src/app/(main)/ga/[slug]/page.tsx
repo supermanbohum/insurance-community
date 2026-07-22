@@ -1,57 +1,21 @@
-import { notFound } from 'next/navigation';
-import { getPublicGaDetailBySlug } from '@/lib/public/ga';
-import { getCurrentUser } from '@/lib/auth/session';
-import { isGaFavorited } from '@/lib/user/favorites';
-import { GaDetailView } from '@/components/ga/GaDetailView';
-import type { GaPreviewData } from '@/components/ga/types';
+import { redirect } from 'next/navigation';
+import { getGaRedirectTarget } from '@/lib/public/ga';
 
 export const dynamic = 'force-dynamic';
 
-export default async function GaDetailPage({ params }: { params: { slug: string } }) {
-  const ga = await getPublicGaDetailBySlug(params.slug);
-  if (!ga) {
-    notFound();
+/**
+ * GA는 더 이상 자체 상세페이지를 갖지 않는다(회사 정보/로고/브랜드 소개만 갖는 상위 엔티티).
+ * 옛 /ga/[slug] 링크가 들어오면 그 회사의 본사 지점(또는 유일한 지점)으로,
+ * 그마저 없으면 검색 결과로 보낸다.
+ */
+export default async function GaRedirectPage({ params }: { params: { slug: string } }) {
+  const target = await getGaRedirectTarget(params.slug);
+
+  if (!target.found) {
+    redirect('/search');
   }
-
-  const user = await getCurrentUser();
-  const initialFavorited = user ? await isGaFavorited(user.id, ga.id) : false;
-
-  const data: GaPreviewData = {
-    name: ga.name,
-    slug: ga.slug,
-    ceoName: ga.ceoName,
-    description: ga.description,
-    logoUrl: ga.logoUrl,
-    banner: ga.banner,
-    gallery: ga.gallery,
-    address: ga.address,
-    addressDetail: ga.addressDetail,
-    lat: ga.lat,
-    lng: ga.lng,
-    phone: ga.phone,
-    homepageUrl: ga.homepageUrl,
-    educationInfo: ga.educationInfo,
-    welfareInfo: ga.welfareInfo,
-    strengthsInfo: ga.strengthsInfo,
-    promoVideoUrl: ga.promoVideoUrl,
-    snsBlogUrl: ga.snsBlogUrl,
-    snsInstagramUrl: ga.snsInstagramUrl,
-    snsYoutubeUrl: ga.snsYoutubeUrl,
-    snsKakaoChannelUrl: ga.snsKakaoChannelUrl,
-    snsOpenChatUrl: ga.snsOpenChatUrl,
-    isHeadquarters: ga.isHeadquarters,
-    operationType: ga.operationType,
-    isRecruiting: ga.isRecruiting,
-    isVerified: ga.isVerified,
-    branchCount: ga.branches.length,
-    branches: ga.branches,
-    activeRecruits: ga.activeRecruits,
-    updatedAt: ga.updatedAt,
-  };
-
-  return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-4">
-      <GaDetailView data={data} variant="public" favorite={{ gaId: ga.id, initialFavorited }} />
-    </div>
-  );
+  if (target.branchSlug) {
+    redirect(`/branch/${target.branchSlug}`);
+  }
+  redirect(`/search?q=${encodeURIComponent(target.gaName ?? '')}`);
 }

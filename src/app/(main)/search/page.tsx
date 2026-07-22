@@ -3,7 +3,6 @@ import { listPublicGaCompanies } from '@/lib/public/ga';
 import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
 import { listSidoGroups } from '@/lib/public/region';
 import { BranchCard } from '@/components/branch/BranchCard';
-import { GaCard } from '@/components/ga/GaCard';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { SearchFilters } from '@/components/search/SearchFilters';
 import { SearchFilterButton } from '@/components/search/SearchFilterSheet';
@@ -42,14 +41,7 @@ export default async function SearchPage({
   const hasFilters = Boolean(region) || gaIds.length > 0 || minPlanners > 0 || Boolean(parking) || Boolean(structure);
   const shouldSearch = Boolean(q) || hasFilters;
 
-  const [gaResults, branchResults, regions, allGaOptions] = await Promise.all([
-    shouldSearch
-      ? listPublicGaCompanies({
-          q: q || undefined,
-          gaCompanyIds: gaIds.length > 0 ? gaIds : undefined,
-          operationType: structure || undefined,
-        })
-      : Promise.resolve([]),
+  const [branchResults, regions, allGaOptions] = await Promise.all([
     shouldSearch
       ? listPublicBranches({
           q: q || undefined,
@@ -65,7 +57,7 @@ export default async function SearchPage({
     listPublicGaCompanies({}),
   ]);
 
-  const totalCount = gaResults.length + branchResults.length;
+  const totalCount = branchResults.length;
 
   const gaNameById = new Map(allGaOptions.map((ga) => [ga.id, ga.name]));
   const regionNameByCode = new Map(regions.map((r) => [r.sidoCode, r.sidoName]));
@@ -128,7 +120,7 @@ export default async function SearchPage({
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-500">
             <Search className="h-6 w-6" strokeWidth={1.5} />
           </span>
-          <p className="text-sm">GA명 또는 지점명을 검색하거나 필터를 사용해보세요.</p>
+          <p className="text-sm">지점명 또는 소속 회사명을 검색하거나 필터를 사용해보세요.</p>
         </div>
       ) : totalCount === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line py-20 text-ink-faint">
@@ -166,22 +158,6 @@ export default async function SearchPage({
               structure={structure}
             />
           </div>
-
-          {gaResults.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <h2 className="flex items-center gap-1.5 text-[15px] font-extrabold tracking-tight text-ink">
-                GA
-                <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-bold text-brand-600">{gaResults.length}</span>
-              </h2>
-              <div className="grid grid-cols-3 gap-2.5">
-                {gaResults.map((ga) => (
-                  <GaCard key={ga.id} ga={ga} highlightQuery={q} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {gaResults.length > 0 && branchResults.length > 0 && <div className="h-px bg-line" />}
 
           {branchResults.length > 0 && (
             <section className="flex flex-col gap-3">

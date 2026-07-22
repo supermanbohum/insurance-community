@@ -1,10 +1,10 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import type { PublicBranchSummary } from '@/types/database';
+import type { PublicBranchSummary, GaOperationType } from '@/types/database';
 
 const SUMMARY_SELECT = `
-  id, name, address, lat, lng, organic_view_count, imported_view_count, correction_view_count,
-  is_recommended, created_at, updated_at,
-  ga_company:ga_company_id ( id, name, slug, is_verified, operation_type, ga_branch(id) ),
+  id, slug, name, address, lat, lng, organic_view_count, imported_view_count, correction_view_count,
+  is_recommended, created_at, updated_at, operation_type, is_headquarters,
+  ga_company:ga_company_id ( id, name, logo_path, is_verified, ga_branch(id) ),
   region:region_id ( sido_name, sigungu_name ),
   branch_media ( value, media_type, source ),
   branch_recruit ( id, is_active )
@@ -12,6 +12,7 @@ const SUMMARY_SELECT = `
 
 interface BranchSummaryRow {
   id: string;
+  slug: string;
   name: string;
   address: string;
   lat: number | null;
@@ -22,12 +23,13 @@ interface BranchSummaryRow {
   is_recommended: boolean;
   created_at: string;
   updated_at: string;
+  operation_type: GaOperationType;
+  is_headquarters: boolean;
   ga_company: {
     id: string;
     name: string;
-    slug: string;
+    logo_path: string | null;
     is_verified: boolean;
-    operation_type: 'direct' | 'branch';
     ga_branch: { id: string }[] | null;
   } | null;
   region: { sido_name: string; sigungu_name: string | null } | null;
@@ -35,13 +37,14 @@ interface BranchSummaryRow {
   branch_recruit: { id: string; is_active: boolean }[] | null;
 }
 
-function toSummary(row: BranchSummaryRow, imageBaseUrl: string): PublicBranchSummary {
+function toSummary(row: BranchSummaryRow, imageBaseUrl: string, logoBaseUrl: string): PublicBranchSummary {
   const mainImage = row.branch_media?.find((m) => m.media_type === 'image_main');
   return {
     id: row.id,
+    slug: row.slug,
     gaCompanyId: row.ga_company?.id ?? '',
     gaCompanyName: row.ga_company?.name ?? '',
-    gaCompanySlug: row.ga_company?.slug ?? '',
+    gaCompanyLogoUrl: row.ga_company?.logo_path ? `${logoBaseUrl}/${row.ga_company.logo_path}` : null,
     isGaVerified: row.ga_company?.is_verified ?? false,
     name: row.name,
     sidoName: row.region?.sido_name ?? null,
@@ -53,7 +56,8 @@ function toSummary(row: BranchSummaryRow, imageBaseUrl: string): PublicBranchSum
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     gaBranchCount: Array.isArray(row.ga_company?.ga_branch) ? row.ga_company!.ga_branch.length : 0,
-    operationType: row.ga_company?.operation_type ?? 'branch',
+    operationType: row.operation_type,
+    isHeadquarters: row.is_headquarters,
     lat: row.lat,
     lng: row.lng,
     hasActiveRecruit: (row.branch_recruit ?? []).some((r) => r.is_active),
@@ -62,6 +66,10 @@ function toSummary(row: BranchSummaryRow, imageBaseUrl: string): PublicBranchSum
 
 function getImageBaseUrl(): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/branch-images`;
+}
+
+function getLogoBaseUrl(): string {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/company-logos`;
 }
 
 export type BranchSortOption = 'recommended' | 'newest' | 'views';
@@ -73,17 +81,19 @@ export async function listPublicBranches(options: {
   sort?: BranchSortOption;
   limit?: number;
   gaCompanyIds?: string[];
+  branchIds?: string[];
   minPlannerCount?: number;
   parkingAvailable?: boolean;
   operationType?: 'direct' | 'branch';
 }): Promise<PublicBranchSummary[]> {
   const supabase = createServerSupabaseClient();
   const imageBaseUrl = getImageBaseUrl();
+  const logoBaseUrl = getLogoBaseUrl();
 
   let query = supabase.from('ga_branch').select(SUMMARY_SELECT);
 
   if (options.operationType) {
-    query = query.eq('ga_company.operation_type', options.operationType);
+    query = query.eq('operation_type', options.operationType);
   }
 
   if (options.regionId) {
@@ -103,6 +113,10 @@ export async function listPublicBranches(options: {
 
   if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
     query = query.in('ga_company_id', options.gaCompanyIds);
+  }
+
+  if (options.branchIds && options.branchIds.length > 0) {
+    query = query.in('id', options.branchIds);
   }
 
   if (options.minPlannerCount) {
@@ -127,12 +141,14 @@ export async function listPublicBranches(options: {
 
   const { data, error } = await query;
   if (error) throw error;
-  return ((data ?? []) as unknown as BranchSummaryRow[]).map((row) => toSummary(row, imageBaseUrl));
+  return ((data ?? []) as unknown as BranchSummaryRow[]).map((row) => toSummary(row, imageBaseUrl, logoBaseUrl));
 }
 
 export interface BranchDetail {
   id: string;
+  slug: string;
   name: string;
+  managerName: string | null;
   address: string;
   addressDetail: string | null;
   sidoName: string | null;
@@ -145,21 +161,23 @@ export interface BranchDetail {
   welfareInfo: string | null;
   dbSupportInfo: string | null;
   settlementSupportInfo: string | null;
+  atmosphereInfo: string | null;
   plannerCount: number | null;
   parkingAvailable: boolean | null;
   visitConsultAvailable: boolean | null;
   businessHours: string | null;
+  operationType: GaOperationType;
+  isHeadquarters: boolean;
   updatedAt: string;
   viewCount: number;
   isRecommended: boolean;
   gaCompany: {
     id: string;
     name: string;
-    slug: string;
+    logoUrl: string | null;
     isVerified: boolean;
     ceoName: string | null;
     description: string | null;
-    operationType: 'direct' | 'branch';
   };
   media: { id: string; type: string; source: string; url: string }[];
   contacts: { id: string; type: string; value: string; label: string | null }[];
@@ -167,22 +185,23 @@ export interface BranchDetail {
   activeRecruits: { id: string; title: string; content: string; employmentType: string | null }[];
 }
 
-export async function getPublicBranchDetail(branchId: string): Promise<BranchDetail | null> {
+export async function getPublicBranchDetail(slug: string): Promise<BranchDetail | null> {
   const supabase = createServerSupabaseClient();
   const imageBaseUrl = getImageBaseUrl();
+  const logoBaseUrl = getLogoBaseUrl();
   const videoBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/branch-videos`;
 
   const { data: branch, error } = await supabase
     .from('ga_branch')
     .select(
-      `id, name, address, address_detail, lat, lng, intro_text, education_info, welfare_info,
-       db_support_info, settlement_support_info, planner_count, parking_available, visit_consult_available,
-       business_hours, updated_at, organic_view_count, imported_view_count,
+      `id, slug, name, manager_name, address, address_detail, lat, lng, intro_text, education_info, welfare_info,
+       db_support_info, settlement_support_info, atmosphere_info, planner_count, parking_available, visit_consult_available,
+       business_hours, operation_type, is_headquarters, updated_at, organic_view_count, imported_view_count,
        correction_view_count, is_recommended,
-       ga_company:ga_company_id ( id, name, slug, is_verified, ceo_name, description, operation_type ),
+       ga_company:ga_company_id ( id, name, logo_path, is_verified, ceo_name, description ),
        region:region_id ( sido_name, sigungu_name )`
     )
-    .eq('id', branchId)
+    .eq('slug', slug)
     .single();
 
   if (error || !branch) return null;
@@ -190,22 +209,21 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
   const gaCompany = branch.ga_company as unknown as {
     id: string;
     name: string;
-    slug: string;
+    logo_path: string | null;
     is_verified: boolean;
     ceo_name: string | null;
     description: string | null;
-    operation_type: 'direct' | 'branch';
   } | null;
   const region = branch.region as unknown as { sido_name: string; sigungu_name: string | null } | null;
 
   const [mediaRes, contactsRes, insurerLinksRes, recruitsRes, branchCountRes] = await Promise.all([
-    supabase.from('branch_media').select('id, media_type, source, value, sort_order').eq('branch_id', branchId).order('sort_order'),
-    supabase.from('branch_contacts').select('id, type, value, label, sort_order').eq('branch_id', branchId).order('sort_order'),
-    supabase.from('branch_insurers').select('insurer_id, insurers:insurer_id(name)').eq('branch_id', branchId),
+    supabase.from('branch_media').select('id, media_type, source, value, sort_order').eq('branch_id', branch.id).order('sort_order'),
+    supabase.from('branch_contacts').select('id, type, value, label, sort_order').eq('branch_id', branch.id).order('sort_order'),
+    supabase.from('branch_insurers').select('insurer_id, insurers:insurer_id(name)').eq('branch_id', branch.id),
     supabase
       .from('branch_recruit')
       .select('id, title, content, employment_type')
-      .eq('branch_id', branchId)
+      .eq('branch_id', branch.id)
       .eq('is_active', true),
     supabase
       .from('ga_branch')
@@ -222,7 +240,9 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
 
   return {
     id: branch.id,
+    slug: branch.slug,
     name: branch.name,
+    managerName: branch.manager_name,
     address: branch.address,
     addressDetail: branch.address_detail,
     sidoName: region?.sido_name ?? null,
@@ -235,21 +255,23 @@ export async function getPublicBranchDetail(branchId: string): Promise<BranchDet
     welfareInfo: branch.welfare_info,
     dbSupportInfo: branch.db_support_info,
     settlementSupportInfo: branch.settlement_support_info,
+    atmosphereInfo: branch.atmosphere_info,
     plannerCount: branch.planner_count,
     parkingAvailable: branch.parking_available,
     visitConsultAvailable: branch.visit_consult_available,
     businessHours: branch.business_hours,
+    operationType: branch.operation_type,
+    isHeadquarters: branch.is_headquarters,
     updatedAt: branch.updated_at,
     viewCount: branch.organic_view_count + branch.imported_view_count + branch.correction_view_count,
     isRecommended: branch.is_recommended,
     gaCompany: {
       id: gaCompany?.id ?? '',
       name: gaCompany?.name ?? '',
-      slug: gaCompany?.slug ?? '',
+      logoUrl: gaCompany?.logo_path ? `${logoBaseUrl}/${gaCompany.logo_path}` : null,
       isVerified: gaCompany?.is_verified ?? false,
       ceoName: gaCompany?.ceo_name ?? null,
       description: gaCompany?.description ?? null,
-      operationType: gaCompany?.operation_type ?? 'branch',
     },
     media: (media ?? []).map((m) => ({
       id: m.id,

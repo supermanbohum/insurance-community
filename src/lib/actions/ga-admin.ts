@@ -132,15 +132,6 @@ export async function createGaCompanyAction(
     p_ceo_name: input.ceoName?.trim() || undefined,
     p_description: input.description?.trim() || undefined,
     p_logo_path: input.logoPath || undefined,
-    p_operation_type: input.operationType,
-    p_is_headquarters: input.isHeadquarters,
-    p_phone: input.phone || undefined,
-    p_homepage_url: input.homepageUrl || undefined,
-    p_address: input.address || undefined,
-    p_address_detail: input.addressDetail || undefined,
-    p_zonecode: input.zonecode || undefined,
-    p_lat: input.lat,
-    p_lng: input.lng,
   });
 
   if (error || !data) {
@@ -177,26 +168,7 @@ export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompan
     p_ceo_name: input.ceoName?.trim() || undefined,
     p_description: input.description?.trim() || undefined,
     p_logo_path: input.logoPath || undefined,
-    p_operation_type: input.operationType,
-    p_is_headquarters: input.isHeadquarters,
-    p_is_recruiting: input.isRecruiting,
     p_status: input.status,
-    p_phone: input.phone || undefined,
-    p_homepage_url: input.homepageUrl || undefined,
-    p_address: input.address || undefined,
-    p_address_detail: input.addressDetail || undefined,
-    p_zonecode: input.zonecode || undefined,
-    p_lat: input.lat,
-    p_lng: input.lng,
-    p_education_info: input.educationInfo || undefined,
-    p_welfare_info: input.welfareInfo || undefined,
-    p_strengths_info: input.strengthsInfo || undefined,
-    p_promo_video_url: input.promoVideoUrl || undefined,
-    p_sns_blog_url: input.snsBlogUrl || undefined,
-    p_sns_instagram_url: input.snsInstagramUrl || undefined,
-    p_sns_youtube_url: input.snsYoutubeUrl || undefined,
-    p_sns_kakao_channel_url: input.snsKakaoChannelUrl || undefined,
-    p_sns_open_chat_url: input.snsOpenChatUrl || undefined,
   });
 
   if (error) {

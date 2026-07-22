@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BadgeCheck, Building2, Briefcase, Plus } from 'lucide-react';
+import { BadgeCheck, Plus } from 'lucide-react';
 import { listGaCompanies } from '@/lib/admin/ga';
 import type { GaApprovalStatus } from '@/types/database';
 import { APPROVAL_STATUS_BADGE_VARIANT, APPROVAL_STATUS_LABEL } from '@/lib/admin/approval-status';
@@ -69,7 +69,6 @@ export default async function AdminGaListPage({
               <TableRow>
                 <TableHead>GA명</TableHead>
                 <TableHead>slug</TableHead>
-                <TableHead>구분</TableHead>
                 <TableHead>상태</TableHead>
                 <TableHead>등록일</TableHead>
                 <TableHead className="text-right">작업</TableHead>
@@ -78,7 +77,7 @@ export default async function AdminGaListPage({
             <TableBody>
               {list.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
                     조건에 맞는 GA가 없습니다.
                   </TableCell>
                 </TableRow>
@@ -92,22 +91,6 @@ export default async function AdminGaListPage({
                       </Link>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{ga.slug}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {ga.is_headquarters && (
-                          <Badge variant="outline" className="gap-1">
-                            <Building2 className="h-3 w-3" />
-                            본사
-                          </Badge>
-                        )}
-                        {ga.is_recruiting && (
-                          <Badge variant="outline" className="gap-1">
-                            <Briefcase className="h-3 w-3" />
-                            채용중
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
                     <TableCell>
                       <Badge variant={APPROVAL_STATUS_BADGE_VARIANT[ga.approval_status]}>
                         {APPROVAL_STATUS_LABEL[ga.approval_status]}

@@ -2,8 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import type { GaStatus } from '@/types/database';
+import type { GaStatus, GaOperationType } from '@/types/database';
 import { IS_MOCK_MODE } from '@/lib/mock/config';
+import { slugify } from '@/lib/utils';
 import {
   mockCloseBranchRecruit,
   mockCreateBranch,
@@ -21,6 +22,7 @@ export type ActionResult = { success: true } | { success: false; error: string }
 export interface BranchFormInput {
   name: string;
   regionId: string | null;
+  managerName?: string;
   address: string;
   addressDetail?: string;
   lat?: number;
@@ -30,6 +32,9 @@ export interface BranchFormInput {
   welfareInfo?: string;
   dbSupportInfo?: string;
   settlementSupportInfo?: string;
+  atmosphereInfo?: string;
+  operationType?: GaOperationType;
+  isHeadquarters?: boolean;
 }
 
 function revalidateBranch(branchId?: string) {
@@ -56,7 +61,9 @@ export async function createBranchAction(
   const { data, error } = await supabase.rpc('create_branch', {
     p_ga_company_id: gaCompanyId,
     p_region_id: input.regionId,
+    p_slug: slugify(input.name.trim()),
     p_name: input.name.trim(),
+    p_manager_name: input.managerName?.trim() || undefined,
     p_address: input.address.trim(),
     p_address_detail: input.addressDetail?.trim() || undefined,
     p_lat: input.lat,
@@ -66,6 +73,9 @@ export async function createBranchAction(
     p_welfare_info: input.welfareInfo?.trim() || undefined,
     p_db_support_info: input.dbSupportInfo?.trim() || undefined,
     p_settlement_support_info: input.settlementSupportInfo?.trim() || undefined,
+    p_atmosphere_info: input.atmosphereInfo?.trim() || undefined,
+    p_operation_type: input.operationType,
+    p_is_headquarters: input.isHeadquarters,
   });
 
   if (error || !data) {
@@ -95,6 +105,7 @@ export async function updateBranchAction(branchId: string, input: BranchFormInpu
   const { error } = await supabase.rpc('update_branch', {
     p_branch_id: branchId,
     p_name: input.name.trim(),
+    p_manager_name: input.managerName?.trim() || undefined,
     p_region_id: input.regionId,
     p_address: input.address.trim(),
     p_address_detail: input.addressDetail?.trim() || undefined,
@@ -105,6 +116,9 @@ export async function updateBranchAction(branchId: string, input: BranchFormInpu
     p_welfare_info: input.welfareInfo?.trim() || undefined,
     p_db_support_info: input.dbSupportInfo?.trim() || undefined,
     p_settlement_support_info: input.settlementSupportInfo?.trim() || undefined,
+    p_atmosphere_info: input.atmosphereInfo?.trim() || undefined,
+    p_operation_type: input.operationType,
+    p_is_headquarters: input.isHeadquarters,
   });
 
   if (error) {

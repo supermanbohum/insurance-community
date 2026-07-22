@@ -9,9 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export interface BranchInfoDraft {
   name: string;
+  managerName: string;
   address: string;
   addressDetail: string;
   introText: string;
@@ -19,6 +22,9 @@ export interface BranchInfoDraft {
   welfareInfo: string;
   dbSupportInfo: string;
   settlementSupportInfo: string;
+  atmosphereInfo: string;
+  operationType: 'direct' | 'branch';
+  isHeadquarters: boolean;
 }
 
 export function BranchInfoTab({
@@ -33,6 +39,7 @@ export function BranchInfoTab({
 }) {
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(branch.name);
+  const [managerName, setManagerName] = useState(branch.manager_name ?? '');
   const [regionId, setRegionId] = useState<string | null>(branch.region_id);
   const [address, setAddress] = useState(branch.address);
   const [addressDetail, setAddressDetail] = useState(branch.address_detail ?? '');
@@ -41,10 +48,14 @@ export function BranchInfoTab({
   const [welfareInfo, setWelfareInfo] = useState(branch.welfare_info ?? '');
   const [dbSupportInfo, setDbSupportInfo] = useState(branch.db_support_info ?? '');
   const [settlementSupportInfo, setSettlementSupportInfo] = useState(branch.settlement_support_info ?? '');
+  const [atmosphereInfo, setAtmosphereInfo] = useState(branch.atmosphere_info ?? '');
+  const [operationType, setOperationType] = useState<'direct' | 'branch'>(branch.operation_type);
+  const [isHeadquarters, setIsHeadquarters] = useState(branch.is_headquarters);
 
   useEffect(() => {
     onDraftChange?.({
       name,
+      managerName,
       address,
       addressDetail,
       introText,
@@ -52,15 +63,19 @@ export function BranchInfoTab({
       welfareInfo,
       dbSupportInfo,
       settlementSupportInfo,
+      atmosphereInfo,
+      operationType,
+      isHeadquarters,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, address, addressDetail, introText, educationInfo, welfareInfo, dbSupportInfo, settlementSupportInfo]);
+  }, [name, managerName, address, addressDetail, introText, educationInfo, welfareInfo, dbSupportInfo, settlementSupportInfo, atmosphereInfo, operationType, isHeadquarters]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
       const result = await updateBranchAction(branch.id, {
         name,
+        managerName,
         regionId,
         address,
         addressDetail,
@@ -71,6 +86,9 @@ export function BranchInfoTab({
         welfareInfo,
         dbSupportInfo,
         settlementSupportInfo,
+        atmosphereInfo,
+        operationType,
+        isHeadquarters,
       });
       if (result.success) {
         toast.success('저장되었습니다.');
@@ -85,6 +103,32 @@ export function BranchInfoTab({
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="branch-name">지점명</Label>
         <Input id="branch-name" value={name} onChange={(e) => setName(e.target.value)} required />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="branch-manager">대표자</Label>
+        <Input id="branch-manager" value={managerName} onChange={(e) => setManagerName(e.target.value)} placeholder="지점장/본부장 이름" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label>운영 형태</Label>
+          <Select value={operationType} onValueChange={(v) => setOperationType(v as 'direct' | 'branch')}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="direct">직영</SelectItem>
+              <SelectItem value="branch">지사</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>본사 여부</Label>
+          <div className="flex h-9 items-center gap-2">
+            <Switch checked={isHeadquarters} onCheckedChange={setIsHeadquarters} />
+            <span className="text-sm text-muted-foreground">{isHeadquarters ? '본사' : '본사 아님'}</span>
+          </div>
+        </div>
       </div>
 
       <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
@@ -120,6 +164,16 @@ export function BranchInfoTab({
           value={settlementSupportInfo}
           onChange={(e) => setSettlementSupportInfo(e.target.value)}
           rows={3}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="branch-atmosphere">분위기</Label>
+        <Textarea
+          id="branch-atmosphere"
+          value={atmosphereInfo}
+          onChange={(e) => setAtmosphereInfo(e.target.value)}
+          rows={3}
+          placeholder="근무 분위기, 조직 문화 등"
         />
       </div>
 

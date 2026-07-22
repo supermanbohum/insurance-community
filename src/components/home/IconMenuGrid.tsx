@@ -3,10 +3,10 @@ import { MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Meg
 
 const ITEMS = [
   { href: '/region', label: '지역별', icon: MapPin, tile: 'bg-blue-50 text-blue-600' },
-  { href: '/ga', label: 'GA별', icon: Building2, tile: 'bg-indigo-50 text-indigo-600' },
+  { href: '/search', label: '회사별', icon: Building2, tile: 'bg-indigo-50 text-indigo-600' },
   { href: '/jobs', label: '채용', icon: Briefcase, tile: 'bg-emerald-50 text-emerald-600' },
-  { href: '/ga', label: '인기 GA', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
-  { href: '/ga', label: '신규 GA', icon: Sparkles, tile: 'bg-amber-50 text-amber-600' },
+  { href: '/search', label: '인기 지점', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
+  { href: '/search', label: '신규 지점', icon: Sparkles, tile: 'bg-amber-50 text-amber-600' },
   { href: '/events', label: '이벤트', icon: CalendarDays, tile: 'bg-violet-50 text-violet-600' },
   { href: '/community', label: '보험인사이드', icon: Users, tile: 'bg-cyan-50 text-cyan-600', external: true },
   { href: '/board/notice', label: '공지사항', icon: Megaphone, tile: 'bg-slate-100 text-slate-600' },

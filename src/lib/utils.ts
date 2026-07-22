@@ -20,3 +20,12 @@ export function avatarGradient(seed: string): string {
   for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
 }
+
+/** GA/지점 slug 자동 생성 - 한글/영문/숫자만 남기고 나머지는 하이픈으로 치환한다. */
+export function slugify(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}

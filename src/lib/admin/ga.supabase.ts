@@ -4,7 +4,6 @@ import type { Database, GaApprovalStatus } from '@/types/database';
 
 export type GaCompanyRow = Database['public']['Tables']['ga_company']['Row'];
 export type GaBranchRow = Database['public']['Tables']['ga_branch']['Row'];
-export type GaMediaRow = Database['public']['Tables']['ga_media']['Row'];
 
 export async function listGaCompanies(options: {
   status?: GaApprovalStatus;
@@ -42,12 +41,3 @@ export async function getBranchesByGaCompanyId(gaCompanyId: string): Promise<GaB
   return data ?? [];
 }
 
-export async function getGaMedia(gaCompanyId: string): Promise<GaMediaRow[]> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from('ga_media')
-    .select('*')
-    .eq('ga_company_id', gaCompanyId)
-    .order('sort_order', { ascending: true });
-  return data ?? [];
-}

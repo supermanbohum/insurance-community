@@ -40,23 +40,23 @@ export function mockLoginOrCreateUser(
   return { id };
 }
 
-export function mockToggleFavorite(userId: string, gaId: string): { favorited: boolean } {
-  const existing = mockStore.favorites.find((f) => f.user_id === userId && f.ga_id === gaId);
+export function mockToggleFavorite(userId: string, branchId: string): { favorited: boolean } {
+  const existing = mockStore.favorites.find((f) => f.user_id === userId && f.branch_id === branchId);
   if (existing) {
     mockStore.favorites = mockStore.favorites.filter((f) => f.id !== existing.id);
     return { favorited: false };
   }
-  mockStore.favorites.push({ id: mockStore.genId('fav'), user_id: userId, ga_id: gaId, created_at: mockStore.nowIso() });
+  mockStore.favorites.push({ id: mockStore.genId('fav'), user_id: userId, branch_id: branchId, created_at: mockStore.nowIso() });
   return { favorited: true };
 }
 
-export function mockIsFavorited(userId: string, gaId: string): boolean {
-  return mockStore.favorites.some((f) => f.user_id === userId && f.ga_id === gaId);
+export function mockIsFavorited(userId: string, branchId: string): boolean {
+  return mockStore.favorites.some((f) => f.user_id === userId && f.branch_id === branchId);
 }
 
-export function mockListFavoriteGaIds(userId: string): string[] {
+export function mockListFavoriteBranchIds(userId: string): string[] {
   return mockStore.favorites
     .filter((f) => f.user_id === userId)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .map((f) => f.ga_id);
+    .map((f) => f.branch_id);
 }

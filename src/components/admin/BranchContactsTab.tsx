@@ -16,6 +16,7 @@ const CONTACT_TYPE_OPTIONS: { value: KnownBranchContactType | 'custom'; label: s
   { value: 'phone', label: '전화' },
   { value: 'phone_recruit', label: '채용문의 전화' },
   { value: 'kakao', label: '카카오톡' },
+  { value: 'kakao_open_chat', label: '카카오 오픈채팅' },
   { value: 'homepage', label: '홈페이지' },
   { value: 'instagram', label: '인스타그램' },
   { value: 'youtube', label: '유튜브' },

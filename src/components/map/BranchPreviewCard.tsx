@@ -51,7 +51,7 @@ export function BranchPreviewCard({ branch, onClose }: { branch: MapBranch; onCl
       </div>
 
       <Link
-        href={`/branch/${branch.id}`}
+        href={`/branch/${branch.slug}`}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600 transition-colors hover:bg-brand-100"
         aria-label="상세페이지로 이동"
       >

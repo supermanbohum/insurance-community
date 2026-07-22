@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Clock, TrendingUp, Building2, MapPin, X } from 'lucide-react';
+import { Search, Clock, TrendingUp, MapPin, X } from 'lucide-react';
 import { getSearchSuggestionsAction, type SearchSuggestion } from '@/lib/actions/public';
 import { addRecentSearch, getRecentSearches, removeRecentSearch } from '@/lib/search/recentSearches';
 import { cn } from '@/lib/utils';
@@ -172,11 +172,11 @@ export function SearchCombobox({
               ))}
             </div>
           ) : suggestions.length === 0 ? (
-            <p className="px-2 py-4 text-center text-xs text-ink-faint">일치하는 GA/지점이 없습니다.</p>
+            <p className="px-2 py-4 text-center text-xs text-ink-faint">일치하는 지점이 없습니다.</p>
           ) : (
             <div className="flex flex-col gap-0.5">
               {suggestions.map((s) => {
-                const Icon = s.type === 'ga' ? Building2 : MapPin;
+                const Icon = MapPin;
                 return (
                   <Link
                     key={`${s.type}-${s.id}`}

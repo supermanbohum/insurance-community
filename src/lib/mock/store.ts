@@ -32,6 +32,11 @@ export type GaOperationType = 'direct' | 'branch';
 /** GA(본사) 노출 상태 - approval_status(심사)와 별개로, 승인된 이후에도 관리자가 임시로 내릴 수 있는 스위치. */
 export type GaDisplayStatus = 'visible' | 'hidden';
 
+/**
+ * GA는 상위 브랜드 정보(로고/회사명/대표자/소개)만 갖는다. 주소·연락처·SNS·교육·복지 등
+ * 실제 운영에 관한 필드는 전부 Branch(지점)로 이관됐다 - 지점마다 운영 방식·교육·복지·
+ * 채용·분위기가 다르기 때문에 사용자가 실제로 찾고 비교하는 단위는 GA가 아니라 Branch다.
+ */
 export interface MockGaCompany {
   id: string;
   slug: string;
@@ -39,35 +44,8 @@ export interface MockGaCompany {
   ceo_name: string | null;
   description: string | null;
   logo_path: string | null;
-  /** GA 운영 형태 - 'direct'(직영, 보험사 계열 본부) | 'branch'(지사, 독립 GA 대리점) */
-  operation_type: GaOperationType;
-  /** 이 등록 건이 본사(headquarters) 성격인지 여부. 현재는 GA 1건=본사 레코드 1개 구조라 대부분 true. */
-  is_headquarters: boolean;
-  /** 채용중 배지 노출 여부(관리자 수동 토글, 지점별 채용공고와 별개). */
-  is_recruiting: boolean;
   /** 승인(approval_status='approved') 이후에도 관리자가 임시로 노출을 껐다 켤 수 있는 스위치. */
   status: GaDisplayStatus;
-  /** 주소검색(Daum 우편번호) 결과 - 기본주소. */
-  address: string | null;
-  /** 상세주소 - 유일하게 관리자가 직접 입력하는 주소 필드. */
-  address_detail: string | null;
-  /** 우편번호 - 주소검색 결과로 자동 저장. */
-  zonecode: string | null;
-  /** 위도/경도 - 주소검색 결과를 Kakao Local API로 지오코딩해 자동 저장. */
-  lat: number | null;
-  lng: number | null;
-  phone: string | null;
-  homepage_url: string | null;
-  education_info: string | null;
-  welfare_info: string | null;
-  strengths_info: string | null;
-  /** 홍보영상 - 유튜브 링크. */
-  promo_video_url: string | null;
-  sns_blog_url: string | null;
-  sns_instagram_url: string | null;
-  sns_youtube_url: string | null;
-  sns_kakao_channel_url: string | null;
-  sns_open_chat_url: string | null;
   is_verified: boolean;
   verified_at: string | null;
   /** 향후 인증 정책이 바뀌어도(예: 등급제, 재인증 만료 등) 누가/언제 부여했는지 추적할 수 있도록 남겨둔다. */
@@ -84,9 +62,13 @@ export interface MockGaCompany {
 
 export interface MockBranch {
   id: string;
+  /** 공개 상세페이지(/branch/[slug]) 라우팅 키. 유니크. */
+  slug: string;
   ga_company_id: string;
   region_id: string | null;
   name: string;
+  /** 대표자(지점장/본부장). GA의 ceo_name과 별개 - 지점마다 다를 수 있다. */
+  manager_name: string | null;
   address: string;
   address_detail: string | null;
   lat: number | null;
@@ -96,10 +78,16 @@ export interface MockBranch {
   welfare_info: string | null;
   db_support_info: string | null;
   settlement_support_info: string | null;
+  /** 분위기 - 지점 고유의 근무 분위기/문화 소개. */
+  atmosphere_info: string | null;
   planner_count: number | null;
   parking_available: boolean | null;
   visit_consult_available: boolean | null;
   business_hours: string | null;
+  /** 지점 운영 형태 - 'direct'(직영) | 'branch'(지사). GA가 아니라 지점마다 다를 수 있다. */
+  operation_type: GaOperationType;
+  /** 이 지점이 소속 GA의 본사(headquarters)인지 여부. GA당 최대 1개 지점만 true. */
+  is_headquarters: boolean;
   organic_view_count: number;
   imported_view_count: number;
   correction_view_count: number;
@@ -149,7 +137,7 @@ export interface MockUser {
 export interface MockFavorite {
   id: string;
   user_id: string;
-  ga_id: string;
+  branch_id: string;
   created_at: string;
 }
 
@@ -157,7 +145,7 @@ export interface MockFavorite {
 export interface MockReview {
   id: string;
   user_id: string;
-  ga_id: string;
+  branch_id: string;
   rating: number;
   content: string;
   created_at: string;
@@ -167,7 +155,7 @@ export interface MockReview {
 export interface MockRecentView {
   id: string;
   user_id: string;
-  ga_id: string;
+  branch_id: string;
   viewed_at: string;
 }
 
@@ -206,17 +194,6 @@ export interface MockBranchMedia {
   id: string;
   branch_id: string;
   media_type: 'image_main' | 'image_office' | 'video';
-  source: 'storage' | 'external';
-  value: string;
-  sort_order: number;
-  created_at: string;
-}
-
-/** GA(본사) 대표 배너/갤러리 이미지. branch_media와 동일한 모양이며 ga_company_id로 스코프된다. */
-export interface MockGaMedia {
-  id: string;
-  ga_company_id: string;
-  media_type: 'banner' | 'gallery';
   source: 'storage' | 'external';
   value: string;
   sort_order: number;
@@ -313,16 +290,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-1', slug: 'kb-insure-partners', name: 'KB인슈어런스파트너스',
     ceo_name: '김보험', description: '고객 중심의 종합보험 컨설팅을 지향하는 GA입니다. 전국 12개 지점, 850명의 설계사가 함께합니다.',
-    logo_path: null, operation_type: 'direct',
-    is_headquarters: true, is_recruiting: true, status: 'visible',
-    address: '서울특별시 강남구 테헤란로 123', address_detail: '20층 본사', zonecode: '06134', lat: 37.5006, lng: 127.0364,
-    phone: '02-1234-5678', homepage_url: 'https://example.com',
-    education_info: '전 지점 공통 온라인 상품 교육 플랫폼 제공, 신입 정착과정 4주 운영.',
-    welfare_info: '4대보험, 경조사비 지원, 우수 설계사 해외연수.',
-    strengths_info: '업계 최다 12개 지점 네트워크, 대형 손보/생보사 전 상품 취급.',
-    promo_video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    sns_blog_url: 'https://blog.naver.com/kb-insure-partners', sns_instagram_url: 'https://instagram.com/kb_insure_partners',
-    sns_youtube_url: 'https://www.youtube.com/@kb-insure-partners', sns_kakao_channel_url: 'https://pf.kakao.com/_kbinsure', sns_open_chat_url: null,
+    logo_path: null, status: 'visible',
     is_verified: true, verified_at: daysAgo(120), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(150),
     created_at: daysAgo(200), updated_at: daysAgo(10), display_priority: 0,
@@ -330,14 +298,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-2', slug: 'good-insurance-partners', name: '굿인슈런스파트너스',
     ceo_name: '이대표', description: '신입 설계사 정착 지원과 체계적인 교육 시스템이 강점인 GA입니다.',
-    logo_path: null, operation_type: 'branch',
-    is_headquarters: true, is_recruiting: true, status: 'visible',
-    address: '서울특별시 서초구 서초대로 456', address_detail: '3층', zonecode: '06621', lat: 37.4919, lng: 127.0074,
-    phone: '02-9876-5432', homepage_url: null,
-    education_info: '3주 집중 신입 양성과정 무료 제공.', welfare_info: '4대보험, 사무실 개인 좌석 제공, 주차 지원.',
-    strengths_info: '신입 설계사 정착률 90% 이상, 1:1 멘토링 시스템.',
-    promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: null, sns_youtube_url: null, sns_kakao_channel_url: 'https://pf.kakao.com/_example', sns_open_chat_url: null,
+    logo_path: null, status: 'visible',
     is_verified: true, verified_at: daysAgo(80), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(90),
     created_at: daysAgo(140), updated_at: daysAgo(5), display_priority: 0,
@@ -345,13 +306,9 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-3', slug: 'hanwha-total-insure', name: '한화토탈인슈어런스',
     ceo_name: '박대표', description: null,
-    logo_path: null, operation_type: 'direct',
+    logo_path: null,
     // 승인은 됐지만 관리자가 임시로 노출을 꺼둔 데모 케이스(운영상태 비노출).
-    is_headquarters: true, is_recruiting: false, status: 'hidden',
-    address: '서울특별시 영등포구 여의대로 24', address_detail: '12층', zonecode: '07326', lat: 37.5257, lng: 126.9245,
-    phone: null, homepage_url: null,
-    education_info: null, welfare_info: null, strengths_info: null, promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: null, sns_youtube_url: null, sns_kakao_channel_url: null, sns_open_chat_url: null,
+    status: 'hidden',
     is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: null, reviewed_at: daysAgo(30),
     created_at: daysAgo(60), updated_at: daysAgo(2), display_priority: 0,
@@ -359,12 +316,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-4', slug: 'first-insure-group', name: '퍼스트인슈어그룹',
     ceo_name: '최대표', description: '이제 막 입점을 신청한 신규 GA입니다.',
-    logo_path: null, operation_type: 'branch',
-    is_headquarters: true, is_recruiting: false, status: 'visible',
-    address: null, address_detail: null, zonecode: null, lat: null, lng: null,
-    phone: null, homepage_url: null,
-    education_info: null, welfare_info: null, strengths_info: null, promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: null, sns_youtube_url: null, sns_kakao_channel_url: null, sns_open_chat_url: null,
+    logo_path: null, status: 'visible',
     is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'pending', approval_reason: null, reviewed_by_admin_id: null, reviewed_at: null,
     created_at: daysAgo(1), updated_at: daysAgo(1), display_priority: 0,
@@ -372,12 +324,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-5', slug: 'suspended-sample', name: '중지테스트GA',
     ceo_name: null, description: null,
-    logo_path: null, operation_type: 'branch',
-    is_headquarters: true, is_recruiting: false, status: 'visible',
-    address: null, address_detail: null, zonecode: null, lat: null, lng: null,
-    phone: null, homepage_url: null,
-    education_info: null, welfare_info: null, strengths_info: null, promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: null, sns_youtube_url: null, sns_kakao_channel_url: null, sns_open_chat_url: null,
+    logo_path: null, status: 'visible',
     is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'suspended', approval_reason: '자료 확인 필요', reviewed_by_admin_id: null, reviewed_at: daysAgo(3),
     created_at: daysAgo(45), updated_at: daysAgo(3), display_priority: 0,
@@ -385,15 +332,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-6', slug: 'jeongdo', name: '정도',
     ceo_name: '정도현', description: '원칙과 정도(正道)를 지키는 정직한 보험 컨설팅을 지향하는 GA입니다.',
-    logo_path: '/mock-logos/jeongdo.png', operation_type: 'branch',
-    is_headquarters: true, is_recruiting: false, status: 'visible',
-    address: '서울특별시 강남구 논현로 152', address_detail: '8층', zonecode: '06246', lat: 37.5089, lng: 127.0324,
-    phone: '02-2345-6789', homepage_url: 'https://jeongdo.example.com',
-    education_info: '월 4회 상품 교육 및 컴플라이언스 교육.', welfare_info: '4대보험, 인센티브 별도 지급.',
-    strengths_info: '원칙과 정도를 지키는 정직한 설계, 22년 경력 대표 직강.',
-    promo_video_url: null,
-    sns_blog_url: 'https://blog.naver.com/jeongdo-insure', sns_instagram_url: 'https://instagram.com/jeongdo_insure',
-    sns_youtube_url: null, sns_kakao_channel_url: 'https://pf.kakao.com/_jeongdo', sns_open_chat_url: 'https://open.kakao.com/o/jeongdo',
+    logo_path: '/mock-logos/jeongdo.png', status: 'visible',
     is_verified: true, verified_at: daysAgo(60), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(70),
     created_at: daysAgo(100), updated_at: daysAgo(4), display_priority: 106,
@@ -401,13 +340,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-7', slug: 'route-logistics', name: '루트',
     ceo_name: '노선일', description: '고객에게 맞는 최적의 보장 루트를 설계하는 GA입니다.',
-    logo_path: '/mock-logos/route.png', operation_type: 'branch',
-    is_headquarters: true, is_recruiting: false, status: 'visible',
-    address: '인천광역시 연수구 컨벤시아대로 165', address_detail: '3층', zonecode: '21998', lat: 37.3943, lng: 126.6389,
-    phone: '032-345-6789', homepage_url: null,
-    education_info: '신입 온보딩 2주 과정.', welfare_info: '4대보험.', strengths_info: '고객 맞춤형 보장 루트 설계 컨설팅.',
-    promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: null, sns_youtube_url: null, sns_kakao_channel_url: null, sns_open_chat_url: null,
+    logo_path: '/mock-logos/route.png', status: 'visible',
     is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(40),
     created_at: daysAgo(70), updated_at: daysAgo(6), display_priority: 105,
@@ -415,15 +348,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-8', slug: 'map-group', name: '맵그룹',
     ceo_name: '김지도', description: '데이터 기반 컨설팅으로 고객의 보장 지도를 그리는 GA입니다.',
-    logo_path: '/mock-logos/mapgroup.png', operation_type: 'direct',
-    is_headquarters: true, is_recruiting: true, status: 'visible',
-    address: '서울특별시 종로구 종로 33', address_detail: '15층', zonecode: '03149', lat: 37.5704, lng: 126.9910,
-    phone: '02-3456-7890', homepage_url: 'https://mapgroup.example.com',
-    education_info: '데이터 분석 툴 교육 포함 신입 과정.', welfare_info: '4대보험, 자기계발비 지원.',
-    strengths_info: '데이터 기반 보장 분석 리포트 제공.',
-    promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: 'https://instagram.com/mapgroup_insure', sns_youtube_url: 'https://www.youtube.com/@mapgroup',
-    sns_kakao_channel_url: 'https://pf.kakao.com/_mapgroup', sns_open_chat_url: null,
+    logo_path: '/mock-logos/mapgroup.png', status: 'visible',
     is_verified: true, verified_at: daysAgo(30), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(35),
     created_at: daysAgo(50), updated_at: daysAgo(8), display_priority: 104,
@@ -431,13 +356,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-9', slug: 'insurance-superman', name: '보험슈퍼맨',
     ceo_name: '강슈퍼', description: '빠르고 강력한 보장 설계로 고객을 지키는 GA입니다.',
-    logo_path: '/mock-logos/insurance-superman.png', operation_type: 'branch',
-    is_headquarters: true, is_recruiting: false, status: 'visible',
-    address: '서울특별시 서초구 강남대로 429', address_detail: '10층', zonecode: '06611', lat: 37.4989, lng: 127.0276,
-    phone: '02-4567-8901', homepage_url: null,
-    education_info: '주 1회 실전 세일즈 트레이닝.', welfare_info: '4대보험, 우수 설계사 포상.', strengths_info: '빠르고 강력한 보장 설계.',
-    promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: null, sns_youtube_url: null, sns_kakao_channel_url: null, sns_open_chat_url: null,
+    logo_path: '/mock-logos/insurance-superman.png', status: 'visible',
     is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(20),
     created_at: daysAgo(40), updated_at: daysAgo(3), display_priority: 103,
@@ -445,13 +364,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-10', slug: 'essential-insurance', name: '에센셜',
     ceo_name: '오필수', description: '꼭 필요한 보장만 담은 에센셜(Essential) 설계를 지향하는 GA입니다.',
-    logo_path: '/mock-logos/essential.png', operation_type: 'branch',
-    is_headquarters: true, is_recruiting: false, status: 'visible',
-    address: '부산광역시 사하구 낙동대로 550', address_detail: '2층', zonecode: '49434', lat: 35.1044, lng: 128.9743,
-    phone: '051-567-8901', homepage_url: null,
-    education_info: '월 2회 정기 교육.', welfare_info: '4대보험.', strengths_info: '꼭 필요한 보장만 담은 에센셜 설계.',
-    promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: null, sns_youtube_url: null, sns_kakao_channel_url: null, sns_open_chat_url: null,
+    logo_path: '/mock-logos/essential.png', status: 'visible',
     is_verified: true, verified_at: daysAgo(15), verified_by_admin_id: 'mock-admin-1',
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(18),
     created_at: daysAgo(30), updated_at: daysAgo(1), display_priority: 102,
@@ -459,13 +372,7 @@ const gaCompanies: MockGaCompany[] = [
   {
     id: 'ga-11', slug: 'apdo-insurance', name: 'APDO(압도)',
     ceo_name: '전압도', description: '압도적인 상품 비교와 설계 역량을 갖춘 GA입니다.',
-    logo_path: '/mock-logos/apdo.png', operation_type: 'branch',
-    is_headquarters: true, is_recruiting: false, status: 'visible',
-    address: '대구광역시 중구 동성로 88', address_detail: '6층', zonecode: '41911', lat: 35.8688, lng: 128.5945,
-    phone: '053-678-9012', homepage_url: null,
-    education_info: '신입 3주 집중 양성과정.', welfare_info: '4대보험, 사무실 개인 좌석 제공.', strengths_info: '압도적인 상품 비교와 설계 역량.',
-    promo_video_url: null,
-    sns_blog_url: null, sns_instagram_url: null, sns_youtube_url: null, sns_kakao_channel_url: null, sns_open_chat_url: null,
+    logo_path: '/mock-logos/apdo.png', status: 'visible',
     is_verified: false, verified_at: null, verified_by_admin_id: null,
     approval_status: 'approved', approval_reason: null, reviewed_by_admin_id: 'mock-admin-1', reviewed_at: daysAgo(10),
     created_at: daysAgo(20), updated_at: daysAgo(2), display_priority: 101,
@@ -474,146 +381,182 @@ const gaCompanies: MockGaCompany[] = [
 
 const branches: MockBranch[] = [
   {
-    id: 'branch-1', ga_company_id: 'ga-1', region_id: regionIdBySigunguName('11', '강남구'),
-    name: 'KB인슈어런스파트너스 강남본점', address: '서울특별시 강남구 테헤란로 123', address_detail: '5층',
+    id: 'branch-1', slug: 'kb-gangnam', ga_company_id: 'ga-1', region_id: regionIdBySigunguName('11', '강남구'),
+    name: 'KB인슈어런스파트너스 강남본점', manager_name: '김지점',
+    address: '서울특별시 강남구 테헤란로 123', address_detail: '5층',
     lat: 37.5006, lng: 127.0364,
     intro_text: '강남 중심가에 위치한 본점으로, 다양한 상품군과 전문 컨설턴트를 보유하고 있습니다.',
     education_info: '매주 화/목 신입 교육 진행, 온라인 상품 교육 플랫폼 제공',
     welfare_info: '4대보험, 경조사비 지원, 자기계발비 월 10만원',
     db_support_info: '신규 설계사 월 100건 DB 무상 제공',
     settlement_support_info: '입사 첫 6개월 정착지원금 매월 지급',
+    atmosphere_info: '수평적인 소통 문화, 매주 금요일 팀별 성과 공유 세션 운영.',
     planner_count: 45, parking_available: true, visit_consult_available: true, business_hours: '평일 09:00-18:00 (토요일 사전예약제)',
+    operation_type: 'direct', is_headquarters: true,
     organic_view_count: 482, imported_view_count: 0, correction_view_count: 0,
     is_recommended: true, recommended_rank: 1, status: 'visible',
     created_at: daysAgo(180), updated_at: daysAgo(4), deleted_at: null, display_priority: 0,
   },
   {
-    id: 'branch-2', ga_company_id: 'ga-1', region_id: regionIdBySigunguName('26', '해운대구'),
-    name: 'KB인슈어런스파트너스 부산해운대지점', address: '부산광역시 해운대구 센텀중앙로 45', address_detail: null,
+    id: 'branch-2', slug: 'kb-haeundae', ga_company_id: 'ga-1', region_id: regionIdBySigunguName('26', '해운대구'),
+    name: 'KB인슈어런스파트너스 부산해운대지점', manager_name: null,
+    address: '부산광역시 해운대구 센텀중앙로 45', address_detail: null,
     lat: 35.1691, lng: 129.1306,
     intro_text: '부산·경남 지역 고객을 위한 거점 지점입니다.',
     education_info: '월 2회 정기 세미나', welfare_info: '4대보험, 경조사비 지원',
     db_support_info: null, settlement_support_info: '정착지원금 3개월 지급',
+    atmosphere_info: null,
     planner_count: 18, parking_available: true, visit_consult_available: true, business_hours: '평일 09:00-18:00',
+    operation_type: 'direct', is_headquarters: false,
     organic_view_count: 156, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(150), updated_at: daysAgo(20), deleted_at: null, display_priority: 0,
   },
   {
-    id: 'branch-3', ga_company_id: 'ga-2', region_id: regionIdBySigunguName('11', '서초구'),
-    name: '굿인슈런스파트너스 서초지점', address: '서울특별시 서초구 서초대로 456', address_detail: '3층',
+    id: 'branch-3', slug: 'good-insurance-seocho', ga_company_id: 'ga-2', region_id: regionIdBySigunguName('11', '서초구'),
+    name: '굿인슈런스파트너스 서초지점', manager_name: '이지점장',
+    address: '서울특별시 서초구 서초대로 456', address_detail: '3층',
     lat: 37.4919, lng: 127.0074,
     intro_text: '신입 설계사 정착률 90% 이상, 1:1 멘토링 시스템 운영.',
     education_info: '3주 집중 신입 양성과정 무료 제공',
     welfare_info: '4대보험, 사무실 개인 좌석 제공, 주차 지원',
     db_support_info: '신규 설계사 첫 3개월 DB 전액 지원',
     settlement_support_info: '정착지원금 최대 6개월, 월 최대 150만원',
+    atmosphere_info: '자유로운 출퇴근, 개인 역량을 존중하는 문화.',
     planner_count: 32, parking_available: false, visit_consult_available: true, business_hours: '평일 09:00-19:00',
+    operation_type: 'branch', is_headquarters: true,
     organic_view_count: 731, imported_view_count: 12, correction_view_count: 0,
     is_recommended: true, recommended_rank: 2, status: 'visible',
     created_at: daysAgo(130), updated_at: daysAgo(1), deleted_at: null, display_priority: 0,
   },
   {
-    id: 'branch-4', ga_company_id: 'ga-2', region_id: regionIdBySigunguName('41', '수원시'),
-    name: '굿인슈런스파트너스 수원지점', address: '경기도 수원시 팔달구 인계로 78', address_detail: null,
+    id: 'branch-4', slug: 'good-insurance-suwon', ga_company_id: 'ga-2', region_id: regionIdBySigunguName('41', '수원시'),
+    name: '굿인슈런스파트너스 수원지점', manager_name: null,
+    address: '경기도 수원시 팔달구 인계로 78', address_detail: null,
     lat: 37.2636, lng: 127.0286,
     intro_text: '경기 남부 최대 규모 지점.',
     education_info: '매주 수요일 상품 교육', welfare_info: '4대보험', db_support_info: '월 50건 DB 지원',
     settlement_support_info: null,
+    atmosphere_info: null,
     planner_count: 15, parking_available: true, visit_consult_available: false, business_hours: '평일 09:00-18:00',
+    operation_type: 'branch', is_headquarters: false,
     organic_view_count: 89, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(60), updated_at: daysAgo(15), deleted_at: null, display_priority: 0,
   },
   {
-    id: 'branch-5', ga_company_id: 'ga-3', region_id: regionIdBySigunguName('11', '영등포구'),
-    name: '한화토탈인슈어런스 여의도지점', address: '서울특별시 영등포구 여의대로 24', address_detail: '12층',
+    id: 'branch-5', slug: 'hanwha-total-yeouido', ga_company_id: 'ga-3', region_id: regionIdBySigunguName('11', '영등포구'),
+    name: '한화토탈인슈어런스 여의도지점', manager_name: null,
+    address: '서울특별시 영등포구 여의대로 24', address_detail: '12층',
     lat: 37.5257, lng: 126.9245,
     intro_text: null, education_info: null, welfare_info: null, db_support_info: null, settlement_support_info: null,
+    atmosphere_info: null,
     planner_count: null, parking_available: null, visit_consult_available: null, business_hours: null,
+    operation_type: 'direct', is_headquarters: true,
     organic_view_count: 34, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(20), updated_at: daysAgo(20), deleted_at: null, display_priority: 0,
   },
   {
-    id: 'branch-6', ga_company_id: 'ga-1', region_id: regionIdBySigunguName('30', '서구'),
-    name: 'KB인슈어런스파트너스 대전지점', address: '대전광역시 서구 둔산로 100', address_detail: null,
+    id: 'branch-6', slug: 'kb-daejeon', ga_company_id: 'ga-1', region_id: regionIdBySigunguName('30', '서구'),
+    name: 'KB인슈어런스파트너스 대전지점', manager_name: null,
+    address: '대전광역시 서구 둔산로 100', address_detail: null,
     lat: 36.3504, lng: 127.3845,
     intro_text: '대전·충청 지역 신규 오픈 지점입니다.',
     education_info: '신입 교육 지원', welfare_info: '4대보험', db_support_info: null, settlement_support_info: '정착지원금 3개월',
+    atmosphere_info: null,
     planner_count: 6, parking_available: true, visit_consult_available: true, business_hours: '평일 09:00-18:00',
+    operation_type: 'direct', is_headquarters: false,
     organic_view_count: 12, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(3), updated_at: daysAgo(3), deleted_at: null, display_priority: 0,
   },
   {
-    id: 'branch-7', ga_company_id: 'ga-6', region_id: regionIdBySigunguName('11', '강남구'),
-    name: '정도지점', address: '서울특별시 강남구 논현로 152', address_detail: '8층',
+    id: 'branch-7', slug: 'jeongdo', ga_company_id: 'ga-6', region_id: regionIdBySigunguName('11', '강남구'),
+    name: '정도지점', manager_name: '정도현',
+    address: '서울특별시 강남구 논현로 152', address_detail: '8층',
     lat: 37.5089, lng: 127.0324,
     intro_text: '원칙을 지키는 정직한 보장 설계, 정도(正道)가 답입니다.',
     education_info: '월 4회 상품 교육 및 컴플라이언스 교육', welfare_info: '4대보험, 인센티브 별도 지급',
     db_support_info: '신규 설계사 DB 지원', settlement_support_info: '정착지원금 4개월',
+    atmosphere_info: '원칙과 정도를 지키는 정직한 분위기, 22년 경력 대표가 직접 코칭.',
     planner_count: 22, parking_available: true, visit_consult_available: true, business_hours: '평일 09:00-18:00',
+    operation_type: 'branch', is_headquarters: true,
     organic_view_count: 45, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(100), updated_at: daysAgo(4), deleted_at: null, display_priority: 106,
   },
   {
-    id: 'branch-8', ga_company_id: 'ga-7', region_id: regionIdBySigunguName('28', '연수구'),
-    name: '루트지점', address: '인천광역시 연수구 컨벤시아대로 165', address_detail: '3층',
+    id: 'branch-8', slug: 'route-incheon', ga_company_id: 'ga-7', region_id: regionIdBySigunguName('28', '연수구'),
+    name: '루트지점', manager_name: '노선일',
+    address: '인천광역시 연수구 컨벤시아대로 165', address_detail: '3층',
     lat: 37.3943, lng: 126.6389,
     intro_text: '고객에게 맞는 최적의 보장 루트를 함께 찾아드립니다.',
     education_info: '신입 온보딩 2주 과정', welfare_info: '4대보험',
     db_support_info: null, settlement_support_info: '정착지원금 3개월',
+    atmosphere_info: null,
     planner_count: 14, parking_available: true, visit_consult_available: false, business_hours: '평일 09:00-18:00',
+    operation_type: 'branch', is_headquarters: true,
     organic_view_count: 21, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(70), updated_at: daysAgo(6), deleted_at: null, display_priority: 105,
   },
   {
-    id: 'branch-9', ga_company_id: 'ga-8', region_id: regionIdBySigunguName('11', '종로구'),
-    name: '맵그룹 본점', address: '서울특별시 종로구 종로 33', address_detail: '15층',
+    id: 'branch-9', slug: 'mapgroup-jongno', ga_company_id: 'ga-8', region_id: regionIdBySigunguName('11', '종로구'),
+    name: '맵그룹 본점', manager_name: '김지도',
+    address: '서울특별시 종로구 종로 33', address_detail: '15층',
     lat: 37.5704, lng: 126.9910,
     intro_text: '데이터 기반 컨설팅으로 고객만의 보장 지도를 그립니다.',
     education_info: '데이터 분석 툴 교육 포함 신입 과정', welfare_info: '4대보험, 자기계발비 지원',
     db_support_info: '월 80건 DB 지원', settlement_support_info: '정착지원금 최대 5개월',
+    atmosphere_info: '데이터·분석을 중시하는 논리적인 팀 문화.',
     planner_count: 38, parking_available: false, visit_consult_available: true, business_hours: '평일 09:00-19:00',
+    operation_type: 'direct', is_headquarters: true,
     organic_view_count: 63, imported_view_count: 0, correction_view_count: 0,
     is_recommended: true, recommended_rank: 3, status: 'visible',
     created_at: daysAgo(50), updated_at: daysAgo(8), deleted_at: null, display_priority: 104,
   },
   {
-    id: 'branch-10', ga_company_id: 'ga-9', region_id: regionIdBySigunguName('11', '서초구'),
-    name: '보험슈퍼맨 본부', address: '서울특별시 서초구 강남대로 429', address_detail: '10층',
+    id: 'branch-10', slug: 'superman-seocho', ga_company_id: 'ga-9', region_id: regionIdBySigunguName('11', '서초구'),
+    name: '보험슈퍼맨 본부', manager_name: '강슈퍼',
+    address: '서울특별시 서초구 강남대로 429', address_detail: '10층',
     lat: 37.4989, lng: 127.0276,
     intro_text: '빠르고 강력한 보장 설계로 고객을 든든하게 지켜드립니다.',
     education_info: '주 1회 실전 세일즈 트레이닝', welfare_info: '4대보험, 우수 설계사 포상',
     db_support_info: '신규 설계사 DB 무상 지원', settlement_support_info: '정착지원금 최대 6개월',
+    atmosphere_info: '목표 지향적이고 에너지 넘치는 영업 문화.',
     planner_count: 51, parking_available: true, visit_consult_available: true, business_hours: '평일 09:00-19:00 (토요일 상담 가능)',
+    operation_type: 'branch', is_headquarters: true,
     organic_view_count: 98, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(40), updated_at: daysAgo(3), deleted_at: null, display_priority: 103,
   },
   {
-    id: 'branch-11', ga_company_id: 'ga-10', region_id: regionIdBySigunguName('26', '사하구'),
-    name: '에센셜지점', address: '부산광역시 사하구 낙동대로 550', address_detail: '2층',
+    id: 'branch-11', slug: 'essential-busan', ga_company_id: 'ga-10', region_id: regionIdBySigunguName('26', '사하구'),
+    name: '에센셜지점', manager_name: '오필수',
+    address: '부산광역시 사하구 낙동대로 550', address_detail: '2층',
     lat: 35.1044, lng: 128.9743,
     intro_text: '꼭 필요한 보장만 담은 에센셜(Essential) 설계를 제안합니다.',
     education_info: '월 2회 정기 교육', welfare_info: '4대보험',
     db_support_info: null, settlement_support_info: '정착지원금 3개월',
+    atmosphere_info: null,
     planner_count: 9, parking_available: true, visit_consult_available: true, business_hours: '평일 09:00-18:00',
+    operation_type: 'branch', is_headquarters: true,
     organic_view_count: 17, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(30), updated_at: daysAgo(1), deleted_at: null, display_priority: 102,
   },
   {
-    id: 'branch-12', ga_company_id: 'ga-11', region_id: regionIdBySigunguName('27', '중구'),
-    name: '압도 본부', address: '대구광역시 중구 동성로 88', address_detail: '6층',
+    id: 'branch-12', slug: 'apdo-daegu', ga_company_id: 'ga-11', region_id: regionIdBySigunguName('27', '중구'),
+    name: '압도 본부', manager_name: '전압도',
+    address: '대구광역시 중구 동성로 88', address_detail: '6층',
     lat: 35.8688, lng: 128.5945,
     intro_text: '압도적인 상품 비교와 설계 역량으로 지역 1위를 지향합니다.',
     education_info: '신입 3주 집중 양성과정', welfare_info: '4대보험, 사무실 개인 좌석 제공',
     db_support_info: '월 60건 DB 지원', settlement_support_info: '정착지원금 최대 4개월',
+    atmosphere_info: null,
     planner_count: 19, parking_available: true, visit_consult_available: false, business_hours: '평일 09:00-18:00',
+    operation_type: 'branch', is_headquarters: true,
     organic_view_count: 8, imported_view_count: 0, correction_view_count: 0,
     is_recommended: false, recommended_rank: null, status: 'visible',
     created_at: daysAgo(20), updated_at: daysAgo(2), deleted_at: null, display_priority: 101,
@@ -657,8 +600,6 @@ const SIDO_FIRST_SIGUNGU: [string, string, string, number, number][] = [
 const DIRECT_NAME_KEYWORDS = ['한화생명', '삼성생명', '신한금융플러스', '농협생명', 'DB금융서비스', 'KB라이프', '메리츠금융서비스'];
 
 const extraGaCompanies: MockGaCompany[] = EXTRA_GA_NAMES.map((name, i) => {
-  const [, sidoName, sigunguName, baseLat, baseLng] = SIDO_FIRST_SIGUNGU[i % SIDO_FIRST_SIGUNGU.length];
-  const jitter = (seed: number) => ((seed * 37) % 100) / 100 - 0.5;
   return {
     id: `ga-extra-${i + 1}`,
     slug: `ga-extra-${i + 1}`,
@@ -666,26 +607,7 @@ const extraGaCompanies: MockGaCompany[] = EXTRA_GA_NAMES.map((name, i) => {
     ceo_name: null,
     description: `${name}의 보험 상담 및 설계 서비스를 제공하는 GA입니다.`,
     logo_path: null,
-    operation_type: DIRECT_NAME_KEYWORDS.some((k) => name.includes(k)) ? 'direct' : 'branch',
-    is_headquarters: true,
-    is_recruiting: i % 4 === 0,
     status: 'visible',
-    address: `${sidoName} ${sigunguName} 중앙로 ${100 + i}`,
-    address_detail: null,
-    zonecode: String(10000 + ((i * 137) % 90000)).slice(0, 5),
-    lat: baseLat + jitter(i) * 0.1,
-    lng: baseLng + jitter(i + 1) * 0.1,
-    phone: null,
-    homepage_url: null,
-    education_info: null,
-    welfare_info: null,
-    strengths_info: null,
-    promo_video_url: null,
-    sns_blog_url: null,
-    sns_instagram_url: null,
-    sns_youtube_url: null,
-    sns_kakao_channel_url: null,
-    sns_open_chat_url: null,
     is_verified: i % 5 === 0,
     verified_at: i % 5 === 0 ? daysAgo(30 + i) : null,
     verified_by_admin_id: i % 5 === 0 ? 'mock-admin-1' : null,
@@ -705,9 +627,11 @@ const extraBranches: MockBranch[] = EXTRA_GA_NAMES.map((name, i) => {
   const jitter = (seed: number) => ((seed * 37) % 100) / 100 - 0.5;
   return {
     id: `branch-extra-${i + 1}`,
+    slug: `ga-extra-${i + 1}-branch`,
     ga_company_id: `ga-extra-${i + 1}`,
     region_id: regionIdBySigunguName(sidoCode, sigunguName),
     name: `${name} 본점`,
+    manager_name: null,
     address: `${sidoName} ${sigunguName} 중앙로 ${100 + i}`,
     address_detail: null,
     lat: baseLat + jitter(i) * 0.1,
@@ -717,10 +641,13 @@ const extraBranches: MockBranch[] = EXTRA_GA_NAMES.map((name, i) => {
     welfare_info: null,
     db_support_info: null,
     settlement_support_info: null,
+    atmosphere_info: null,
     planner_count: 15 + ((i * 37) % 380),
     parking_available: i % 3 !== 0,
     visit_consult_available: true,
     business_hours: '평일 09:00-18:00',
+    operation_type: DIRECT_NAME_KEYWORDS.some((k) => name.includes(k)) ? 'direct' : 'branch',
+    is_headquarters: true,
     organic_view_count: 5 + ((i * 3) % 50),
     imported_view_count: 0,
     correction_view_count: 0,
@@ -748,24 +675,28 @@ const branchMedia: MockBranchMedia[] = [
   { id: 'media-7', branch_id: 'branch-12', media_type: 'image_main', source: 'storage', value: '/mock-logos/apdo.png', sort_order: 0, created_at: daysAgo(20) },
 ];
 
-const gaMedia: MockGaMedia[] = [
-  { id: 'ga-media-1', ga_company_id: 'ga-1', media_type: 'banner', source: 'storage', value: '/mock-logos/mapgroup.png', sort_order: 0, created_at: daysAgo(100) },
-  { id: 'ga-media-2', ga_company_id: 'ga-6', media_type: 'banner', source: 'storage', value: '/mock-logos/jeongdo.png', sort_order: 0, created_at: daysAgo(100) },
-  { id: 'ga-media-3', ga_company_id: 'ga-7', media_type: 'banner', source: 'storage', value: '/mock-logos/route.png', sort_order: 0, created_at: daysAgo(70) },
-  { id: 'ga-media-4', ga_company_id: 'ga-8', media_type: 'banner', source: 'storage', value: '/mock-logos/mapgroup.png', sort_order: 0, created_at: daysAgo(50) },
-  { id: 'ga-media-5', ga_company_id: 'ga-8', media_type: 'gallery', source: 'storage', value: '/mock-logos/mapgroup.png', sort_order: 0, created_at: daysAgo(50) },
-  { id: 'ga-media-6', ga_company_id: 'ga-8', media_type: 'gallery', source: 'storage', value: '/mock-logos/insurance-superman.png', sort_order: 1, created_at: daysAgo(49) },
-];
-
 const branchContacts: MockBranchContact[] = [
   { id: 'contact-1', branch_id: 'branch-1', type: 'phone', value: '02-1234-5678', label: null, sort_order: 0, created_at: daysAgo(180), updated_at: daysAgo(180) },
-  { id: 'contact-2', branch_id: 'branch-1', type: 'kakao', value: 'https://pf.kakao.com/_example', label: null, sort_order: 1, created_at: daysAgo(180), updated_at: daysAgo(180) },
+  { id: 'contact-2', branch_id: 'branch-1', type: 'kakao', value: 'https://pf.kakao.com/_kbinsure', label: null, sort_order: 1, created_at: daysAgo(180), updated_at: daysAgo(180) },
   { id: 'contact-3', branch_id: 'branch-1', type: 'homepage', value: 'https://example.com', label: null, sort_order: 2, created_at: daysAgo(180), updated_at: daysAgo(180) },
-  { id: 'contact-4', branch_id: 'branch-1', type: 'instagram', value: 'https://instagram.com/example', label: null, sort_order: 3, created_at: daysAgo(180), updated_at: daysAgo(180) },
+  { id: 'contact-4', branch_id: 'branch-1', type: 'instagram', value: 'https://instagram.com/kb_insure_partners', label: null, sort_order: 3, created_at: daysAgo(180), updated_at: daysAgo(180) },
+  { id: 'contact-4b', branch_id: 'branch-1', type: 'blog', value: 'https://blog.naver.com/kb-insure-partners', label: null, sort_order: 4, created_at: daysAgo(180), updated_at: daysAgo(180) },
+  { id: 'contact-4c', branch_id: 'branch-1', type: 'youtube', value: 'https://www.youtube.com/@kb-insure-partners', label: null, sort_order: 5, created_at: daysAgo(180), updated_at: daysAgo(180) },
   { id: 'contact-5', branch_id: 'branch-3', type: 'phone', value: '02-9876-5432', label: '대표전화', sort_order: 0, created_at: daysAgo(130), updated_at: daysAgo(130) },
   { id: 'contact-6', branch_id: 'branch-3', type: 'phone_recruit', value: '02-9876-5433', label: '채용 전용', sort_order: 1, created_at: daysAgo(130), updated_at: daysAgo(130) },
-  { id: 'contact-7', branch_id: 'branch-3', type: 'kakao', value: 'https://pf.kakao.com/_example2', label: null, sort_order: 2, created_at: daysAgo(130), updated_at: daysAgo(130) },
+  { id: 'contact-7', branch_id: 'branch-3', type: 'kakao', value: 'https://pf.kakao.com/_example', label: null, sort_order: 2, created_at: daysAgo(130), updated_at: daysAgo(130) },
   { id: 'contact-8', branch_id: 'branch-2', type: 'phone', value: '051-123-4567', label: null, sort_order: 0, created_at: daysAgo(150), updated_at: daysAgo(150) },
+  { id: 'contact-9', branch_id: 'branch-7', type: 'phone', value: '02-2345-6789', label: null, sort_order: 0, created_at: daysAgo(100), updated_at: daysAgo(100) },
+  { id: 'contact-10', branch_id: 'branch-7', type: 'homepage', value: 'https://jeongdo.example.com', label: null, sort_order: 1, created_at: daysAgo(100), updated_at: daysAgo(100) },
+  { id: 'contact-11', branch_id: 'branch-7', type: 'blog', value: 'https://blog.naver.com/jeongdo-insure', label: null, sort_order: 2, created_at: daysAgo(100), updated_at: daysAgo(100) },
+  { id: 'contact-12', branch_id: 'branch-7', type: 'instagram', value: 'https://instagram.com/jeongdo_insure', label: null, sort_order: 3, created_at: daysAgo(100), updated_at: daysAgo(100) },
+  { id: 'contact-13', branch_id: 'branch-7', type: 'kakao', value: 'https://pf.kakao.com/_jeongdo', label: null, sort_order: 4, created_at: daysAgo(100), updated_at: daysAgo(100) },
+  { id: 'contact-14', branch_id: 'branch-7', type: 'kakao_open_chat', value: 'https://open.kakao.com/o/jeongdo', label: null, sort_order: 5, created_at: daysAgo(100), updated_at: daysAgo(100) },
+  { id: 'contact-15', branch_id: 'branch-9', type: 'phone', value: '02-3456-7890', label: null, sort_order: 0, created_at: daysAgo(50), updated_at: daysAgo(50) },
+  { id: 'contact-16', branch_id: 'branch-9', type: 'homepage', value: 'https://mapgroup.example.com', label: null, sort_order: 1, created_at: daysAgo(50), updated_at: daysAgo(50) },
+  { id: 'contact-17', branch_id: 'branch-9', type: 'instagram', value: 'https://instagram.com/mapgroup_insure', label: null, sort_order: 2, created_at: daysAgo(50), updated_at: daysAgo(50) },
+  { id: 'contact-18', branch_id: 'branch-9', type: 'youtube', value: 'https://www.youtube.com/@mapgroup', label: null, sort_order: 3, created_at: daysAgo(50), updated_at: daysAgo(50) },
+  { id: 'contact-19', branch_id: 'branch-9', type: 'kakao', value: 'https://pf.kakao.com/_mapgroup', label: null, sort_order: 4, created_at: daysAgo(50), updated_at: daysAgo(50) },
 ];
 
 const branchRecruits: MockBranchRecruit[] = [
@@ -862,7 +793,6 @@ return {
     gaCompanies,
     branches,
     branchMedia,
-    gaMedia,
     branchContacts,
     branchRecruits,
     branchInsurers,

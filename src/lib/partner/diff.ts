@@ -5,28 +5,12 @@ export const GA_FIELD_LABELS: Record<string, string> = {
   ceo_name: '대표자명',
   description: 'GA 소개',
   logo_path: '로고',
-  operation_type: '운영 형태',
-  is_headquarters: '본사 여부',
-  is_recruiting: '채용중 여부',
   status: '노출 여부',
-  address: '주소',
-  address_detail: '상세주소',
-  zonecode: '우편번호',
-  phone: '대표번호',
-  homepage_url: '홈페이지',
-  education_info: '교육 소개',
-  welfare_info: '복지 소개',
-  strengths_info: '회사 강점',
-  promo_video_url: '홍보영상',
-  sns_blog_url: '블로그',
-  sns_instagram_url: '인스타그램',
-  sns_youtube_url: '유튜브',
-  sns_kakao_channel_url: '카카오채널',
-  sns_open_chat_url: '오픈채팅',
 };
 
 export const BRANCH_FIELD_LABELS: Record<string, string> = {
   name: '지점명',
+  manager_name: '대표자',
   address: '주소',
   address_detail: '상세주소',
   intro_text: '회사소개',
@@ -34,10 +18,13 @@ export const BRANCH_FIELD_LABELS: Record<string, string> = {
   welfare_info: '복지 안내',
   db_support_info: 'DB지원 안내',
   settlement_support_info: '정착지원 안내',
+  atmosphere_info: '분위기',
   planner_count: '설계사 수',
   parking_available: '주차 가능 여부',
   visit_consult_available: '방문 상담 가능 여부',
   business_hours: '운영시간',
+  operation_type: '운영 형태',
+  is_headquarters: '본사 여부',
 };
 
 type FieldFormatter = (value: unknown) => string;
@@ -52,16 +39,18 @@ const PLANNER_COUNT_FORMATTER: FieldFormatter = (value) => {
   return `${value}명`;
 };
 
+const OPERATION_TYPE_FORMATTER: FieldFormatter = (value) => (value === 'direct' ? '직영' : value === 'branch' ? '지사' : '(없음)');
+const HEADQUARTERS_FORMATTER: FieldFormatter = (value) => (value ? '본사' : '본사 아님');
+
 export const BRANCH_FIELD_FORMATTERS: Record<string, FieldFormatter> = {
   parking_available: BOOLEAN_FORMATTER,
   visit_consult_available: BOOLEAN_FORMATTER,
   planner_count: PLANNER_COUNT_FORMATTER,
+  operation_type: OPERATION_TYPE_FORMATTER,
+  is_headquarters: HEADQUARTERS_FORMATTER,
 };
 
 export const GA_FIELD_FORMATTERS: Record<string, FieldFormatter> = {
-  operation_type: (value) => (value === 'direct' ? '직영' : value === 'branch' ? '지사' : '(없음)'),
-  is_headquarters: (value) => (value ? '본사' : '본사 아님'),
-  is_recruiting: (value) => (value ? '채용중' : '채용중 아님'),
   status: (value) => (value === 'visible' ? '공개' : value === 'hidden' ? '비공개' : '(없음)'),
 };
 

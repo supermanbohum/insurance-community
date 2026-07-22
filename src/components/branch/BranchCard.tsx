@@ -28,7 +28,7 @@ export function BranchCard({
 }) {
   return (
     <Link
-      href={`/branch/${branch.id}`}
+      href={`/branch/${branch.slug}`}
       className={cn(
         'group flex flex-col overflow-hidden rounded-2xl border border-line bg-surface-card shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card-hover',
         className

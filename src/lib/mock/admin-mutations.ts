@@ -1,39 +1,41 @@
 import 'server-only';
 import { mockStore } from '@/lib/mock/store';
 import type { ChangeFieldDiff, ChangeRequestAction, ChangeRequestStatus, ChangeRequestTargetType, MockBranch } from '@/lib/mock/store';
-import type { BranchMediaSource, BranchMediaType, GaApprovalStatus, GaDisplayStatus, GaMediaType, GaStatus } from '@/types/database';
+import type { BranchMediaSource, BranchMediaType, GaApprovalStatus, GaDisplayStatus, GaStatus } from '@/types/database';
 import type { GaOperationType } from '@/lib/mock/store';
 import { diffFields, GA_FIELD_LABELS, GA_FIELD_FORMATTERS, BRANCH_FIELD_LABELS, BRANCH_FIELD_FORMATTERS } from '@/lib/partner/diff';
+import { slugify } from '@/lib/utils';
 
 function slugTaken(slug: string): boolean {
   return mockStore.gaCompanies.some((c) => c.slug === slug);
 }
 
+function branchSlugTaken(slug: string): boolean {
+  return mockStore.branches.some((b) => b.slug === slug);
+}
+
+/** 지점명 기반으로 유니크한 slug를 자동 생성한다(충돌 시 -2, -3... 접미사). */
+function generateBranchSlug(name: string): string {
+  const base = slugify(name) || 'branch';
+  let candidate = base;
+  let i = 2;
+  while (branchSlugTaken(candidate)) {
+    candidate = `${base}-${i}`;
+    i += 1;
+  }
+  return candidate;
+}
+
+/**
+ * GA(회사)는 상위 브랜드 정보(회사명/대표자/소개/로고)만 갖는다. 주소·연락처·SNS·교육·복지 등
+ * 실제 운영에 관한 필드는 전부 Branch(지점)에만 존재한다.
+ */
 export interface MockGaCompanyFormInput {
   name: string;
   ceoName?: string;
   description?: string;
   logoPath?: string;
-  operationType?: GaOperationType;
-  isHeadquarters?: boolean;
-  isRecruiting?: boolean;
   status?: GaDisplayStatus;
-  phone?: string;
-  homepageUrl?: string;
-  address?: string;
-  addressDetail?: string;
-  zonecode?: string;
-  lat?: number;
-  lng?: number;
-  educationInfo?: string;
-  welfareInfo?: string;
-  strengthsInfo?: string;
-  promoVideoUrl?: string;
-  snsBlogUrl?: string;
-  snsInstagramUrl?: string;
-  snsYoutubeUrl?: string;
-  snsKakaoChannelUrl?: string;
-  snsOpenChatUrl?: string;
 }
 
 export function mockCreateGaCompany(
@@ -49,26 +51,7 @@ export function mockCreateGaCompany(
     ceo_name: input.ceoName ?? null,
     description: input.description ?? null,
     logo_path: input.logoPath ?? null,
-    operation_type: input.operationType ?? 'branch',
-    is_headquarters: input.isHeadquarters ?? true,
-    is_recruiting: input.isRecruiting ?? false,
     status: input.status ?? 'visible',
-    address: input.address ?? null,
-    address_detail: input.addressDetail ?? null,
-    zonecode: input.zonecode ?? null,
-    lat: input.lat ?? null,
-    lng: input.lng ?? null,
-    phone: input.phone ?? null,
-    homepage_url: input.homepageUrl ?? null,
-    education_info: input.educationInfo ?? null,
-    welfare_info: input.welfareInfo ?? null,
-    strengths_info: input.strengthsInfo ?? null,
-    promo_video_url: input.promoVideoUrl ?? null,
-    sns_blog_url: input.snsBlogUrl ?? null,
-    sns_instagram_url: input.snsInstagramUrl ?? null,
-    sns_youtube_url: input.snsYoutubeUrl ?? null,
-    sns_kakao_channel_url: input.snsKakaoChannelUrl ?? null,
-    sns_open_chat_url: input.snsOpenChatUrl ?? null,
     is_verified: false,
     verified_at: null,
     verified_by_admin_id: null,
@@ -84,7 +67,7 @@ export function mockCreateGaCompany(
 }
 
 /**
- * 부분 업데이트 - GA 수정 화면은 탭(기본정보/홍보/SNS/노출설정)마다 독립적으로 저장하므로,
+ * 부분 업데이트 - GA 수정 화면은 탭(기본정보/노출설정)마다 독립적으로 저장하므로,
  * input에 실제로 포함된 키만 반영하고 나머지 필드는 건드리지 않는다(diffFields의
  * "next에 없는 키는 비교 대상 아님" 철학과 동일 - 한 탭 저장이 다른 탭 값을 지우면 안 된다).
  */
@@ -95,53 +78,8 @@ export function mockUpdateGaCompany(id: string, input: Partial<MockGaCompanyForm
   if (input.ceoName !== undefined) company.ceo_name = input.ceoName || null;
   if (input.description !== undefined) company.description = input.description || null;
   if (input.logoPath) company.logo_path = input.logoPath;
-  if (input.operationType !== undefined) company.operation_type = input.operationType;
-  if (input.isHeadquarters !== undefined) company.is_headquarters = input.isHeadquarters;
-  if (input.isRecruiting !== undefined) company.is_recruiting = input.isRecruiting;
   if (input.status !== undefined) company.status = input.status;
-  if (input.address !== undefined) company.address = input.address || null;
-  if (input.addressDetail !== undefined) company.address_detail = input.addressDetail || null;
-  if (input.zonecode !== undefined) company.zonecode = input.zonecode || null;
-  if (input.lat !== undefined) company.lat = input.lat;
-  if (input.lng !== undefined) company.lng = input.lng;
-  if (input.phone !== undefined) company.phone = input.phone || null;
-  if (input.homepageUrl !== undefined) company.homepage_url = input.homepageUrl || null;
-  if (input.educationInfo !== undefined) company.education_info = input.educationInfo || null;
-  if (input.welfareInfo !== undefined) company.welfare_info = input.welfareInfo || null;
-  if (input.strengthsInfo !== undefined) company.strengths_info = input.strengthsInfo || null;
-  if (input.promoVideoUrl !== undefined) company.promo_video_url = input.promoVideoUrl || null;
-  if (input.snsBlogUrl !== undefined) company.sns_blog_url = input.snsBlogUrl || null;
-  if (input.snsInstagramUrl !== undefined) company.sns_instagram_url = input.snsInstagramUrl || null;
-  if (input.snsYoutubeUrl !== undefined) company.sns_youtube_url = input.snsYoutubeUrl || null;
-  if (input.snsKakaoChannelUrl !== undefined) company.sns_kakao_channel_url = input.snsKakaoChannelUrl || null;
-  if (input.snsOpenChatUrl !== undefined) company.sns_open_chat_url = input.snsOpenChatUrl || null;
   company.updated_at = mockStore.nowIso();
-}
-
-export function mockAddGaMedia(
-  gaCompanyId: string,
-  mediaType: GaMediaType,
-  source: BranchMediaSource,
-  value: string
-): { id: string } {
-  const id = mockStore.genId('ga-media');
-  mockStore.gaMedia.push({
-    id,
-    ga_company_id: gaCompanyId,
-    media_type: mediaType,
-    source,
-    value,
-    sort_order: mockStore.gaMedia.filter((m) => m.ga_company_id === gaCompanyId).length,
-    created_at: mockStore.nowIso(),
-  });
-  return { id };
-}
-
-export function mockDeleteGaMedia(mediaId: string): string | null {
-  const media = mockStore.gaMedia.find((m) => m.id === mediaId);
-  if (!media) return null;
-  mockStore.gaMedia = mockStore.gaMedia.filter((m) => m.id !== mediaId);
-  return media.value;
 }
 
 export function mockVerifyGaCompany(id: string, verified: boolean, adminId: string): void {
@@ -166,6 +104,7 @@ export function mockSetGaApprovalStatus(id: string, status: GaApprovalStatus, ad
 export interface MockBranchFormInput {
   name: string;
   regionId: string | null;
+  managerName?: string;
   address: string;
   addressDetail?: string;
   lat?: number;
@@ -175,10 +114,13 @@ export interface MockBranchFormInput {
   welfareInfo?: string;
   dbSupportInfo?: string;
   settlementSupportInfo?: string;
+  atmosphereInfo?: string;
   plannerCount?: number | null;
   parkingAvailable?: boolean | null;
   visitConsultAvailable?: boolean | null;
   businessHours?: string | null;
+  operationType?: GaOperationType;
+  isHeadquarters?: boolean;
 }
 
 export function mockCreateBranch(gaCompanyId: string, input: MockBranchFormInput): { id: string } {
@@ -186,9 +128,11 @@ export function mockCreateBranch(gaCompanyId: string, input: MockBranchFormInput
   const now = mockStore.nowIso();
   mockStore.branches.push({
     id,
+    slug: generateBranchSlug(input.name),
     ga_company_id: gaCompanyId,
     region_id: input.regionId,
     name: input.name,
+    manager_name: input.managerName ?? null,
     address: input.address,
     address_detail: input.addressDetail ?? null,
     lat: input.lat ?? null,
@@ -198,10 +142,13 @@ export function mockCreateBranch(gaCompanyId: string, input: MockBranchFormInput
     welfare_info: input.welfareInfo ?? null,
     db_support_info: input.dbSupportInfo ?? null,
     settlement_support_info: input.settlementSupportInfo ?? null,
+    atmosphere_info: input.atmosphereInfo ?? null,
     planner_count: input.plannerCount ?? null,
     parking_available: input.parkingAvailable ?? null,
     visit_consult_available: input.visitConsultAvailable ?? null,
     business_hours: input.businessHours ?? null,
+    operation_type: input.operationType ?? 'branch',
+    is_headquarters: input.isHeadquarters ?? true,
     organic_view_count: 0,
     imported_view_count: 0,
     correction_view_count: 0,
@@ -225,6 +172,7 @@ export function mockUpdateBranch(branchId: string, input: MockBranchFormInput): 
   if (!branch) throw new Error('BRANCH_NOT_FOUND');
   branch.name = input.name;
   branch.region_id = input.regionId;
+  if (input.managerName !== undefined) branch.manager_name = input.managerName || null;
   branch.address = input.address;
   branch.address_detail = input.addressDetail ?? null;
   branch.lat = input.lat ?? null;
@@ -234,10 +182,13 @@ export function mockUpdateBranch(branchId: string, input: MockBranchFormInput): 
   branch.welfare_info = input.welfareInfo ?? null;
   branch.db_support_info = input.dbSupportInfo ?? null;
   branch.settlement_support_info = input.settlementSupportInfo ?? null;
+  if (input.atmosphereInfo !== undefined) branch.atmosphere_info = input.atmosphereInfo || null;
   if (input.plannerCount !== undefined) branch.planner_count = input.plannerCount;
   if (input.parkingAvailable !== undefined) branch.parking_available = input.parkingAvailable;
   if (input.visitConsultAvailable !== undefined) branch.visit_consult_available = input.visitConsultAvailable;
   if (input.businessHours !== undefined) branch.business_hours = input.businessHours;
+  if (input.operationType !== undefined) branch.operation_type = input.operationType;
+  if (input.isHeadquarters !== undefined) branch.is_headquarters = input.isHeadquarters;
   branch.updated_at = mockStore.nowIso();
 }
 
@@ -428,26 +379,7 @@ export function mockSubmitGaCompanyChange(
   if (input.ceoName !== undefined) next.ceo_name = input.ceoName || null;
   if (input.description !== undefined) next.description = input.description || null;
   if (input.logoPath !== undefined) next.logo_path = input.logoPath || null;
-  if (input.operationType !== undefined) next.operation_type = input.operationType;
-  if (input.isHeadquarters !== undefined) next.is_headquarters = input.isHeadquarters;
-  if (input.isRecruiting !== undefined) next.is_recruiting = input.isRecruiting;
   if (input.status !== undefined) next.status = input.status;
-  if (input.address !== undefined) next.address = input.address || null;
-  if (input.addressDetail !== undefined) next.address_detail = input.addressDetail || null;
-  if (input.zonecode !== undefined) next.zonecode = input.zonecode || null;
-  if (input.lat !== undefined) next.lat = input.lat;
-  if (input.lng !== undefined) next.lng = input.lng;
-  if (input.phone !== undefined) next.phone = input.phone || null;
-  if (input.homepageUrl !== undefined) next.homepage_url = input.homepageUrl || null;
-  if (input.educationInfo !== undefined) next.education_info = input.educationInfo || null;
-  if (input.welfareInfo !== undefined) next.welfare_info = input.welfareInfo || null;
-  if (input.strengthsInfo !== undefined) next.strengths_info = input.strengthsInfo || null;
-  if (input.promoVideoUrl !== undefined) next.promo_video_url = input.promoVideoUrl || null;
-  if (input.snsBlogUrl !== undefined) next.sns_blog_url = input.snsBlogUrl || null;
-  if (input.snsInstagramUrl !== undefined) next.sns_instagram_url = input.snsInstagramUrl || null;
-  if (input.snsYoutubeUrl !== undefined) next.sns_youtube_url = input.snsYoutubeUrl || null;
-  if (input.snsKakaoChannelUrl !== undefined) next.sns_kakao_channel_url = input.snsKakaoChannelUrl || null;
-  if (input.snsOpenChatUrl !== undefined) next.sns_open_chat_url = input.snsOpenChatUrl || null;
 
   if (company.approval_status !== 'approved') {
     Object.assign(company, next, { updated_at: mockStore.nowIso() });
@@ -493,6 +425,7 @@ export interface BranchContactsChange {
 
 export interface MockBranchChangeInput {
   name?: string;
+  managerName?: string;
   address?: string;
   addressDetail?: string;
   introText?: string;
@@ -500,10 +433,13 @@ export interface MockBranchChangeInput {
   welfareInfo?: string;
   dbSupportInfo?: string;
   settlementSupportInfo?: string;
+  atmosphereInfo?: string;
   plannerCount?: number | null;
   parkingAvailable?: boolean | null;
   visitConsultAvailable?: boolean | null;
   businessHours?: string | null;
+  operationType?: GaOperationType;
+  isHeadquarters?: boolean;
   insurers?: BranchInsurersChange;
   mainImage?: BranchMainImageChange;
   recruit?: BranchRecruitChange;
@@ -643,6 +579,7 @@ export function mockSubmitBranchChange(
 
   const next: Record<string, unknown> = {};
   if (input.name !== undefined) next.name = input.name;
+  if (input.managerName !== undefined) next.manager_name = input.managerName || null;
   if (input.address !== undefined) next.address = input.address;
   if (input.addressDetail !== undefined) next.address_detail = input.addressDetail || null;
   if (input.introText !== undefined) next.intro_text = input.introText || null;
@@ -650,10 +587,13 @@ export function mockSubmitBranchChange(
   if (input.welfareInfo !== undefined) next.welfare_info = input.welfareInfo || null;
   if (input.dbSupportInfo !== undefined) next.db_support_info = input.dbSupportInfo || null;
   if (input.settlementSupportInfo !== undefined) next.settlement_support_info = input.settlementSupportInfo || null;
+  if (input.atmosphereInfo !== undefined) next.atmosphere_info = input.atmosphereInfo || null;
   if (input.plannerCount !== undefined) next.planner_count = input.plannerCount;
   if (input.parkingAvailable !== undefined) next.parking_available = input.parkingAvailable;
   if (input.visitConsultAvailable !== undefined) next.visit_consult_available = input.visitConsultAvailable;
   if (input.businessHours !== undefined) next.business_hours = input.businessHours || null;
+  if (input.operationType !== undefined) next.operation_type = input.operationType;
+  if (input.isHeadquarters !== undefined) next.is_headquarters = input.isHeadquarters;
 
   const scalarDiffs = diffFields(BRANCH_FIELD_LABELS, branch as unknown as Record<string, unknown>, next, BRANCH_FIELD_FORMATTERS);
   const { diffs: compositeDiffs, raw: compositeRaw } = buildCompositeDiffs(branch, input);
@@ -692,9 +632,11 @@ export function mockCreateBranchDraft(
   const now = mockStore.nowIso();
   mockStore.branches.push({
     id,
+    slug: generateBranchSlug(input.name),
     ga_company_id: gaCompanyId,
     region_id: input.regionId,
     name: input.name,
+    manager_name: input.managerName ?? null,
     address: input.address,
     address_detail: input.addressDetail ?? null,
     lat: input.lat ?? null,
@@ -704,10 +646,13 @@ export function mockCreateBranchDraft(
     welfare_info: input.welfareInfo ?? null,
     db_support_info: input.dbSupportInfo ?? null,
     settlement_support_info: input.settlementSupportInfo ?? null,
+    atmosphere_info: input.atmosphereInfo ?? null,
     planner_count: input.plannerCount ?? null,
     parking_available: input.parkingAvailable ?? null,
     visit_consult_available: input.visitConsultAvailable ?? null,
     business_hours: input.businessHours ?? null,
+    operation_type: input.operationType ?? 'branch',
+    is_headquarters: input.isHeadquarters ?? false,
     organic_view_count: 0,
     imported_view_count: 0,
     correction_view_count: 0,
@@ -787,7 +732,7 @@ export function mockRegisterGaForPartner(
   });
   if ('error' in created) return created;
 
-  const branch = mockCreateBranch(created.id, input.branch);
+  const branch = mockCreateBranch(created.id, { ...input.branch, isHeadquarters: input.branch.isHeadquarters ?? true });
 
   admin.ga_company_id = created.id;
   admin.updated_at = mockStore.nowIso();

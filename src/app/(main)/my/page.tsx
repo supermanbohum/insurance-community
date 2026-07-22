@@ -1,8 +1,8 @@
 import { LogOut } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/session';
 import { logoutAction } from '@/lib/actions/user-auth';
-import { listFavoriteGas } from '@/lib/user/favorites';
-import { GaCard } from '@/components/ga/GaCard';
+import { listFavoriteBranches } from '@/lib/user/favorites';
+import { BranchCard } from '@/components/branch/BranchCard';
 import { avatarGradient, cn } from '@/lib/utils';
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -14,7 +14,7 @@ const PROVIDER_LABEL: Record<string, string> = {
 export default async function MyPage() {
   // my/layout.tsx가 이미 로그인 여부를 가드하므로 여기서는 항상 로그인된 상태다.
   const user = (await getCurrentUser())!;
-  const favorites = await listFavoriteGas(user.id);
+  const favorites = await listFavoriteBranches(user.id);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6">
@@ -59,13 +59,13 @@ export default async function MyPage() {
         </h2>
         {favorites.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line py-14 text-ink-faint">
-            <p className="text-sm">아직 즐겨찾기한 GA가 없습니다.</p>
-            <p className="text-xs">GA 상세페이지에서 하트를 눌러 추가해보세요.</p>
+            <p className="text-sm">아직 즐겨찾기한 지점이 없습니다.</p>
+            <p className="text-xs">지점 상세페이지에서 하트를 눌러 추가해보세요.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2.5">
-            {favorites.map((ga) => (
-              <GaCard key={ga.id} ga={ga} />
+          <div className="grid grid-cols-2 gap-3">
+            {favorites.map((branch) => (
+              <BranchCard key={branch.id} branch={branch} />
             ))}
           </div>
         )}

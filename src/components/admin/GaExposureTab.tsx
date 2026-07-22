@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export function GaExposureTab({ ga }: { ga: GaCompanyRow }) {
   const [isPending, startTransition] = useTransition();
   const [isVerified, setIsVerified] = useState(ga.is_verified);
-  const [isRecruiting, setIsRecruiting] = useState(ga.is_recruiting);
   const [isVisible, setIsVisible] = useState(ga.status === 'visible');
 
   function handleVerifyToggle(checked: boolean) {
@@ -21,18 +20,6 @@ export function GaExposureTab({ ga }: { ga: GaCompanyRow }) {
       else {
         toast.error(result.error);
         setIsVerified(!checked);
-      }
-    });
-  }
-
-  function handleRecruitingToggle(checked: boolean) {
-    setIsRecruiting(checked);
-    startTransition(async () => {
-      const result = await updateGaCompanyAction(ga.id, { isRecruiting: checked });
-      if (result.success) toast.success(checked ? '채용중 배지를 노출합니다.' : '채용중 배지를 해제했습니다.');
-      else {
-        toast.error(result.error);
-        setIsRecruiting(!checked);
       }
     });
   }
@@ -68,21 +55,8 @@ export function GaExposureTab({ ga }: { ga: GaCompanyRow }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">채용중 배지</CardTitle>
-          <CardDescription>지점별 채용공고와 별개로, GA 카드/상세에 채용중 배지를 노출합니다.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <Switch checked={isRecruiting} onCheckedChange={handleRecruitingToggle} disabled={isPending} />
-            <span className="text-sm">{isRecruiting ? '채용중' : '채용중 아님'}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle className="text-base">공식 인증 GA</CardTitle>
-          <CardDescription>승인 상태와는 별개의 신뢰 배지입니다. GA 상세페이지에 노출됩니다.</CardDescription>
+          <CardDescription>승인 상태와는 별개의 신뢰 배지입니다. 소속 지점 상세페이지에 노출됩니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
