@@ -11,6 +11,7 @@ import {
   mockCreateBranchDraft,
   mockCreateBranch,
   type MockBranchFormInput,
+  type MockGaCompanyFormInput,
 } from '@/lib/mock/admin-mutations';
 import { requirePartner } from '@/lib/partner/session';
 
@@ -80,13 +81,14 @@ export async function registerGaAction(input: {
   return { success: true };
 }
 
-/** GA 소개/대표자/로고 수정. 승인 전이면 즉시 반영, 승인 후면 변경요청으로 대기. */
-export async function updateGaCompanyProfileAction(input: {
-  name: string;
-  ceoName?: string;
-  description?: string;
-  logoPath?: string;
-}): Promise<ActionResult & { pending?: boolean }> {
+/**
+ * GA 프로필 수정(기본정보/운영정보/홍보/SNS 전 필드). 승인 전이면 즉시 반영,
+ * 승인 후면 변경요청으로 대기. 필드 구성은 관리자 GaInfoTab/GaPromoTab/GaSnsTab과
+ * 동일하게 맞춰뒀다 - 파트너용 UI가 나중에 이 액션을 그대로 호출하면 된다.
+ */
+export async function updateGaCompanyProfileAction(
+  input: { name: string } & Partial<MockGaCompanyFormInput>
+): Promise<ActionResult & { pending?: boolean }> {
   if (!input.name.trim()) {
     return { success: false, error: 'GA명을 입력해주세요.' };
   }
@@ -99,12 +101,7 @@ export async function updateGaCompanyProfileAction(input: {
     return { success: false, error: '등록된 GA가 없습니다.' };
   }
 
-  const result = mockSubmitGaCompanyChange(partner.ga_company_id, partner.id, {
-    name: input.name.trim(),
-    ceoName: input.ceoName?.trim(),
-    description: input.description?.trim(),
-    logoPath: input.logoPath,
-  });
+  const result = mockSubmitGaCompanyChange(partner.ga_company_id, partner.id, { ...input, name: input.name.trim() });
 
   revalidatePath('/partner/company');
   revalidatePath('/admin/change-requests');

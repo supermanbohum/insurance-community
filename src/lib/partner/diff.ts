@@ -5,6 +5,24 @@ export const GA_FIELD_LABELS: Record<string, string> = {
   ceo_name: '대표자명',
   description: 'GA 소개',
   logo_path: '로고',
+  operation_type: '운영 형태',
+  is_headquarters: '본사 여부',
+  is_recruiting: '채용중 여부',
+  status: '노출 여부',
+  address: '주소',
+  address_detail: '상세주소',
+  zonecode: '우편번호',
+  phone: '대표번호',
+  homepage_url: '홈페이지',
+  education_info: '교육 소개',
+  welfare_info: '복지 소개',
+  strengths_info: '회사 강점',
+  promo_video_url: '홍보영상',
+  sns_blog_url: '블로그',
+  sns_instagram_url: '인스타그램',
+  sns_youtube_url: '유튜브',
+  sns_kakao_channel_url: '카카오채널',
+  sns_open_chat_url: '오픈채팅',
 };
 
 export const BRANCH_FIELD_LABELS: Record<string, string> = {
@@ -38,6 +56,13 @@ export const BRANCH_FIELD_FORMATTERS: Record<string, FieldFormatter> = {
   parking_available: BOOLEAN_FORMATTER,
   visit_consult_available: BOOLEAN_FORMATTER,
   planner_count: PLANNER_COUNT_FORMATTER,
+};
+
+export const GA_FIELD_FORMATTERS: Record<string, FieldFormatter> = {
+  operation_type: (value) => (value === 'direct' ? '직영' : value === 'branch' ? '지사' : '(없음)'),
+  is_headquarters: (value) => (value ? '본사' : '본사 아님'),
+  is_recruiting: (value) => (value ? '채용중' : '채용중 아님'),
+  status: (value) => (value === 'visible' ? '공개' : value === 'hidden' ? '비공개' : '(없음)'),
 };
 
 function formatFieldValue(value: unknown, formatter?: FieldFormatter): string {

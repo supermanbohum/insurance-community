@@ -3,7 +3,7 @@ import { mockStore } from '@/lib/mock/store';
 import type { ChangeFieldDiff, ChangeRequestAction, ChangeRequestStatus, ChangeRequestTargetType, MockBranch } from '@/lib/mock/store';
 import type { BranchMediaSource, BranchMediaType, GaApprovalStatus, GaDisplayStatus, GaMediaType, GaStatus } from '@/types/database';
 import type { GaOperationType } from '@/lib/mock/store';
-import { diffFields, GA_FIELD_LABELS, BRANCH_FIELD_LABELS, BRANCH_FIELD_FORMATTERS } from '@/lib/partner/diff';
+import { diffFields, GA_FIELD_LABELS, GA_FIELD_FORMATTERS, BRANCH_FIELD_LABELS, BRANCH_FIELD_FORMATTERS } from '@/lib/partner/diff';
 
 function slugTaken(slug: string): boolean {
   return mockStore.gaCompanies.some((c) => c.slug === slug);
@@ -418,7 +418,7 @@ function clearPendingChangeRequestIfAny(targetType: ChangeRequestTargetType, tar
 export function mockSubmitGaCompanyChange(
   gaCompanyId: string,
   submittedByGaAdminId: string,
-  input: { name?: string; ceoName?: string; description?: string; logoPath?: string }
+  input: MockGaCompanyFormInput
 ): ChangeSubmitResult {
   const company = mockStore.gaCompanies.find((c) => c.id === gaCompanyId);
   if (!company) throw new Error('GA_COMPANY_NOT_FOUND');
@@ -428,13 +428,33 @@ export function mockSubmitGaCompanyChange(
   if (input.ceoName !== undefined) next.ceo_name = input.ceoName || null;
   if (input.description !== undefined) next.description = input.description || null;
   if (input.logoPath !== undefined) next.logo_path = input.logoPath || null;
+  if (input.operationType !== undefined) next.operation_type = input.operationType;
+  if (input.isHeadquarters !== undefined) next.is_headquarters = input.isHeadquarters;
+  if (input.isRecruiting !== undefined) next.is_recruiting = input.isRecruiting;
+  if (input.status !== undefined) next.status = input.status;
+  if (input.address !== undefined) next.address = input.address || null;
+  if (input.addressDetail !== undefined) next.address_detail = input.addressDetail || null;
+  if (input.zonecode !== undefined) next.zonecode = input.zonecode || null;
+  if (input.lat !== undefined) next.lat = input.lat;
+  if (input.lng !== undefined) next.lng = input.lng;
+  if (input.phone !== undefined) next.phone = input.phone || null;
+  if (input.homepageUrl !== undefined) next.homepage_url = input.homepageUrl || null;
+  if (input.educationInfo !== undefined) next.education_info = input.educationInfo || null;
+  if (input.welfareInfo !== undefined) next.welfare_info = input.welfareInfo || null;
+  if (input.strengthsInfo !== undefined) next.strengths_info = input.strengthsInfo || null;
+  if (input.promoVideoUrl !== undefined) next.promo_video_url = input.promoVideoUrl || null;
+  if (input.snsBlogUrl !== undefined) next.sns_blog_url = input.snsBlogUrl || null;
+  if (input.snsInstagramUrl !== undefined) next.sns_instagram_url = input.snsInstagramUrl || null;
+  if (input.snsYoutubeUrl !== undefined) next.sns_youtube_url = input.snsYoutubeUrl || null;
+  if (input.snsKakaoChannelUrl !== undefined) next.sns_kakao_channel_url = input.snsKakaoChannelUrl || null;
+  if (input.snsOpenChatUrl !== undefined) next.sns_open_chat_url = input.snsOpenChatUrl || null;
 
   if (company.approval_status !== 'approved') {
     Object.assign(company, next, { updated_at: mockStore.nowIso() });
     return { status: 'applied' };
   }
 
-  const diffs = diffFields(GA_FIELD_LABELS, company as unknown as Record<string, unknown>, next);
+  const diffs = diffFields(GA_FIELD_LABELS, company as unknown as Record<string, unknown>, next, GA_FIELD_FORMATTERS);
   if (diffs.length === 0) {
     clearPendingChangeRequestIfAny('ga_company', gaCompanyId);
     return { status: 'no_change' };
