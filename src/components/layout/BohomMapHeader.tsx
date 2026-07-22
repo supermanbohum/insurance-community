@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, ShieldCheck, ExternalLink } from 'lucide-react';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { cn } from '@/lib/utils';
 
 const MENU_GROUPS = [
   {
@@ -34,6 +36,7 @@ const MENU_GROUPS = [
 
 export function BohomMapHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <>
@@ -61,6 +64,29 @@ export function BohomMapHeader() {
               navigateOnFocus
             />
           </div>
+          {user ? (
+            <Link
+              href="/my"
+              aria-label="마이페이지"
+              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-xs font-bold text-brand-600"
+            >
+              {user.profileImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.profileImage} alt={user.nickname} className="h-full w-full object-cover" />
+              ) : (
+                user.nickname.slice(0, 1)
+              )}
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className={cn(
+                'shrink-0 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:bg-surface-sunken'
+              )}
+            >
+              로그인
+            </Link>
+          )}
         </div>
       </header>
 
