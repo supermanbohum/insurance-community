@@ -30,6 +30,9 @@ function toSummary(branch: (typeof mockStore.branches)[number]): PublicBranchSum
     updatedAt: branch.updated_at,
     gaBranchCount: mockStore.branches.filter((b) => b.ga_company_id === branch.ga_company_id && isPubliclyVisible(b)).length,
     operationType: company?.operation_type ?? 'branch',
+    lat: branch.lat,
+    lng: branch.lng,
+    hasActiveRecruit: mockStore.branchRecruits.some((r) => r.branch_id === branch.id && r.is_active),
   };
 }
 

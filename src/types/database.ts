@@ -708,4 +708,7 @@ export interface PublicBranchSummary {
   updatedAt: string;
   gaBranchCount: number;
   operationType: 'direct' | 'branch';
+  lat: number | null;
+  lng: number | null;
+  hasActiveRecruit: boolean;
 }

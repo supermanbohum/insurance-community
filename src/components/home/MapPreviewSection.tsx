@@ -17,7 +17,7 @@ export function MapPreviewSection() {
       </div>
 
       <Link
-        href="/region"
+        href="/map"
         className="group relative flex h-40 w-full items-end overflow-hidden rounded-2xl border border-line bg-surface-sunken shadow-card transition-all hover:shadow-card-hover sm:h-48"
       >
         <div

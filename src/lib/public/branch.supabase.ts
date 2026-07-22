@@ -2,17 +2,20 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { PublicBranchSummary } from '@/types/database';
 
 const SUMMARY_SELECT = `
-  id, name, address, organic_view_count, imported_view_count, correction_view_count,
+  id, name, address, lat, lng, organic_view_count, imported_view_count, correction_view_count,
   is_recommended, created_at, updated_at,
   ga_company:ga_company_id ( id, name, slug, is_verified, operation_type, ga_branch(id) ),
   region:region_id ( sido_name, sigungu_name ),
-  branch_media ( value, media_type, source )
+  branch_media ( value, media_type, source ),
+  branch_recruit ( id, is_active )
 `;
 
 interface BranchSummaryRow {
   id: string;
   name: string;
   address: string;
+  lat: number | null;
+  lng: number | null;
   organic_view_count: number;
   imported_view_count: number;
   correction_view_count: number;
@@ -29,6 +32,7 @@ interface BranchSummaryRow {
   } | null;
   region: { sido_name: string; sigungu_name: string | null } | null;
   branch_media: { value: string; media_type: string; source: string }[] | null;
+  branch_recruit: { id: string; is_active: boolean }[] | null;
 }
 
 function toSummary(row: BranchSummaryRow, imageBaseUrl: string): PublicBranchSummary {
@@ -50,6 +54,9 @@ function toSummary(row: BranchSummaryRow, imageBaseUrl: string): PublicBranchSum
     updatedAt: row.updated_at,
     gaBranchCount: Array.isArray(row.ga_company?.ga_branch) ? row.ga_company!.ga_branch.length : 0,
     operationType: row.ga_company?.operation_type ?? 'branch',
+    lat: row.lat,
+    lng: row.lng,
+    hasActiveRecruit: (row.branch_recruit ?? []).some((r) => r.is_active),
   };
 }
 

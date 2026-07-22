@@ -473,13 +473,24 @@ const EXTRA_GA_NAMES = [
 ];
 
 // 각 시/도의 첫 번째 시/군/구로 지점 지역을 순환 배정한다 (regionIdBySigunguName 조회용).
-const SIDO_FIRST_SIGUNGU: [string, string, string][] = [
-  ['11', '서울특별시', '종로구'], ['26', '부산광역시', '중구'], ['27', '대구광역시', '중구'],
-  ['28', '인천광역시', '중구'], ['29', '광주광역시', '동구'], ['30', '대전광역시', '동구'],
-  ['31', '울산광역시', '중구'], ['41', '경기도', '수원시'], ['42', '강원특별자치도', '춘천시'],
-  ['43', '충청북도', '청주시'], ['44', '충청남도', '천안시'], ['45', '전북특별자치도', '전주시'],
-  ['46', '전라남도', '목포시'], ['47', '경상북도', '포항시'], ['48', '경상남도', '창원시'],
-  ['50', '제주특별자치도', '제주시'],
+// 좌표는 시/도 중심 좌표를 재사용하고 아래에서 지점별로 소량의 오프셋을 더해 지도 마커가 겹치지 않게 한다.
+const SIDO_FIRST_SIGUNGU: [string, string, string, number, number][] = [
+  ['11', '서울특별시', '종로구', 37.5665, 126.978],
+  ['26', '부산광역시', '중구', 35.1796, 129.0756],
+  ['27', '대구광역시', '중구', 35.8714, 128.6014],
+  ['28', '인천광역시', '중구', 37.4563, 126.7052],
+  ['29', '광주광역시', '동구', 35.1595, 126.8526],
+  ['30', '대전광역시', '동구', 36.3504, 127.3845],
+  ['31', '울산광역시', '중구', 35.5384, 129.3114],
+  ['41', '경기도', '수원시', 37.4138, 127.5183],
+  ['42', '강원특별자치도', '춘천시', 37.8228, 128.1555],
+  ['43', '충청북도', '청주시', 36.6357, 127.4917],
+  ['44', '충청남도', '천안시', 36.5184, 126.8],
+  ['45', '전북특별자치도', '전주시', 35.7175, 127.153],
+  ['46', '전라남도', '목포시', 34.8679, 126.991],
+  ['47', '경상북도', '포항시', 36.4919, 128.8889],
+  ['48', '경상남도', '창원시', 35.4606, 128.2132],
+  ['50', '제주특별자치도', '제주시', 33.4996, 126.5312],
 ];
 
 // 보험사 계열 브랜드명이 포함된 GA는 '직영'(direct), 나머지 독립 GA 대리점은 '지사'(branch)로 분류한다.
@@ -506,8 +517,9 @@ const extraGaCompanies: MockGaCompany[] = EXTRA_GA_NAMES.map((name, i) => ({
 }));
 
 const extraBranches: MockBranch[] = EXTRA_GA_NAMES.map((name, i) => {
-  const [, sidoName, sigunguName] = SIDO_FIRST_SIGUNGU[i % SIDO_FIRST_SIGUNGU.length];
-  const [sidoCode] = SIDO_FIRST_SIGUNGU[i % SIDO_FIRST_SIGUNGU.length];
+  const [sidoCode, sidoName, sigunguName, baseLat, baseLng] = SIDO_FIRST_SIGUNGU[i % SIDO_FIRST_SIGUNGU.length];
+  // 같은 시/도로 배정된 지점끼리 마커가 겹치지 않도록 ±0.05 범위에서 결정론적으로 흩뿌린다.
+  const jitter = (seed: number) => ((seed * 37) % 100) / 100 - 0.5;
   return {
     id: `branch-extra-${i + 1}`,
     ga_company_id: `ga-extra-${i + 1}`,
@@ -515,8 +527,8 @@ const extraBranches: MockBranch[] = EXTRA_GA_NAMES.map((name, i) => {
     name: `${name} 본점`,
     address: `${sidoName} ${sigunguName} 중앙로 ${100 + i}`,
     address_detail: null,
-    lat: null,
-    lng: null,
+    lat: baseLat + jitter(i) * 0.1,
+    lng: baseLng + jitter(i + 1) * 0.1,
     intro_text: `${name}의 대표 지점입니다.`,
     education_info: null,
     welfare_info: null,
