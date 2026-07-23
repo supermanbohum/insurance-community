@@ -82,7 +82,8 @@ create or replace function public.update_ga_company(
   p_name text,
   p_ceo_name text default null,
   p_description text default null,
-  p_logo_path text default null
+  p_logo_path text default null,
+  p_status text default null
 )
 returns void
 language plpgsql
@@ -98,8 +99,13 @@ begin
     raise exception 'INVALID_INPUT';
   end if;
 
+  if p_status is not null and p_status not in ('visible', 'hidden') then
+    raise exception 'INVALID_STATUS';
+  end if;
+
   update public.ga_company
-  set name = p_name, ceo_name = p_ceo_name, description = p_description, logo_path = p_logo_path
+  set name = p_name, ceo_name = p_ceo_name, description = p_description, logo_path = p_logo_path,
+      status = coalesce(p_status, status)
   where id = p_ga_company_id;
 
   if not found then
@@ -108,21 +114,25 @@ begin
 end;
 $$;
 
--- '공식 인증 GA' 배지 부여/해제
+-- '공식 인증 GA' 배지 부여/해제. 누가 부여했는지는 클라이언트가 보내는 값이 아니라
+-- 호출 시점의 current_admin_id()로 서버가 직접 기록한다(위조 방지).
 create or replace function public.verify_ga_company(p_ga_company_id uuid, p_verified boolean)
 returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_admin_id uuid := public.current_admin_id();
 begin
-  if public.current_admin_id() is null then
+  if v_admin_id is null then
     raise exception 'NOT_PLATFORM_ADMIN';
   end if;
 
   update public.ga_company
   set is_verified = p_verified,
-      verified_at = case when p_verified then now() else null end
+      verified_at = case when p_verified then now() else null end,
+      verified_by_admin_id = case when p_verified then v_admin_id else null end
   where id = p_ga_company_id;
 
   if not found then
@@ -182,6 +192,7 @@ $$;
 create or replace function public.create_branch(
   p_ga_company_id uuid,
   p_region_id uuid,
+  p_slug text,
   p_name text,
   p_address text,
   p_address_detail text default null,
@@ -191,7 +202,15 @@ create or replace function public.create_branch(
   p_education_info text default null,
   p_welfare_info text default null,
   p_db_support_info text default null,
-  p_settlement_support_info text default null
+  p_settlement_support_info text default null,
+  p_manager_name text default null,
+  p_atmosphere_info text default null,
+  p_planner_count int default null,
+  p_parking_available boolean default null,
+  p_visit_consult_available boolean default null,
+  p_business_hours text default null,
+  p_operation_type text default 'branch',
+  p_is_headquarters boolean default false
 )
 returns uuid
 language plpgsql
@@ -205,16 +224,22 @@ begin
     raise exception 'NOT_PLATFORM_ADMIN';
   end if;
 
-  if length(trim(p_name)) = 0 or length(trim(p_address)) = 0 then
+  if length(trim(p_name)) = 0 or length(trim(p_address)) = 0 or length(trim(p_slug)) = 0 then
     raise exception 'INVALID_INPUT';
   end if;
 
+  if p_operation_type not in ('direct', 'branch') then
+    raise exception 'INVALID_OPERATION_TYPE';
+  end if;
+
   insert into public.ga_branch (
-    ga_company_id, region_id, name, address, address_detail, lat, lng,
-    intro_text, education_info, welfare_info, db_support_info, settlement_support_info
+    ga_company_id, region_id, slug, name, manager_name, address, address_detail, lat, lng,
+    intro_text, education_info, welfare_info, db_support_info, settlement_support_info, atmosphere_info,
+    planner_count, parking_available, visit_consult_available, business_hours, operation_type, is_headquarters
   ) values (
-    p_ga_company_id, p_region_id, p_name, p_address, p_address_detail, p_lat, p_lng,
-    p_intro_text, p_education_info, p_welfare_info, p_db_support_info, p_settlement_support_info
+    p_ga_company_id, p_region_id, p_slug, p_name, p_manager_name, p_address, p_address_detail, p_lat, p_lng,
+    p_intro_text, p_education_info, p_welfare_info, p_db_support_info, p_settlement_support_info, p_atmosphere_info,
+    p_planner_count, p_parking_available, p_visit_consult_available, p_business_hours, p_operation_type, p_is_headquarters
   ) returning id into v_branch_id;
 
   perform public._write_ga_audit_log('ga_branch', v_branch_id, 'create', null, jsonb_build_object('name', p_name));
@@ -235,7 +260,15 @@ create or replace function public.update_branch(
   p_education_info text default null,
   p_welfare_info text default null,
   p_db_support_info text default null,
-  p_settlement_support_info text default null
+  p_settlement_support_info text default null,
+  p_manager_name text default null,
+  p_atmosphere_info text default null,
+  p_planner_count int default null,
+  p_parking_available boolean default null,
+  p_visit_consult_available boolean default null,
+  p_business_hours text default null,
+  p_operation_type text default null,
+  p_is_headquarters boolean default null
 )
 returns void
 language plpgsql
@@ -251,11 +284,20 @@ begin
     raise exception 'INVALID_INPUT';
   end if;
 
+  if p_operation_type is not null and p_operation_type not in ('direct', 'branch') then
+    raise exception 'INVALID_OPERATION_TYPE';
+  end if;
+
   update public.ga_branch
   set name = p_name, region_id = p_region_id, address = p_address, address_detail = p_address_detail,
       lat = p_lat, lng = p_lng, intro_text = p_intro_text, education_info = p_education_info,
       welfare_info = p_welfare_info, db_support_info = p_db_support_info,
-      settlement_support_info = p_settlement_support_info
+      settlement_support_info = p_settlement_support_info,
+      manager_name = p_manager_name, atmosphere_info = p_atmosphere_info,
+      planner_count = p_planner_count, parking_available = p_parking_available,
+      visit_consult_available = p_visit_consult_available, business_hours = p_business_hours,
+      operation_type = coalesce(p_operation_type, operation_type),
+      is_headquarters = coalesce(p_is_headquarters, is_headquarters)
   where id = p_branch_id;
 
   if not found then
@@ -323,7 +365,8 @@ create or replace function public.update_branch_profile(
   p_education_info text,
   p_welfare_info text,
   p_db_support_info text,
-  p_settlement_support_info text
+  p_settlement_support_info text,
+  p_atmosphere_info text default null
 )
 returns void
 language plpgsql
@@ -337,7 +380,8 @@ begin
 
   update public.ga_branch
   set intro_text = p_intro_text, education_info = p_education_info, welfare_info = p_welfare_info,
-      db_support_info = p_db_support_info, settlement_support_info = p_settlement_support_info
+      db_support_info = p_db_support_info, settlement_support_info = p_settlement_support_info,
+      atmosphere_info = p_atmosphere_info
   where id = p_branch_id;
 
   if not found then
@@ -751,15 +795,15 @@ $$;
 -- K. 실행 권한 부여
 -- ---------------------------------------------------------
 grant execute on function public.create_ga_company(text, text, text, text, text) to authenticated;
-grant execute on function public.update_ga_company(uuid, text, text, text, text) to authenticated;
+grant execute on function public.update_ga_company(uuid, text, text, text, text, text) to authenticated;
 grant execute on function public.verify_ga_company(uuid, boolean) to authenticated;
 grant execute on function public.set_ga_company_approval_status(uuid, text, text) to authenticated;
 
-grant execute on function public.create_branch(uuid, uuid, text, text, text, double precision, double precision, text, text, text, text, text) to authenticated;
-grant execute on function public.update_branch(uuid, text, uuid, text, text, double precision, double precision, text, text, text, text, text) to authenticated;
+grant execute on function public.create_branch(uuid, uuid, text, text, text, text, double precision, double precision, text, text, text, text, text, text, text, int, boolean, boolean, text, text, boolean) to authenticated;
+grant execute on function public.update_branch(uuid, text, uuid, text, text, double precision, double precision, text, text, text, text, text, text, text, int, boolean, boolean, text, text, boolean) to authenticated;
 grant execute on function public.set_branch_status(uuid, text) to authenticated;
 grant execute on function public.set_branch_recommended(uuid, boolean, int) to authenticated;
-grant execute on function public.update_branch_profile(uuid, text, text, text, text, text) to authenticated;
+grant execute on function public.update_branch_profile(uuid, text, text, text, text, text, text) to authenticated;
 
 grant execute on function public.add_branch_media(uuid, public.branch_media_type, public.branch_media_source, text, int) to authenticated;
 grant execute on function public.delete_branch_media(uuid) to authenticated;

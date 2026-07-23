@@ -23,6 +23,10 @@ export interface BranchInfoDraft {
   dbSupportInfo: string;
   settlementSupportInfo: string;
   atmosphereInfo: string;
+  plannerCount: string;
+  parkingAvailable: boolean | null;
+  visitConsultAvailable: boolean | null;
+  businessHours: string;
   operationType: 'direct' | 'branch';
   isHeadquarters: boolean;
 }
@@ -49,6 +53,10 @@ export function BranchInfoTab({
   const [dbSupportInfo, setDbSupportInfo] = useState(branch.db_support_info ?? '');
   const [settlementSupportInfo, setSettlementSupportInfo] = useState(branch.settlement_support_info ?? '');
   const [atmosphereInfo, setAtmosphereInfo] = useState(branch.atmosphere_info ?? '');
+  const [plannerCount, setPlannerCount] = useState(branch.planner_count?.toString() ?? '');
+  const [parkingAvailable, setParkingAvailable] = useState<boolean | null>(branch.parking_available);
+  const [visitConsultAvailable, setVisitConsultAvailable] = useState<boolean | null>(branch.visit_consult_available);
+  const [businessHours, setBusinessHours] = useState(branch.business_hours ?? '');
   const [operationType, setOperationType] = useState<'direct' | 'branch'>(branch.operation_type);
   const [isHeadquarters, setIsHeadquarters] = useState(branch.is_headquarters);
 
@@ -64,11 +72,15 @@ export function BranchInfoTab({
       dbSupportInfo,
       settlementSupportInfo,
       atmosphereInfo,
+      plannerCount,
+      parkingAvailable,
+      visitConsultAvailable,
+      businessHours,
       operationType,
       isHeadquarters,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, managerName, address, addressDetail, introText, educationInfo, welfareInfo, dbSupportInfo, settlementSupportInfo, atmosphereInfo, operationType, isHeadquarters]);
+  }, [name, managerName, address, addressDetail, introText, educationInfo, welfareInfo, dbSupportInfo, settlementSupportInfo, atmosphereInfo, plannerCount, parkingAvailable, visitConsultAvailable, businessHours, operationType, isHeadquarters]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +99,10 @@ export function BranchInfoTab({
         dbSupportInfo,
         settlementSupportInfo,
         atmosphereInfo,
+        plannerCount: plannerCount.trim() ? Number(plannerCount) : null,
+        parkingAvailable,
+        visitConsultAvailable,
+        businessHours,
         operationType,
         isHeadquarters,
       });
@@ -175,6 +191,64 @@ export function BranchInfoTab({
           rows={3}
           placeholder="근무 분위기, 조직 문화 등"
         />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="branch-planner-count">설계사 수</Label>
+          <Input
+            id="branch-planner-count"
+            type="number"
+            min={0}
+            value={plannerCount}
+            onChange={(e) => setPlannerCount(e.target.value)}
+            placeholder="예: 45"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="branch-business-hours">영업시간</Label>
+          <Input
+            id="branch-business-hours"
+            value={businessHours}
+            onChange={(e) => setBusinessHours(e.target.value)}
+            placeholder="예: 평일 09:00-18:00"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label>주차 가능 여부</Label>
+          <Select
+            value={parkingAvailable === null ? 'unset' : String(parkingAvailable)}
+            onValueChange={(v) => setParkingAvailable(v === 'unset' ? null : v === 'true')}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unset">미설정</SelectItem>
+              <SelectItem value="true">가능</SelectItem>
+              <SelectItem value="false">불가능</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>방문 상담 가능 여부</Label>
+          <Select
+            value={visitConsultAvailable === null ? 'unset' : String(visitConsultAvailable)}
+            onValueChange={(v) => setVisitConsultAvailable(v === 'unset' ? null : v === 'true')}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unset">미설정</SelectItem>
+              <SelectItem value="true">가능</SelectItem>
+              <SelectItem value="false">불가능</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Button type="submit" disabled={isPending} className="self-start">

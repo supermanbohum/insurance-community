@@ -643,6 +643,10 @@ export interface Database {
           p_db_support_info?: string;
           p_settlement_support_info?: string;
           p_atmosphere_info?: string;
+          p_planner_count?: number;
+          p_parking_available?: boolean;
+          p_visit_consult_available?: boolean;
+          p_business_hours?: string;
           p_operation_type?: GaOperationType;
           p_is_headquarters?: boolean;
         };
@@ -664,6 +668,10 @@ export interface Database {
           p_db_support_info?: string;
           p_settlement_support_info?: string;
           p_atmosphere_info?: string;
+          p_planner_count?: number;
+          p_parking_available?: boolean;
+          p_visit_consult_available?: boolean;
+          p_business_hours?: string;
           p_operation_type?: GaOperationType;
           p_is_headquarters?: boolean;
         };

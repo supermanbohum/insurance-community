@@ -3,19 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { GaStatus, GaOperationType } from '@/types/database';
-import { IS_MOCK_MODE } from '@/lib/mock/config';
 import { slugify } from '@/lib/utils';
-import {
-  mockCloseBranchRecruit,
-  mockCreateBranch,
-  mockCreateBranchRecruit,
-  mockDeleteBranchContact,
-  mockSetBranchInsurers,
-  mockSetBranchRecommended,
-  mockSetBranchStatus,
-  mockUpdateBranch,
-  mockUpsertBranchContact,
-} from '@/lib/mock/admin-mutations';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
@@ -33,6 +21,10 @@ export interface BranchFormInput {
   dbSupportInfo?: string;
   settlementSupportInfo?: string;
   atmosphereInfo?: string;
+  plannerCount?: number | null;
+  parkingAvailable?: boolean | null;
+  visitConsultAvailable?: boolean | null;
+  businessHours?: string | null;
   operationType?: GaOperationType;
   isHeadquarters?: boolean;
 }
@@ -49,12 +41,6 @@ export async function createBranchAction(
 ): Promise<ActionResult & { branchId?: string }> {
   if (!input.name.trim() || !input.address.trim()) {
     return { success: false, error: '지점명과 주소를 입력해주세요.' };
-  }
-
-  if (IS_MOCK_MODE) {
-    const { id } = mockCreateBranch(gaCompanyId, { ...input, name: input.name.trim(), address: input.address.trim() });
-    revalidateBranch(id);
-    return { success: true, branchId: id };
   }
 
   const supabase = createServerSupabaseClient();
@@ -74,6 +60,10 @@ export async function createBranchAction(
     p_db_support_info: input.dbSupportInfo?.trim() || undefined,
     p_settlement_support_info: input.settlementSupportInfo?.trim() || undefined,
     p_atmosphere_info: input.atmosphereInfo?.trim() || undefined,
+    p_planner_count: input.plannerCount ?? undefined,
+    p_parking_available: input.parkingAvailable ?? undefined,
+    p_visit_consult_available: input.visitConsultAvailable ?? undefined,
+    p_business_hours: input.businessHours?.trim() || undefined,
     p_operation_type: input.operationType,
     p_is_headquarters: input.isHeadquarters,
   });
@@ -89,16 +79,6 @@ export async function createBranchAction(
 export async function updateBranchAction(branchId: string, input: BranchFormInput): Promise<ActionResult> {
   if (!input.name.trim() || !input.address.trim()) {
     return { success: false, error: '지점명과 주소를 입력해주세요.' };
-  }
-
-  if (IS_MOCK_MODE) {
-    try {
-      mockUpdateBranch(branchId, { ...input, name: input.name.trim(), address: input.address.trim() });
-    } catch {
-      return { success: false, error: '저장하지 못했습니다.' };
-    }
-    revalidateBranch(branchId);
-    return { success: true };
   }
 
   const supabase = createServerSupabaseClient();
@@ -117,6 +97,10 @@ export async function updateBranchAction(branchId: string, input: BranchFormInpu
     p_db_support_info: input.dbSupportInfo?.trim() || undefined,
     p_settlement_support_info: input.settlementSupportInfo?.trim() || undefined,
     p_atmosphere_info: input.atmosphereInfo?.trim() || undefined,
+    p_planner_count: input.plannerCount ?? undefined,
+    p_parking_available: input.parkingAvailable ?? undefined,
+    p_visit_consult_available: input.visitConsultAvailable ?? undefined,
+    p_business_hours: input.businessHours?.trim() || undefined,
     p_operation_type: input.operationType,
     p_is_headquarters: input.isHeadquarters,
   });
@@ -130,16 +114,6 @@ export async function updateBranchAction(branchId: string, input: BranchFormInpu
 }
 
 export async function setBranchStatusAction(branchId: string, status: GaStatus): Promise<ActionResult> {
-  if (IS_MOCK_MODE) {
-    try {
-      mockSetBranchStatus(branchId, status);
-    } catch {
-      return { success: false, error: '처리하지 못했습니다.' };
-    }
-    revalidateBranch(branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('set_branch_status', { p_branch_id: branchId, p_status: status });
   if (error) return { success: false, error: '처리하지 못했습니다.' };
@@ -151,16 +125,6 @@ export async function setBranchRecommendedAction(
   branchId: string,
   isRecommended: boolean
 ): Promise<ActionResult> {
-  if (IS_MOCK_MODE) {
-    try {
-      mockSetBranchRecommended(branchId, isRecommended);
-    } catch {
-      return { success: false, error: '처리하지 못했습니다.' };
-    }
-    revalidateBranch(branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('set_branch_recommended', {
     p_branch_id: branchId,
@@ -172,12 +136,6 @@ export async function setBranchRecommendedAction(
 }
 
 export async function setBranchInsurersAction(branchId: string, insurerIds: string[]): Promise<ActionResult> {
-  if (IS_MOCK_MODE) {
-    mockSetBranchInsurers(branchId, insurerIds);
-    revalidateBranch(branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('set_branch_insurers', {
     p_branch_id: branchId,
@@ -203,16 +161,6 @@ export async function upsertBranchContactAction(input: {
     return { success: false, error: '연락 채널 종류와 값을 입력해주세요.' };
   }
 
-  if (IS_MOCK_MODE) {
-    try {
-      mockUpsertBranchContact({ ...input, type: input.type.trim(), value: input.value.trim() });
-    } catch {
-      return { success: false, error: '저장하지 못했습니다.' };
-    }
-    revalidateBranch(input.branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('upsert_branch_contact', {
     p_contact_id: input.contactId,
@@ -229,12 +177,6 @@ export async function upsertBranchContactAction(input: {
 }
 
 export async function deleteBranchContactAction(contactId: string, branchId: string): Promise<ActionResult> {
-  if (IS_MOCK_MODE) {
-    mockDeleteBranchContact(contactId);
-    revalidateBranch(branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('delete_branch_contact', { p_contact_id: contactId });
   if (error) return { success: false, error: '삭제하지 못했습니다.' };
@@ -256,12 +198,6 @@ export async function createBranchRecruitAction(input: {
     return { success: false, error: '제목과 내용을 입력해주세요.' };
   }
 
-  if (IS_MOCK_MODE) {
-    mockCreateBranchRecruit({ ...input, title: input.title.trim(), content: input.content.trim() });
-    revalidateBranch(input.branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('create_branch_recruit', {
     p_branch_id: input.branchId,
@@ -277,16 +213,6 @@ export async function createBranchRecruitAction(input: {
 }
 
 export async function closeBranchRecruitAction(recruitId: string, branchId: string): Promise<ActionResult> {
-  if (IS_MOCK_MODE) {
-    try {
-      mockCloseBranchRecruit(recruitId);
-    } catch {
-      return { success: false, error: '마감 처리하지 못했습니다.' };
-    }
-    revalidateBranch(branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('close_branch_recruit', { p_recruit_id: recruitId });
   if (error) return { success: false, error: '마감 처리하지 못했습니다.' };

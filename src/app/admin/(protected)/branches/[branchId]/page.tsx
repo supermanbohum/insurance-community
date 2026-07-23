@@ -11,7 +11,6 @@ import {
 import { getGaCompanyById, getBranchesByGaCompanyId } from '@/lib/admin/ga';
 import { computeBranchCompleteness } from '@/lib/admin/completeness';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { IS_MOCK_MODE } from '@/lib/mock/config';
 import { BranchCompletenessCard } from '@/components/admin/BranchCompletenessCard';
 import { BranchEditWorkspace } from '@/components/admin/BranchEditWorkspace';
 import { Badge } from '@/components/ui/badge';
@@ -43,11 +42,9 @@ export default async function AdminBranchDetailPage({ params }: { params: { bran
   });
 
   const imageBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/branch-images`;
-  const gaCompanyLogoUrl = !gaCompany?.logo_path
-    ? null
-    : IS_MOCK_MODE
-      ? gaCompany.logo_path
-      : createAdminClient().storage.from('company-logos').getPublicUrl(gaCompany.logo_path).data.publicUrl;
+  const gaCompanyLogoUrl = gaCompany?.logo_path
+    ? createAdminClient().storage.from('company-logos').getPublicUrl(gaCompany.logo_path).data.publicUrl
+    : null;
 
   return (
     <div className="flex flex-col gap-6">

@@ -85,7 +85,7 @@ create policy "public read active insurers"
 -- ---------------------------------------------------------
 create policy "public read approved ga_company"
   on public.ga_company for select
-  using (approval_status = 'approved');
+  using (approval_status = 'approved' and status = 'visible');
 
 create policy "ga admin read own company"
   on public.ga_company for select

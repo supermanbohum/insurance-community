@@ -49,9 +49,14 @@ create table if not exists public.ga_company (
   description text,
   logo_path text,
 
+  -- 승인(approval_status='approved') 이후에도 관리자가 임시로 노출을 껐다 켤 수 있는 스위치.
+  status text not null default 'visible' check (status in ('visible', 'hidden')),
+
   -- '공식 인증 GA' 배지 - 승인 여부와는 별개의 신뢰 배지. 플랫폼 관리자만 부여 (0008의 verify_ga_company).
   is_verified boolean not null default false,
   verified_at timestamptz,
+  -- 향후 인증 정책이 바뀌어도(예: 등급제, 재인증 만료 등) 누가/언제 부여했는지 추적할 수 있도록 남겨둔다.
+  verified_by_admin_id uuid references public.admin_users(id),
 
   approval_status text not null default 'pending'
     check (approval_status in ('pending', 'approved', 'rejected', 'suspended')),
@@ -76,19 +81,35 @@ create table if not exists public.ga_branch (
   ga_company_id uuid not null references public.ga_company(id) on delete cascade,
   region_id uuid references public.regions(id),
 
-  name text not null, -- 지점명
+  -- 공개 상세페이지(/branch/[slug]) 라우팅 키. GA는 더 이상 자체 상세페이지가 없고
+  -- 검색/지도/즐겨찾기/상세페이지 모두 지점(Branch) 기준으로 동작하므로 여기가 유일한 slug다.
+  slug text not null unique,
+
+  name text not null, -- 본부/지점명
+  manager_name text, -- 대표자(지점장/본부장). ga_company.ceo_name과 별개 - 지점마다 다를 수 있다.
 
   address text not null,
   address_detail text,
   lat double precision,
   lng double precision,
 
-  -- 소개 텍스트 (스펙: 회사소개/교육/복지/DB지원/정착지원)
+  -- 소개 텍스트 (스펙: 회사소개/교육/복지/DB지원/정착지원/분위기)
   intro_text text,
   education_info text,
   welfare_info text,
   db_support_info text,
   settlement_support_info text,
+  atmosphere_info text, -- 분위기 - 지점 고유의 근무 분위기/문화 소개
+
+  planner_count int, -- 설계사 수
+  parking_available boolean,
+  visit_consult_available boolean,
+  business_hours text, -- 영업시간
+
+  -- 지점 운영 형태 - 'direct'(직영) | 'branch'(지사). GA가 아니라 지점 단위로 다를 수 있다.
+  operation_type text not null default 'branch' check (operation_type in ('direct', 'branch')),
+  -- 이 지점이 소속 GA의 본사(headquarters)인지 여부. GA당 최대 1개 지점만 true.
+  is_headquarters boolean not null default false,
 
   -- 조회수 3분할 (posts와 동일 패턴 - organic은 record_branch_view()로만 증가,
   -- imported/correction은 0008의 관리자 전용 함수로만 수정하고 audit_logs에 기록)

@@ -5,8 +5,6 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { BranchMediaSource, BranchMediaType } from '@/types/database';
 import type { ActionResult } from '@/lib/actions/branch-admin';
-import { IS_MOCK_MODE } from '@/lib/mock/config';
-import { mockAddBranchMedia, mockDeleteBranchMedia } from '@/lib/mock/admin-mutations';
 
 function revalidateBranch(branchId: string) {
   revalidatePath('/admin/branches');
@@ -46,14 +44,6 @@ export async function uploadBranchImageAction(
   }
 
   const path = `${gaCompanyId}/${branchId}/${randomUUID()}.${extension}`;
-
-  if (IS_MOCK_MODE) {
-    // Mock 모드는 실제 Storage가 없어 등록만 하고 파일은 저장하지 않는다
-    // (목록에는 표시되지만 썸네일은 깨진 이미지로 보일 수 있음 - DB 준비 후 실제 업로드로 대체).
-    mockAddBranchMedia(branchId, mediaType, 'storage', `mock/${path}`);
-    revalidateBranch(branchId);
-    return { success: true };
-  }
 
   const supabase = createServerSupabaseClient();
   const { error: uploadError } = await supabase.storage
@@ -101,12 +91,6 @@ export async function uploadBranchVideoAction(
 
   const path = `${gaCompanyId}/${branchId}/${randomUUID()}.${extension}`;
 
-  if (IS_MOCK_MODE) {
-    mockAddBranchMedia(branchId, 'video', 'storage', `mock/${path}`);
-    revalidateBranch(branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error: uploadError } = await supabase.storage
     .from(VIDEO_BUCKET)
@@ -138,12 +122,6 @@ export async function addBranchVideoUrlAction(branchId: string, url: string): Pr
     return { success: false, error: '올바른 URL을 입력해주세요.' };
   }
 
-  if (IS_MOCK_MODE) {
-    mockAddBranchMedia(branchId, 'video', 'external', url.trim());
-    revalidateBranch(branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('add_branch_media', {
     p_branch_id: branchId,
@@ -163,12 +141,6 @@ export async function deleteBranchMediaAction(
   branchId: string,
   bucket: 'branch-images' | 'branch-videos' | null
 ): Promise<ActionResult> {
-  if (IS_MOCK_MODE) {
-    mockDeleteBranchMedia(mediaId);
-    revalidateBranch(branchId);
-    return { success: true };
-  }
-
   const supabase = createServerSupabaseClient();
   const { data: path, error } = await supabase.rpc('delete_branch_media', { p_media_id: mediaId });
 
