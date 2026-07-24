@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { uploadBranchImageAction, deleteBranchMediaAction } from '@/lib/actions/branch-media-admin';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +33,7 @@ export async function GET() {
       return NextResponse.json({ steps, ok: false });
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase = createAdminClient();
     const { data: mediaRow, error: mediaError } = await supabase
       .from('branch_media')
       .select('id, value, media_type, source')
