@@ -40,7 +40,7 @@ export function HeroSearch() {
 
         <SearchCombobox
           placeholder="지역, GA명, 지점명 검색"
-          inputClassName="w-full rounded-full border-0 bg-white py-3 pl-10 pr-4 text-sm text-ink shadow-card outline-none ring-0 transition-shadow placeholder:text-ink-faint focus:shadow-card-hover"
+          inputClassName="w-full rounded-full border-0 bg-white py-3.5 pl-11 pr-4 text-base text-ink shadow-card outline-none ring-0 transition-shadow placeholder:text-ink-faint focus:shadow-card-hover"
           navigateOnFocus
         />
       </div>

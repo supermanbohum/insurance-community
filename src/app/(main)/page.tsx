@@ -77,7 +77,7 @@ export default async function HomePage() {
         {recommended.length === 0 ? (
           <EmptyRow text="등록된 추천 지점이 없습니다." />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {recommended.map((b) => (
               <BranchCard key={b.id} branch={b} />
             ))}
@@ -89,7 +89,7 @@ export default async function HomePage() {
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {latest.map((b) => (
               <BranchCard key={b.id} branch={b} />
             ))}

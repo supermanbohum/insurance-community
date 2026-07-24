@@ -104,7 +104,7 @@ export default async function SearchPage({
             defaultValue={q}
             placeholder="지역, GA명, 지점명으로 검색"
             autoFocus={!q}
-            inputClassName="w-full rounded-2xl border border-line bg-white py-3 pl-10 pr-4 text-sm text-ink shadow-card outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:shadow-card-hover"
+            inputClassName="w-full rounded-2xl border border-line bg-white py-3 pl-10 pr-4 text-base text-ink shadow-card outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:shadow-card-hover"
           />
         </div>
         <SearchFilterButton
@@ -168,7 +168,7 @@ export default async function SearchPage({
                   {branchResults.length}
                 </span>
               </h2>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {branchResults.map((branch) => (
                   <BranchCard key={branch.id} branch={branch} highlightQuery={q} />
                 ))}

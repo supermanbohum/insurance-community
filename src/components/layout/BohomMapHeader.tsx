@@ -41,12 +41,12 @@ export function BohomMapHeader() {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-line bg-white/90 shadow-header backdrop-blur-md">
-        <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-2.5">
+        <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="메뉴 열기"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-sunken active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-surface-sunken active:scale-95"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -60,7 +60,7 @@ export function BohomMapHeader() {
             <SearchCombobox
               placeholder="지역, GA명, 지점명 검색"
               iconClassName="left-3.5"
-              inputClassName="w-full rounded-full border border-transparent bg-surface-sunken py-2 pl-9 pr-3 text-sm text-ink outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:bg-white focus:shadow-card"
+              inputClassName="w-full rounded-full border border-transparent bg-surface-sunken py-2.5 pl-9 pr-3 text-base text-ink outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:bg-white focus:shadow-card"
               navigateOnFocus
             />
           </div>
@@ -68,7 +68,7 @@ export function BohomMapHeader() {
             <Link
               href="/my"
               aria-label="마이페이지"
-              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-xs font-bold text-brand-600"
+              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-xs font-bold text-brand-600"
             >
               {user.profileImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -81,7 +81,7 @@ export function BohomMapHeader() {
             <Link
               href="/login"
               className={cn(
-                'shrink-0 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:bg-surface-sunken'
+                'shrink-0 rounded-full border border-line px-3.5 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-surface-sunken'
               )}
             >
               로그인

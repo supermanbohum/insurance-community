@@ -15,7 +15,7 @@ export default function SearchLoading() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="flex flex-col overflow-hidden rounded-2xl border border-line">
             <div className="aspect-[4/3] w-full animate-pulse bg-surface-sunken" />

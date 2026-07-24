@@ -94,7 +94,7 @@ export function MapPageClient({
           <SearchCombobox
             defaultValue={filterCurrent.query}
             placeholder="지역, GA명, 지점명 검색"
-            inputClassName="w-full rounded-full border border-line bg-surface-sunken py-2.5 pl-10 pr-4 text-sm text-ink outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:bg-white focus:shadow-card"
+            inputClassName="w-full rounded-full border border-line bg-surface-sunken py-3 pl-10 pr-4 text-base text-ink outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:bg-white focus:shadow-card"
             basePath="/map"
           />
         </div>

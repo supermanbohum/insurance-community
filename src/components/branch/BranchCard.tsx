@@ -74,7 +74,7 @@ export function BranchCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
+      <div className="flex flex-1 flex-col gap-2 p-3.5">
         <p className="flex items-center gap-1 truncate text-[11px] font-medium text-ink-faint">
           {branch.isGaVerified && <BadgeCheck className="h-3 w-3 shrink-0 text-brand-500" />}
           <span className="truncate">{branch.gaCompanyName}</span>

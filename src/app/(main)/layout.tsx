@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { BohomMapHeader } from '@/components/layout/BohomMapHeader';
 import { BohomMapBottomNav } from '@/components/layout/BohomMapBottomNav';
+import { PageTransition } from '@/components/layout/PageTransition';
 
 /**
  * 공개(비관리자) 페이지 전용 레이아웃 - 보험맵 헤더/하단탭을 담당한다.
@@ -15,7 +16,9 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   return (
     <AuthProvider initialUser={user}>
       <BohomMapHeader />
-      <main className="pb-mobile-nav w-full">{children}</main>
+      <main className="pb-mobile-nav w-full">
+        <PageTransition>{children}</PageTransition>
+      </main>
       <BohomMapBottomNav />
     </AuthProvider>
   );
