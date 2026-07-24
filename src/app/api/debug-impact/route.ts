@@ -24,11 +24,18 @@ export async function GET() {
   // set_ga_company_status가 deleted_at 컬럼을 실제로 건드리는지 직접 확인 (상태는 그대로 'hidden' 유지)
   const gaStatusTest = await supabase.rpc('set_ga_company_status', { p_ga_company_id: TEST_GA_COMPANY_ID, p_status: 'hidden' });
 
+  // update_ga_company의 p_name이 optional(신규)인지 required(구버전)인지 확인 - p_name 생략하고 호출
+  const updateGaCompanyNewSignature = await supabase.rpc('update_ga_company', {
+    p_ga_company_id: TEST_GA_COMPANY_ID,
+    p_status: 'hidden',
+  } as never);
+
   return NextResponse.json({
     branchImpact: { data: branchImpact.data, error: branchImpact.error },
     gaImpact: { data: gaImpact.data, error: gaImpact.error },
     gaCompanyDeletedAtColumn: { data: gaCompanyDeletedAt.data, error: gaCompanyDeletedAt.error },
     branchStatusAcceptsDeleted: { error: setDeletedTest.error, reverted: !!revertTest && !revertTest.error },
     gaStatusTest: { error: gaStatusTest.error },
+    updateGaCompanyNewSignature: { data: updateGaCompanyNewSignature.data, error: updateGaCompanyNewSignature.error },
   });
 }
