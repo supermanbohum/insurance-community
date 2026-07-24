@@ -465,6 +465,7 @@ export interface Database {
           nickname: string;
           profile_image: string | null;
           provider: AuthProviderType;
+          approval_status: 'approved' | 'pending' | 'rejected';
           created_at: string;
           updated_at: string;
         };

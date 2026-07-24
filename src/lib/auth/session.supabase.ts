@@ -19,11 +19,11 @@ export async function getCurrentUser(): Promise<UserSession | null> {
 
   const { data } = await supabase
     .from('users')
-    .select('id, email, nickname, profile_image, provider')
+    .select('id, email, nickname, profile_image, provider, approval_status')
     .eq('auth_user_id', authUser.id)
     .maybeSingle();
 
-  if (!data) return null;
+  if (!data || data.approval_status !== 'approved') return null;
 
   return {
     id: data.id,
