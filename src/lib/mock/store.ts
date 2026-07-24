@@ -30,7 +30,7 @@ export interface MockInsurer {
 
 export type GaOperationType = 'direct' | 'branch';
 /** GA(본사) 노출 상태 - approval_status(심사)와 별개로, 승인된 이후에도 관리자가 임시로 내릴 수 있는 스위치. */
-export type GaDisplayStatus = 'visible' | 'hidden';
+export type GaDisplayStatus = 'visible' | 'hidden' | 'deleted';
 
 /**
  * GA는 상위 브랜드 정보(로고/회사명/대표자/소개)만 갖는다. 주소·연락처·SNS·교육·복지 등

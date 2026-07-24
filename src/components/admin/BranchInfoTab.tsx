@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { updateBranchAction } from '@/lib/actions/branch-admin';
 import type { BranchRow, RegionRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
+import { AddressSearchField, type AddressValue } from '@/components/admin/AddressSearchField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,8 @@ export interface BranchInfoDraft {
   managerName: string;
   address: string;
   addressDetail: string;
+  lat: number | null;
+  lng: number | null;
   introText: string;
   educationInfo: string;
   welfareInfo: string;
@@ -45,8 +48,13 @@ export function BranchInfoTab({
   const [name, setName] = useState(branch.name);
   const [managerName, setManagerName] = useState(branch.manager_name ?? '');
   const [regionId, setRegionId] = useState<string | null>(branch.region_id);
-  const [address, setAddress] = useState(branch.address);
-  const [addressDetail, setAddressDetail] = useState(branch.address_detail ?? '');
+  const [addressValue, setAddressValue] = useState<AddressValue>({
+    address: branch.address,
+    addressDetail: branch.address_detail ?? '',
+    zonecode: '',
+    lat: branch.lat,
+    lng: branch.lng,
+  });
   const [introText, setIntroText] = useState(branch.intro_text ?? '');
   const [educationInfo, setEducationInfo] = useState(branch.education_info ?? '');
   const [welfareInfo, setWelfareInfo] = useState(branch.welfare_info ?? '');
@@ -64,8 +72,10 @@ export function BranchInfoTab({
     onDraftChange?.({
       name,
       managerName,
-      address,
-      addressDetail,
+      address: addressValue.address,
+      addressDetail: addressValue.addressDetail,
+      lat: addressValue.lat,
+      lng: addressValue.lng,
       introText,
       educationInfo,
       welfareInfo,
@@ -80,7 +90,7 @@ export function BranchInfoTab({
       isHeadquarters,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, managerName, address, addressDetail, introText, educationInfo, welfareInfo, dbSupportInfo, settlementSupportInfo, atmosphereInfo, plannerCount, parkingAvailable, visitConsultAvailable, businessHours, operationType, isHeadquarters]);
+  }, [name, managerName, addressValue, introText, educationInfo, welfareInfo, dbSupportInfo, settlementSupportInfo, atmosphereInfo, plannerCount, parkingAvailable, visitConsultAvailable, businessHours, operationType, isHeadquarters]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,10 +99,10 @@ export function BranchInfoTab({
         name,
         managerName,
         regionId,
-        address,
-        addressDetail,
-        lat: branch.lat ?? undefined,
-        lng: branch.lng ?? undefined,
+        address: addressValue.address,
+        addressDetail: addressValue.addressDetail,
+        lat: addressValue.lat ?? undefined,
+        lng: addressValue.lng ?? undefined,
         introText,
         educationInfo,
         welfareInfo,
@@ -149,14 +159,8 @@ export function BranchInfoTab({
 
       <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="branch-address">주소</Label>
-        <Input id="branch-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="branch-address-detail">상세주소</Label>
-        <Input id="branch-address-detail" value={addressDetail} onChange={(e) => setAddressDetail(e.target.value)} />
-      </div>
+      <AddressSearchField value={addressValue} onChange={setAddressValue} />
+
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="branch-intro">회사소개</Label>
         <Textarea id="branch-intro" value={introText} onChange={(e) => setIntroText(e.target.value)} rows={3} />

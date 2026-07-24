@@ -10,7 +10,7 @@ export async function listGaCompanies(options: {
   q?: string;
 }): Promise<GaCompanyRow[]> {
   const supabase = createAdminClient();
-  let query = supabase.from('ga_company').select('*').order('created_at', { ascending: false });
+  let query = supabase.from('ga_company').select('*').neq('status', 'deleted').order('created_at', { ascending: false });
 
   if (options.status) {
     query = query.eq('approval_status', options.status);

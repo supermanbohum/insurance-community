@@ -1,13 +1,33 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { setBranchInsurersAction, setBranchRecommendedAction, setBranchStatusAction } from '@/lib/actions/branch-admin';
+import { Trash2 } from 'lucide-react';
+import {
+  setBranchInsurersAction,
+  setBranchRecommendedAction,
+  setBranchStatusAction,
+  getBranchDeleteImpactAction,
+  deleteBranchAction,
+  type BranchDeleteImpact,
+} from '@/lib/actions/branch-admin';
 import type { BranchRow, InsurerRow } from '@/lib/admin/branch';
 import { InsurerMultiSelect } from '@/components/admin/InsurerMultiSelect';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export function BranchExposureTab({
   branch,
@@ -18,8 +38,11 @@ export function BranchExposureTab({
   insurers: InsurerRow[];
   initialInsurerIds: string[];
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [insurerIds, setInsurerIds] = useState(initialInsurerIds);
+  const [deleteImpact, setDeleteImpact] = useState<BranchDeleteImpact | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   function handleStatusToggle(checked: boolean) {
     startTransition(async () => {
@@ -42,6 +65,27 @@ export function BranchExposureTab({
       const result = await setBranchInsurersAction(branch.id, insurerIds);
       if (result.success) toast.success('취급 원수사를 저장했습니다.');
       else toast.error(result.error);
+    });
+  }
+
+  async function handleOpenDeleteDialog(open: boolean) {
+    if (open && !deleteImpact) {
+      const impact = await getBranchDeleteImpactAction(branch.id);
+      setDeleteImpact(impact);
+    }
+  }
+
+  function handleDelete() {
+    setIsDeleting(true);
+    startTransition(async () => {
+      const result = await deleteBranchAction(branch.id);
+      setIsDeleting(false);
+      if (result.success) {
+        toast.success('지점이 삭제되었습니다.');
+        router.push('/admin/branches');
+      } else {
+        toast.error(result.error);
+      }
     });
   }
 
@@ -78,6 +122,59 @@ export function BranchExposureTab({
           <Button onClick={handleSaveInsurers} disabled={isPending} className="self-start">
             {isPending ? '저장 중...' : '취급 원수사 저장'}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/40">
+        <CardHeader>
+          <CardTitle className="text-base text-destructive">지점 삭제</CardTitle>
+          <CardDescription>
+            삭제하면 홈/검색/지도/상세페이지를 포함한 모든 공개 화면과 관리자 목록에서 즉시 사라집니다. 되돌리려면
+            데이터베이스에서 직접 복구해야 합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog onOpenChange={handleOpenDeleteDialog}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="gap-1.5">
+                <Trash2 className="h-3.5 w-3.5" />
+                지점 삭제
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>&quot;{branch.name}&quot; 지점을 삭제하시겠습니까?</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="flex flex-col gap-2">
+                    <span>이 작업은 즉시 적용되며, 공개 사이트와 관리자 목록에서 더 이상 보이지 않습니다.</span>
+                    {deleteImpact ? (
+                      <span className="rounded-md bg-muted px-3 py-2 text-xs text-foreground">
+                        연관 데이터: 사진/영상 {deleteImpact.mediaCount}개, 연락처 {deleteImpact.contactsCount}개, 진행중
+                        채용공고 {deleteImpact.activeRecruitCount}건, 누적 조회수 {deleteImpact.viewCount}회
+                        <br />
+                        이 데이터는 삭제되지 않고 보관되지만, 지점이 비공개 처리되며 함께 노출이 중단됩니다.
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">연관 데이터를 확인하는 중...</span>
+                    )}
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDelete();
+                  }}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? '삭제 중...' : '삭제'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     </div>

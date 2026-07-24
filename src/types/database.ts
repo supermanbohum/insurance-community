@@ -15,7 +15,7 @@ export type GaApprovalStatus = 'pending' | 'approved' | 'rejected' | 'suspended'
 export type BranchMediaType = 'image_main' | 'image_office' | 'video';
 export type BranchMediaSource = 'storage' | 'external';
 /** ga_company의 노출 상태 - approval_status(심사)와 별개로 승인 이후에도 관리자가 임시로 내릴 수 있는 스위치. */
-export type GaDisplayStatus = 'visible' | 'hidden';
+export type GaDisplayStatus = 'visible' | 'hidden' | 'deleted';
 /** 지점 운영 형태 - 'direct'(직영) | 'branch'(지사). GA가 아니라 지점 단위로 다를 수 있다. */
 export type GaOperationType = 'direct' | 'branch';
 /** 일반 회원(users)의 로그인 수단. 실제 소셜 로그인 연동 전까지는 Mock Auth에서만 쓰인다. */
@@ -625,6 +625,18 @@ export interface Database {
       set_ga_company_approval_status: {
         Args: { p_ga_company_id: string; p_status: GaApprovalStatus; p_reason?: string };
         Returns: void;
+      };
+      set_ga_company_status: {
+        Args: { p_ga_company_id: string; p_status: GaDisplayStatus };
+        Returns: void;
+      };
+      get_ga_company_delete_impact: {
+        Args: { p_ga_company_id: string };
+        Returns: { branch_count: number }[];
+      };
+      get_branch_delete_impact: {
+        Args: { p_branch_id: string };
+        Returns: { media_count: number; contacts_count: number; active_recruit_count: number; view_count: number }[];
       };
       create_branch: {
         Args: {

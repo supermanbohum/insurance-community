@@ -156,3 +156,31 @@ export async function verifyGaCompanyAction(
   revalidatePath(`/admin/ga/${gaCompanyId}`);
   return { success: true };
 }
+
+export interface GaCompanyDeleteImpact {
+  branchCount: number;
+}
+
+export async function getGaCompanyDeleteImpactAction(gaCompanyId: string): Promise<GaCompanyDeleteImpact | null> {
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase.rpc('get_ga_company_delete_impact', { p_ga_company_id: gaCompanyId }).single();
+  if (error || !data) return null;
+  return { branchCount: data.branch_count };
+}
+
+/** 소프트 삭제 - status를 'deleted'로 전환한다. 소속 지점 전체도 함께 'deleted' 처리된다(0011 SQL). */
+export async function deleteGaCompanyAction(gaCompanyId: string): Promise<ActionResult> {
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('set_ga_company_status', {
+    p_ga_company_id: gaCompanyId,
+    p_status: 'deleted',
+  });
+
+  if (error) {
+    return { success: false, error: '삭제하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  revalidatePath('/admin/ga');
+  revalidatePath('/admin/branches');
+  return { success: true };
+}

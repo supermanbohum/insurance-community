@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { createBranchAction } from '@/lib/actions/branch-admin';
 import type { RegionRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
+import { AddressSearchField, type AddressValue } from '@/components/admin/AddressSearchField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,8 +28,7 @@ export function BranchCreateForm({
   const [gaCompanyId, setGaCompanyId] = useState(defaultGaCompanyId ?? '');
   const [regionId, setRegionId] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [addressDetail, setAddressDetail] = useState('');
+  const [addressValue, setAddressValue] = useState<AddressValue>({ address: '', addressDetail: '', zonecode: '', lat: null, lng: null });
   const [introText, setIntroText] = useState('');
 
   function handleSubmit(e: React.FormEvent) {
@@ -37,12 +37,18 @@ export function BranchCreateForm({
       toast.error('소속 GA를 선택해주세요.');
       return;
     }
+    if (!addressValue.address.trim()) {
+      toast.error('주소를 검색해주세요.');
+      return;
+    }
     startTransition(async () => {
       const result = await createBranchAction(gaCompanyId, {
         name,
         regionId,
-        address,
-        addressDetail,
+        address: addressValue.address,
+        addressDetail: addressValue.addressDetail,
+        lat: addressValue.lat ?? undefined,
+        lng: addressValue.lng ?? undefined,
         introText,
       });
       if (result.success && result.branchId) {
@@ -81,14 +87,8 @@ export function BranchCreateForm({
 
           <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="branch-address">주소 *</Label>
-            <Input id="branch-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="branch-address-detail">상세주소</Label>
-            <Input id="branch-address-detail" value={addressDetail} onChange={(e) => setAddressDetail(e.target.value)} />
-          </div>
+          <AddressSearchField value={addressValue} onChange={setAddressValue} />
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="branch-intro">회사소개</Label>
             <Textarea id="branch-intro" value={introText} onChange={(e) => setIntroText(e.target.value)} rows={4} />

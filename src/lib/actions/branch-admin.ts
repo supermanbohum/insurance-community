@@ -121,6 +121,30 @@ export async function setBranchStatusAction(branchId: string, status: GaStatus):
   return { success: true };
 }
 
+export interface BranchDeleteImpact {
+  mediaCount: number;
+  contactsCount: number;
+  activeRecruitCount: number;
+  viewCount: number;
+}
+
+export async function getBranchDeleteImpactAction(branchId: string): Promise<BranchDeleteImpact | null> {
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase.rpc('get_branch_delete_impact', { p_branch_id: branchId }).single();
+  if (error || !data) return null;
+  return {
+    mediaCount: data.media_count,
+    contactsCount: data.contacts_count,
+    activeRecruitCount: data.active_recruit_count,
+    viewCount: data.view_count,
+  };
+}
+
+/** 소프트 삭제 - status를 'deleted'로 전환한다. 공개/관리자 목록에서 즉시 제외된다. */
+export async function deleteBranchAction(branchId: string): Promise<ActionResult> {
+  return setBranchStatusAction(branchId, 'deleted');
+}
+
 export async function setBranchRecommendedAction(
   branchId: string,
   isRecommended: boolean
