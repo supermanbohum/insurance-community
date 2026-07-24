@@ -33,6 +33,11 @@ function revalidateBranch(branchId?: string) {
   revalidatePath('/admin/branches');
   if (branchId) revalidatePath(`/admin/branches/${branchId}`);
   revalidatePath('/admin');
+  // 공개 페이지도 함께 무효화 - 홈이 캐시(ISR)를 쓰기 때문에 등록/승인 즉시 반영되려면 필요하다.
+  revalidatePath('/');
+  revalidatePath('/search');
+  revalidatePath('/map');
+  revalidatePath('/branch/[slug]', 'page');
 }
 
 export async function createBranchAction(

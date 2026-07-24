@@ -8,6 +8,14 @@ import type { GaApprovalStatus, GaDisplayStatus } from '@/types/database';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
+// 공개 페이지도 함께 무효화 - 홈이 캐시(ISR)를 쓰기 때문에 GA 승인/수정 즉시 반영에 필요하다.
+function revalidatePublicPages() {
+  revalidatePath('/');
+  revalidatePath('/search');
+  revalidatePath('/map');
+  revalidatePath('/branch/[slug]', 'page');
+}
+
 /** GA는 회사 정보/로고/브랜드 소개만 갖는 상위 엔티티다 - 주소/연락처/SNS/교육/복지 등은
  * 전부 지점(Branch) 등록 화면에서 입력한다. */
 export interface GaCompanyActionInput {
@@ -77,6 +85,7 @@ export async function deleteGaLogoAction(gaCompanyId: string): Promise<ActionRes
 
   revalidatePath('/admin/ga');
   revalidatePath(`/admin/ga/${gaCompanyId}`);
+  revalidatePublicPages();
   return { success: true };
 }
 
@@ -107,6 +116,7 @@ export async function setGaApprovalStatusAction(
 
   revalidatePath('/admin');
   revalidatePath('/admin/ga');
+  revalidatePublicPages();
   return { success: true };
 }
 
@@ -162,6 +172,7 @@ export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompan
 
   revalidatePath('/admin/ga');
   revalidatePath(`/admin/ga/${gaCompanyId}`);
+  revalidatePublicPages();
   return { success: true };
 }
 
@@ -172,6 +183,7 @@ export async function setGaDisplayStatusAction(gaCompanyId: string, status: 'vis
   if (error) return { success: false, error: '처리하지 못했습니다.' };
   revalidatePath('/admin/ga');
   revalidatePath(`/admin/ga/${gaCompanyId}`);
+  revalidatePublicPages();
   return { success: true };
 }
 
@@ -191,6 +203,7 @@ export async function verifyGaCompanyAction(
 
   revalidatePath('/admin/ga');
   revalidatePath(`/admin/ga/${gaCompanyId}`);
+  revalidatePublicPages();
   return { success: true };
 }
 
@@ -219,5 +232,6 @@ export async function deleteGaCompanyAction(gaCompanyId: string): Promise<Action
 
   revalidatePath('/admin/ga');
   revalidatePath('/admin/branches');
+  revalidatePublicPages();
   return { success: true };
 }

@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createPublicSupabaseClient } from '@/lib/supabase/public';
 
 export interface SidoGroup {
   sidoCode: string;
@@ -12,7 +13,8 @@ export interface SigunguItem {
 }
 
 export async function listSidoGroups(): Promise<SidoGroup[]> {
-  const supabase = createServerSupabaseClient();
+  // 홈 화면에서 쓰이므로 cookies()를 건드리지 않는 공개 클라이언트를 쓴다(ISR 캐시 유지).
+  const supabase = createPublicSupabaseClient();
   const { data, error } = await supabase.from('regions').select('sido_code, sido_name').order('sort_order');
   if (error) throw error;
 

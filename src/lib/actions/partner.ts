@@ -96,6 +96,8 @@ export async function updateGaCompanyProfileAction(input: {
   }
 
   revalidatePath('/partner/company');
+  revalidatePath('/');
+  revalidatePath('/search');
   return { success: true };
 }
 
@@ -124,7 +126,7 @@ export async function submitBranchChangeAction(
   const partner = await requirePartner();
   const supabase = createServerSupabaseClient();
 
-  const { data: branch } = await supabase.from('ga_branch').select('id, ga_company_id, region_id').eq('id', branchId).maybeSingle();
+  const { data: branch } = await supabase.from('ga_branch').select('id, slug, ga_company_id, region_id').eq('id', branchId).maybeSingle();
   if (!branch || branch.ga_company_id !== partner.ga_company_id) {
     return { success: false, error: '접근 권한이 없습니다.' };
   }
@@ -202,7 +204,9 @@ export async function submitBranchChangeAction(
 
   revalidatePath('/partner/branches');
   revalidatePath(`/partner/branches/${branchId}`);
-  revalidatePath(`/branch/${branchId}`);
+  revalidatePath(`/branch/${branch.slug}`);
+  revalidatePath('/');
+  revalidatePath('/search');
   return { success: true };
 }
 
@@ -228,7 +232,7 @@ export async function submitBranchMainImageAction(branchId: string, formData: Fo
 
   const partner = await requirePartner();
   const supabase = createServerSupabaseClient();
-  const { data: branch } = await supabase.from('ga_branch').select('id, ga_company_id').eq('id', branchId).maybeSingle();
+  const { data: branch } = await supabase.from('ga_branch').select('id, slug, ga_company_id').eq('id', branchId).maybeSingle();
   if (!branch || branch.ga_company_id !== partner.ga_company_id) {
     return { success: false, error: '접근 권한이 없습니다.' };
   }
@@ -254,7 +258,8 @@ export async function submitBranchMainImageAction(branchId: string, formData: Fo
   }
 
   revalidatePath(`/partner/branches/${branchId}`);
-  revalidatePath(`/branch/${branchId}`);
+  revalidatePath(`/branch/${branch.slug}`);
+  revalidatePath('/');
   return { success: true };
 }
 

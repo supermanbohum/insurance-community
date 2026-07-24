@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import type { PublicBranchSummary, GaOperationType } from '@/types/database';
 
 const SUMMARY_SELECT = `
@@ -86,7 +87,9 @@ export async function listPublicBranches(options: {
   parkingAvailable?: boolean;
   operationType?: 'direct' | 'branch';
 }): Promise<PublicBranchSummary[]> {
-  const supabase = createServerSupabaseClient();
+  // cookies()를 건드리지 않는 공개 클라이언트 - 홈/검색/지도가 ISR 캐시를 쓸 수 있으려면
+  // 이 함수가 요청마다 강제로 dynamic 렌더링되게 만들면 안 된다.
+  const supabase = createPublicSupabaseClient();
   const imageBaseUrl = getImageBaseUrl();
   const logoBaseUrl = getLogoBaseUrl();
 
