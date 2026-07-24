@@ -21,10 +21,14 @@ export async function GET() {
     ? null
     : await supabase.rpc('set_branch_status', { p_branch_id: TEST_BRANCH_ID, p_status: 'hidden' });
 
+  // set_ga_company_status가 deleted_at 컬럼을 실제로 건드리는지 직접 확인 (상태는 그대로 'hidden' 유지)
+  const gaStatusTest = await supabase.rpc('set_ga_company_status', { p_ga_company_id: TEST_GA_COMPANY_ID, p_status: 'hidden' });
+
   return NextResponse.json({
     branchImpact: { data: branchImpact.data, error: branchImpact.error },
     gaImpact: { data: gaImpact.data, error: gaImpact.error },
     gaCompanyDeletedAtColumn: { data: gaCompanyDeletedAt.data, error: gaCompanyDeletedAt.error },
     branchStatusAcceptsDeleted: { error: setDeletedTest.error, reverted: !!revertTest && !revertTest.error },
+    gaStatusTest: { error: gaStatusTest.error },
   });
 }
