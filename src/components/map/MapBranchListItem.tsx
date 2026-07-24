@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { BadgeCheck, Briefcase, Building2, Eye, MapPin } from 'lucide-react';
 import { avatarGradient, cn } from '@/lib/utils';
 import type { MapBranch } from './types';
@@ -22,8 +23,7 @@ export function MapBranchListItem({
     >
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-sunken">
         {branch.mainImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={branch.mainImageUrl} alt={branch.name} className="h-full w-full object-cover" />
+          <Image src={branch.mainImageUrl} alt={branch.name} fill loading="lazy" sizes="56px" className="object-cover" />
         ) : (
           <div
             className={cn(

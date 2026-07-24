@@ -26,15 +26,18 @@ export function BohomMapBottomNav() {
           <Link
             key={tab.href}
             href={tab.href}
-            className="flex flex-1 flex-col items-center justify-center gap-1 pt-1.5 text-[11px] transition-colors"
+            className="flex flex-1 flex-col items-center justify-center gap-1 pt-1.5 text-[11px] transition-colors active:scale-95"
           >
             <span
               className={cn(
-                'relative flex h-7 w-11 items-center justify-center rounded-full transition-all duration-200',
-                active ? 'bg-brand-50 text-brand-600' : 'text-ink-faint'
+                'relative flex h-7 w-11 items-center justify-center rounded-full transition-all duration-200 ease-out',
+                active ? 'scale-105 bg-brand-50 text-brand-600' : 'scale-100 text-ink-faint'
               )}
             >
-              <Icon className="h-[19px] w-[19px]" strokeWidth={active ? 2.4 : 2} />
+              <Icon
+                className={cn('h-[19px] w-[19px] transition-transform duration-200', active && 'scale-110')}
+                strokeWidth={active ? 2.4 : 2}
+              />
               {'external' in tab && tab.external && (
                 <ExternalLink className="absolute right-1.5 top-0.5 h-2.5 w-2.5 text-ink-faint" strokeWidth={2.5} />
               )}

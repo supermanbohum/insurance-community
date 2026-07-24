@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { BadgeCheck, MapPin, Eye, Building2, RefreshCw } from 'lucide-react';
@@ -36,11 +37,13 @@ export function BranchCard({
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-sunken">
         {branch.mainImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={branch.mainImageUrl}
             alt={branch.name}
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+            fill
+            loading="lazy"
+            sizes="(min-width: 1024px) 220px, 45vw"
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
           />
         ) : (
           <div

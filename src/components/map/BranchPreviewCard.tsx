@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { BadgeCheck, Briefcase, Building2, ChevronRight, MapPin, X } from 'lucide-react';
 import { avatarGradient, cn } from '@/lib/utils';
 import type { MapBranch } from './types';
@@ -8,8 +9,7 @@ export function BranchPreviewCard({ branch, onClose }: { branch: MapBranch; onCl
     <div className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-line bg-white p-3 shadow-card-hover">
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-surface-sunken">
         {branch.mainImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={branch.mainImageUrl} alt={branch.name} className="h-full w-full object-cover" />
+          <Image src={branch.mainImageUrl} alt={branch.name} fill loading="lazy" sizes="56px" className="object-cover" />
         ) : (
           <div
             className={cn(
