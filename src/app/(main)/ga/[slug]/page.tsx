@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
  * 그마저 없으면 검색 결과로 보낸다.
  */
 export default async function GaRedirectPage({ params }: { params: { slug: string } }) {
-  const target = await getGaRedirectTarget(params.slug);
+  // /branch/[slug]와 동일한 이유로 명시적 디코딩 필요.
+  const target = await getGaRedirectTarget(decodeURIComponent(params.slug));
 
   if (!target.found) {
     redirect('/search');

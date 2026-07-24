@@ -8,7 +8,10 @@ import type { BranchPreviewData } from '@/components/branch/types';
 export const dynamic = 'force-dynamic';
 
 export default async function BranchDetailPage({ params }: { params: { slug: string } }) {
-  const branch = await getPublicBranchDetail(params.slug);
+  // Next.js 14 App Router: 페이지 컴포넌트의 동적 세그먼트 params는 Route Handler와 달리
+  // percent-encoding이 자동으로 디코딩되지 않는 경우가 있어 명시적으로 디코딩한다.
+  const slug = decodeURIComponent(params.slug);
+  const branch = await getPublicBranchDetail(slug);
   if (!branch) {
     notFound();
   }
