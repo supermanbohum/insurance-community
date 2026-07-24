@@ -61,6 +61,15 @@ export async function GET() {
     const { data: afterDelete } = await supabase.from('branch_media').select('id').eq('id', mediaRow.id).maybeSingle();
     steps.step5_dbRowAfterDelete = afterDelete;
 
+    // storage.remove()가 실제로 지웠는지 직접 확인 (service role, RLS 우회)
+    const { data: storageList, error: storageListError } = await supabase.storage.from('branch-images').list(
+      `${TEST_GA_COMPANY_ID}/${TEST_BRANCH_ID}`
+    );
+    steps.step5b_storageObjectsRemaining = { data: storageList, error: storageListError };
+
+    const { error: manualRemoveError } = await supabase.storage.from('branch-images').remove([mediaRow.value]);
+    steps.step5c_manualAdminRemove = { error: manualRemoveError };
+
     const fetchAfterDelete = await fetch(publicUrl, { cache: 'no-store' });
     steps.step6_publicUrlAfterDelete = { status: fetchAfterDelete.status };
 
