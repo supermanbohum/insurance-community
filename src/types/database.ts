@@ -790,6 +790,69 @@ export interface Database {
         Args: { p_branch_id: string };
         Returns: { total_views: number; today_views: number; contact_clicks: number }[];
       };
+      signup_ga_admin: {
+        Args: { p_display_name?: string | null };
+        Returns: Database['public']['Tables']['ga_admin_users']['Row'];
+      };
+      register_ga_for_partner: {
+        Args: {
+          p_slug: string;
+          p_name: string;
+          p_ceo_name?: string | null;
+          p_description?: string | null;
+          p_branch_slug: string;
+          p_branch_name: string;
+          p_region_id: string | null;
+          p_manager_name?: string | null;
+          p_address: string;
+          p_address_detail?: string | null;
+          p_intro_text?: string | null;
+          p_planner_count?: number | null;
+          p_parking_available?: boolean | null;
+          p_visit_consult_available?: boolean | null;
+          p_business_hours?: string | null;
+        };
+        Returns: { ga_company_id: string; branch_id: string }[];
+      };
+      create_partner_branch: {
+        Args: {
+          p_slug: string;
+          p_name: string;
+          p_region_id: string | null;
+          p_manager_name?: string | null;
+          p_address: string;
+          p_address_detail?: string | null;
+          p_intro_text?: string | null;
+          p_planner_count?: number | null;
+          p_parking_available?: boolean | null;
+          p_visit_consult_available?: boolean | null;
+          p_business_hours?: string | null;
+        };
+        Returns: string;
+      };
+      update_partner_ga_company: {
+        Args: { p_name: string; p_ceo_name?: string | null; p_description?: string | null };
+        Returns: void;
+      };
+      update_partner_branch: {
+        Args: {
+          p_branch_id: string;
+          p_name: string;
+          p_region_id: string | null;
+          p_address: string;
+          p_address_detail?: string | null;
+          p_intro_text?: string | null;
+          p_education_info?: string | null;
+          p_welfare_info?: string | null;
+          p_db_support_info?: string | null;
+          p_settlement_support_info?: string | null;
+          p_planner_count?: number | null;
+          p_parking_available?: boolean | null;
+          p_visit_consult_available?: boolean | null;
+          p_business_hours?: string | null;
+        };
+        Returns: void;
+      };
     };
   };
 }

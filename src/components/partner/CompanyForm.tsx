@@ -21,7 +21,7 @@ export function CompanyForm({ company }: { company: GaCompanyRow }) {
     startTransition(async () => {
       const result = await updateGaCompanyProfileAction({ name, ceoName, description });
       if (result.success) {
-        toast.success(result.pending ? '수정 신청이 접수되었습니다. 관리자 승인 후 반영됩니다.' : '저장되었습니다.');
+        toast.success('저장되었습니다.');
       } else {
         toast.error(result.error);
       }
@@ -48,7 +48,7 @@ export function CompanyForm({ company }: { company: GaCompanyRow }) {
             <Textarea id="company-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
           </div>
           <Button type="submit" disabled={isPending} className="self-start">
-            {isPending ? '저장 중...' : company.approval_status === 'approved' ? '수정 신청' : '저장'}
+            {isPending ? '저장 중...' : '저장'}
           </Button>
         </CardContent>
       </Card>

@@ -43,7 +43,7 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
       {isApproved && (
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="pt-4 text-sm text-amber-900">
-            공개 중인 지점은 저장하면 즉시 반영되지 않고 관리자 승인 후 반영됩니다.
+            수정 사항은 저장 즉시 반영됩니다. 다만 지점 자체의 공개 여부는 관리자 승인 상태를 따릅니다.
           </CardContent>
         </Card>
       )}
@@ -55,7 +55,6 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
         selectedInsurerIds={selectedInsurerIds}
         contacts={contacts}
         activeRecruit={activeRecruit}
-        isApproved={isApproved}
       />
     </div>
   );

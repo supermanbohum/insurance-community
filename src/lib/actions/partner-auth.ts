@@ -1,14 +1,9 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { IS_MOCK_MODE } from '@/lib/mock/config';
-import { mockStore } from '@/lib/mock/store';
-import { PARTNER_SESSION_COOKIE } from '@/lib/partner/session';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export type ActionResult = { success: true } | { success: false; error: string };
-
-const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 export async function signupPartnerAction(input: {
   email: string;
@@ -25,35 +20,22 @@ export async function signupPartnerAction(input: {
     return { success: false, error: '비밀번호는 8자 이상이어야 합니다.' };
   }
 
-  if (!IS_MOCK_MODE) {
-    return { success: false, error: '현재 준비 중인 기능입니다.' };
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase.auth.signUp({ email, password: input.password });
+
+  if (error) {
+    return { success: false, error: error.message === 'User already registered' ? '이미 가입된 이메일입니다.' : error.message };
   }
 
-  if (mockStore.gaAdminUsers.some((g) => g.email === email)) {
-    return { success: false, error: '이미 가입된 이메일입니다.' };
+  if (!data.session) {
+    // 이메일 확인이 켜져 있으면 signUp 직후에는 세션이 없다 - 확인 후 로그인 시 계정이 만들어진다.
+    return { success: false, error: '가입 확인 이메일을 보냈습니다. 메일함을 확인한 뒤 로그인해주세요.' };
   }
 
-  const now = mockStore.nowIso();
-  const partner = {
-    id: mockStore.genId('gaadmin'),
-    ga_company_id: null,
-    branch_id: null,
-    email,
-    // Mock 전용 평문 비밀번호. 실제 배포 전 Supabase Auth로 완전히 교체해야 한다.
-    password: input.password,
-    display_name: displayName,
-    is_active: true,
-    created_at: now,
-    updated_at: now,
-  };
-  mockStore.gaAdminUsers.push(partner);
-
-  cookies().set(PARTNER_SESSION_COOKIE, partner.id, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: SESSION_MAX_AGE,
-  });
+  const { error: rpcError } = await supabase.rpc('signup_ga_admin', { p_display_name: displayName });
+  if (rpcError) {
+    return { success: false, error: rpcError.message };
+  }
 
   return { success: true };
 }
@@ -61,26 +43,24 @@ export async function signupPartnerAction(input: {
 export async function loginPartnerAction(input: { email: string; password: string }): Promise<ActionResult> {
   const email = input.email.trim().toLowerCase();
 
-  if (!IS_MOCK_MODE) {
-    return { success: false, error: '현재 준비 중인 기능입니다.' };
-  }
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: input.password });
 
-  const partner = mockStore.gaAdminUsers.find((g) => g.email === email && g.is_active);
-  if (!partner || partner.password !== input.password) {
+  if (error || !data.session) {
     return { success: false, error: '이메일 또는 비밀번호가 올바르지 않습니다.' };
   }
 
-  cookies().set(PARTNER_SESSION_COOKIE, partner.id, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: SESSION_MAX_AGE,
-  });
+  // 가입 시 이메일 확인 때문에 ga_admin_users 행이 아직 없을 수 있으므로 로그인 시점에도 보장한다.
+  const { error: rpcError } = await supabase.rpc('signup_ga_admin', { p_display_name: null });
+  if (rpcError) {
+    return { success: false, error: rpcError.message };
+  }
 
   return { success: true };
 }
 
 export async function logoutPartnerAction(): Promise<void> {
-  cookies().delete(PARTNER_SESSION_COOKIE);
+  const supabase = createServerSupabaseClient();
+  await supabase.auth.signOut();
   redirect('/partner/login');
 }

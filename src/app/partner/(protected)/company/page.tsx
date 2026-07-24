@@ -19,7 +19,7 @@ export default async function PartnerCompanyPage() {
         <h1 className="text-xl font-bold">GA 정보</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {company.approval_status === 'approved'
-            ? '공개 중인 GA입니다. 수정하면 관리자 승인 후 반영돼요.'
+            ? '공개 중인 GA입니다. 수정 사항은 저장 즉시 반영됩니다.'
             : '아직 공개 전이라 수정 즉시 반영됩니다.'}
         </p>
       </div>

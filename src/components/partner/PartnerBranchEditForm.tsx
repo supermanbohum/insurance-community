@@ -21,7 +21,6 @@ export function PartnerBranchEditForm({
   selectedInsurerIds,
   contacts,
   activeRecruit,
-  isApproved,
 }: {
   branch: BranchRow;
   regions: RegionRow[];
@@ -29,7 +28,6 @@ export function PartnerBranchEditForm({
   selectedInsurerIds: string[];
   contacts: BranchContactRow[];
   activeRecruit: BranchRecruitRow | null;
-  isApproved: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
   const [isUploadingImage, setUploadingImage] = useState(false);
@@ -58,8 +56,8 @@ export function PartnerBranchEditForm({
   const [recruitTitle, setRecruitTitle] = useState(activeRecruit?.title ?? '');
   const [recruitContent, setRecruitContent] = useState(activeRecruit?.content ?? '');
 
-  function notify(pending: boolean | undefined) {
-    toast.success(pending ? '수정 신청이 접수되었습니다. 관리자 승인 후 반영됩니다.' : '저장되었습니다.');
+  function notify() {
+    toast.success('저장되었습니다.');
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -87,7 +85,7 @@ export function PartnerBranchEditForm({
             : undefined,
       });
       if (result.success) {
-        notify(result.pending);
+        notify();
       } else {
         toast.error(result.error);
       }
@@ -102,7 +100,7 @@ export function PartnerBranchEditForm({
     submitBranchMainImageAction(branch.id, formData)
       .then((result) => {
         if (result.success) {
-          notify(result.pending);
+          notify();
         } else {
           toast.error(result.error);
         }
@@ -252,7 +250,7 @@ export function PartnerBranchEditForm({
       </Card>
 
       <Button type="submit" disabled={isPending} size="lg">
-        {isPending ? '저장 중...' : isApproved ? '수정 신청' : '저장'}
+        {isPending ? '저장 중...' : '저장'}
       </Button>
     </form>
   );

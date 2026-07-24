@@ -17,7 +17,7 @@ export default async function PartnerBranchesPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-bold">지점 관리</h1>
-        <p className="mt-1 text-sm text-muted-foreground">지점 정보는 저장 시점의 승인 상태에 따라 즉시 반영되거나 수정 신청으로 대기합니다.</p>
+        <p className="mt-1 text-sm text-muted-foreground">지점 정보는 저장 즉시 반영됩니다. 신규 지점의 공개 여부는 관리자 승인을 따릅니다.</p>
       </div>
 
       <Card>
