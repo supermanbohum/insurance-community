@@ -67,11 +67,18 @@ export async function GET() {
     );
     steps.step5b_storageObjectsRemaining = { data: storageList, error: storageListError };
 
-    const { error: manualRemoveError } = await supabase.storage.from('branch-images').remove([mediaRow.value]);
-    steps.step5c_manualAdminRemove = { error: manualRemoveError };
+    // 이전 실행에서 남은 고아 파일까지 전부 정리
+    if (storageList && storageList.length > 0) {
+      const prefix = `${TEST_GA_COMPANY_ID}/${TEST_BRANCH_ID}`;
+      const paths = storageList.map((f) => `${prefix}/${f.name}`);
+      const { error: cleanupError } = await supabase.storage.from('branch-images').remove(paths);
+      steps.step5c_cleanupOrphans = { removed: paths, error: cleanupError };
+    }
 
-    const fetchAfterDelete = await fetch(publicUrl, { cache: 'no-store' });
-    steps.step6_publicUrlAfterDelete = { status: fetchAfterDelete.status };
+    const { data: storageListAfterCleanup } = await supabase.storage
+      .from('branch-images')
+      .list(`${TEST_GA_COMPANY_ID}/${TEST_BRANCH_ID}`);
+    steps.step5d_storageObjectsAfterCleanup = storageListAfterCleanup;
 
     return NextResponse.json({ steps, ok: true });
   } catch (err) {

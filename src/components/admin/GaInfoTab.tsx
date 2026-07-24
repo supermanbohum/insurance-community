@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Trash2, UploadCloud } from 'lucide-react';
-import { updateGaCompanyAction, uploadGaLogoAction } from '@/lib/actions/ga-admin';
+import { updateGaCompanyAction, uploadGaLogoAction, deleteGaLogoAction } from '@/lib/actions/ga-admin';
 import type { GaCompanyRow } from '@/lib/admin/ga';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,7 @@ function GaLogoCard({ ga }: { ga: GaCompanyRow }) {
 
   function handleDelete() {
     startTransition(async () => {
-      const result = await updateGaCompanyAction(ga.id, { logoPath: '' });
+      const result = await deleteGaLogoAction(ga.id);
       if (result.success) {
         setLogoPath(null);
         toast.success('로고를 삭제했습니다.');

@@ -3,6 +3,7 @@
 import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type { BranchMediaSource, BranchMediaType } from '@/types/database';
 import type { ActionResult } from '@/lib/actions/branch-admin';
 
@@ -63,7 +64,7 @@ export async function uploadBranchImageAction(
   });
 
   if (registerError) {
-    await supabase.storage.from(IMAGE_BUCKET).remove([path]);
+    await createAdminClient().storage.from(IMAGE_BUCKET).remove([path]);
     return { success: false, error: '등록하지 못했습니다.' };
   }
 
@@ -109,7 +110,7 @@ export async function uploadBranchVideoAction(
   });
 
   if (registerError) {
-    await supabase.storage.from(VIDEO_BUCKET).remove([path]);
+    await createAdminClient().storage.from(VIDEO_BUCKET).remove([path]);
     return { success: false, error: '등록하지 못했습니다.' };
   }
 
@@ -146,8 +147,15 @@ export async function deleteBranchMediaAction(
 
   if (error) return { success: false, error: '삭제하지 못했습니다.' };
 
+  // storage.objects의 delete RLS 정책은 anon 세션의 auth.uid() 컨텍스트에서 종종
+  // current_admin_id()를 안정적으로 해석하지 못해 파일이 지워지지 않고 남는 문제가
+  // 있었다(DB 레코드만 삭제되고 실제 파일은 고아로 남음) - service role로 확실히 지운다.
   if (bucket && path) {
-    await supabase.storage.from(bucket).remove([path]);
+    const adminClient = createAdminClient();
+    const { error: removeError } = await adminClient.storage.from(bucket).remove([path]);
+    if (removeError) {
+      console.error('[deleteBranchMediaAction] storage.remove failed', removeError);
+    }
   }
 
   revalidateBranch(branchId);

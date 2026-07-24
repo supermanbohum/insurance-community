@@ -3,6 +3,7 @@
 import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import type { GaApprovalStatus, GaDisplayStatus } from '@/types/database';
 
 export type ActionResult = { success: true } | { success: false; error: string };
@@ -55,6 +56,28 @@ export async function uploadGaLogoAction(
   }
 
   return { success: true, path };
+}
+
+/** 현재 로고를 DB/Storage에서 함께 제거한다. */
+export async function deleteGaLogoAction(gaCompanyId: string): Promise<ActionResult> {
+  const supabase = createServerSupabaseClient();
+  const { data: ga } = await supabase.from('ga_company').select('logo_path').eq('id', gaCompanyId).maybeSingle();
+
+  const { error } = await supabase.rpc('update_ga_company', { p_ga_company_id: gaCompanyId, p_logo_path: '' });
+  if (error) {
+    return { success: false, error: '삭제하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  if (ga?.logo_path) {
+    const { error: removeError } = await createAdminClient().storage.from(LOGO_BUCKET).remove([ga.logo_path]);
+    if (removeError) {
+      console.error('[deleteGaLogoAction] storage.remove failed', removeError);
+    }
+  }
+
+  revalidatePath('/admin/ga');
+  revalidatePath(`/admin/ga/${gaCompanyId}`);
+  return { success: true };
 }
 
 /**
