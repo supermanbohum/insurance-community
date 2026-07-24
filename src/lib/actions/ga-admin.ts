@@ -114,6 +114,10 @@ export async function createGaCompanyAction(
   return { success: true, gaCompanyId: data };
 }
 
+/**
+ * 부분 업데이트 - input에 실제로 포함되지 않은 필드(undefined)는 기존 값을 그대로 보존한다.
+ * 선택 필드(대표자/소개/로고)를 명시적으로 지우려면 빈 문자열('')을 보내야 한다.
+ */
 export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompanyUpdateInput): Promise<ActionResult> {
   if (input.name !== undefined && !input.name.trim()) {
     return { success: false, error: 'GA명을 입력해주세요.' };
@@ -122,10 +126,10 @@ export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompan
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('update_ga_company', {
     p_ga_company_id: gaCompanyId,
-    p_name: input.name?.trim() ?? '',
-    p_ceo_name: input.ceoName?.trim() || undefined,
-    p_description: input.description?.trim() || undefined,
-    p_logo_path: input.logoPath || undefined,
+    p_name: input.name?.trim(),
+    p_ceo_name: input.ceoName !== undefined ? input.ceoName.trim() : undefined,
+    p_description: input.description !== undefined ? input.description.trim() : undefined,
+    p_logo_path: input.logoPath,
     p_status: input.status,
   });
 
@@ -133,6 +137,16 @@ export async function updateGaCompanyAction(gaCompanyId: string, input: GaCompan
     return { success: false, error: '수정하지 못했습니다. 잠시 후 다시 시도해주세요.' };
   }
 
+  revalidatePath('/admin/ga');
+  revalidatePath(`/admin/ga/${gaCompanyId}`);
+  return { success: true };
+}
+
+/** 노출 여부(공개/비공개)만 전환한다 - updateGaCompanyAction과 달리 다른 필드에 영향 없음. */
+export async function setGaDisplayStatusAction(gaCompanyId: string, status: 'visible' | 'hidden'): Promise<ActionResult> {
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('set_ga_company_status', { p_ga_company_id: gaCompanyId, p_status: status });
+  if (error) return { success: false, error: '처리하지 못했습니다.' };
   revalidatePath('/admin/ga');
   revalidatePath(`/admin/ga/${gaCompanyId}`);
   return { success: true };

@@ -610,7 +610,7 @@ export interface Database {
       update_ga_company: {
         Args: {
           p_ga_company_id: string;
-          p_name: string;
+          p_name?: string;
           p_ceo_name?: string;
           p_description?: string;
           p_logo_path?: string;

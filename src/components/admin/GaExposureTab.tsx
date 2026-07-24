@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import {
-  updateGaCompanyAction,
+  setGaDisplayStatusAction,
   verifyGaCompanyAction,
   getGaCompanyDeleteImpactAction,
   deleteGaCompanyAction,
@@ -50,7 +50,7 @@ export function GaExposureTab({ ga }: { ga: GaCompanyRow }) {
   function handleVisibleToggle(checked: boolean) {
     setIsVisible(checked);
     startTransition(async () => {
-      const result = await updateGaCompanyAction(ga.id, { status: checked ? 'visible' : 'hidden' });
+      const result = await setGaDisplayStatusAction(ga.id, checked ? 'visible' : 'hidden');
       if (result.success) toast.success(checked ? '공개로 전환했습니다.' : '비공개로 전환했습니다.');
       else {
         toast.error(result.error);

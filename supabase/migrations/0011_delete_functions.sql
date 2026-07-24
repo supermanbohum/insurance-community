@@ -128,3 +128,51 @@ end;
 $$;
 
 grant execute on function public.set_ga_company_status(uuid, text) to authenticated;
+
+-- ---------------------------------------------------------
+-- E. update_ga_company 버그 수정.
+--    기존 구현은 name/ceo_name/description/logo_path를 전부 직접 대입했다.
+--    GaExposureTab의 노출 토글이 { status만 } 보내면 나머지 필드가 전부
+--    빈 값으로 덮어써지는 심각한 데이터 유실 버그였다(운영 중 발견).
+--    지금부터는 값이 오지 않은 필드(null)는 기존 값을 보존하고,
+--    명시적으로 빈 문자열을 보내야만 지운다(선택 필드 한정).
+-- ---------------------------------------------------------
+create or replace function public.update_ga_company(
+  p_ga_company_id uuid,
+  p_name text default null,
+  p_ceo_name text default null,
+  p_description text default null,
+  p_logo_path text default null,
+  p_status text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.current_admin_id() is null then
+    raise exception 'NOT_PLATFORM_ADMIN';
+  end if;
+
+  if p_name is not null and length(trim(p_name)) = 0 then
+    raise exception 'INVALID_INPUT';
+  end if;
+
+  if p_status is not null and p_status not in ('visible', 'hidden') then
+    raise exception 'INVALID_STATUS';
+  end if;
+
+  update public.ga_company
+  set name = coalesce(p_name, name),
+      ceo_name = case when p_ceo_name is null then ceo_name when p_ceo_name = '' then null else p_ceo_name end,
+      description = case when p_description is null then description when p_description = '' then null else p_description end,
+      logo_path = case when p_logo_path is null then logo_path when p_logo_path = '' then null else p_logo_path end,
+      status = coalesce(p_status, status)
+  where id = p_ga_company_id;
+
+  if not found then
+    raise exception 'GA_COMPANY_NOT_FOUND';
+  end if;
+end;
+$$;
