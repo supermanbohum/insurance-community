@@ -10,12 +10,21 @@ export async function GET() {
   const supabase = createServerSupabaseClient();
 
   const branchImpact = await supabase.rpc('get_branch_delete_impact', { p_branch_id: TEST_BRANCH_ID }).single();
-  const branchImpactNoSingle = await supabase.rpc('get_branch_delete_impact', { p_branch_id: TEST_BRANCH_ID });
   const gaImpact = await supabase.rpc('get_ga_company_delete_impact', { p_ga_company_id: TEST_GA_COMPANY_ID }).single();
 
+  // ga_company.deleted_at 컬럼 존재 여부 (0011 section B)
+  const gaCompanyDeletedAt = await supabase.from('ga_company').select('id, deleted_at').eq('id', TEST_GA_COMPANY_ID).single();
+
+  // ga_branch status CHECK 제약이 'deleted'를 허용하는지 (0011 section A) - 실제로 세팅해보고 되돌린다
+  const setDeletedTest = await supabase.rpc('set_branch_status', { p_branch_id: TEST_BRANCH_ID, p_status: 'deleted' });
+  const revertTest = setDeletedTest.error
+    ? null
+    : await supabase.rpc('set_branch_status', { p_branch_id: TEST_BRANCH_ID, p_status: 'hidden' });
+
   return NextResponse.json({
-    branchImpact: { data: branchImpact.data, error: branchImpact.error, status: branchImpact.status, statusText: branchImpact.statusText },
-    branchImpactNoSingle: { data: branchImpactNoSingle.data, error: branchImpactNoSingle.error },
+    branchImpact: { data: branchImpact.data, error: branchImpact.error },
     gaImpact: { data: gaImpact.data, error: gaImpact.error },
+    gaCompanyDeletedAtColumn: { data: gaCompanyDeletedAt.data, error: gaCompanyDeletedAt.error },
+    branchStatusAcceptsDeleted: { error: setDeletedTest.error, reverted: !!revertTest && !revertTest.error },
   });
 }
