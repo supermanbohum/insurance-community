@@ -1,4 +1,5 @@
-import { ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, ShieldCheck } from 'lucide-react';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 
 export function HeroSearch() {
@@ -17,10 +18,19 @@ export function HeroSearch() {
       </div>
 
       <div className="relative z-10 flex flex-col gap-3">
-        <span className="flex w-fit items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/20">
-          <ShieldCheck className="h-3 w-3" />
-          검증된 GA 정보
-        </span>
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex w-fit items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white ring-1 ring-white/20">
+            <ShieldCheck className="h-3 w-3" />
+            검증된 GA 정보
+          </span>
+          <Link
+            href="/partner/signup"
+            className="flex shrink-0 items-center gap-1 rounded-full bg-white px-3.5 py-2 text-[13px] font-extrabold text-brand-700 shadow-card transition-transform hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+            GA 등록하기
+          </Link>
+        </div>
         <div>
           <h1 className="text-xl font-extrabold leading-snug text-white sm:text-2xl">보험맵</h1>
           <p className="mt-1 text-sm font-medium text-white/85 sm:text-base">

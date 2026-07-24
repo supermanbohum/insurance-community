@@ -175,7 +175,7 @@ export function SearchFilterButton({
 
                 <section className="flex flex-col gap-2.5">
                   <h3 className="text-sm font-bold text-ink">지역</h3>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="grid grid-cols-4 gap-1.5">
                     <FilterPill active={draftRegion === ''} onClick={() => setDraftRegion('')}>
                       전체
                     </FilterPill>
@@ -240,7 +240,7 @@ function FilterPill({ active, onClick, children }: { active: boolean; onClick: (
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
+        'flex h-9 shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-3 text-xs font-semibold transition-colors',
         active ? 'border-brand-600 bg-brand-600 text-white' : 'border-line bg-white text-ink-soft hover:border-brand-200'
       )}
     >

@@ -1,5 +1,5 @@
 import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
-import { listPublicGaCompanies } from '@/lib/public/ga';
+import { listGaFilterOptions, splitRegisteredGaIds } from '@/lib/public/ga-directory';
 import { listSidoGroups } from '@/lib/public/region';
 import { MapPageClient } from '@/components/map/MapPageClient';
 import type { MapBranch } from '@/components/map/types';
@@ -28,19 +28,22 @@ export default async function MapPage({
     searchParams.structure === 'direct' ? 'direct' : searchParams.structure === 'branch' ? 'branch' : '';
 
   const sort: BranchSortOption = 'recommended';
+  const { registeredIds: registeredGaIds, hasUnregisteredOnly } = splitRegisteredGaIds(gaIds);
 
   const [branchResults, regions, allGaOptions] = await Promise.all([
-    listPublicBranches({
-      q: q || undefined,
-      sort,
-      sidoCode: region || undefined,
-      gaCompanyIds: gaIds.length > 0 ? gaIds : undefined,
-      minPlannerCount: minPlanners || undefined,
-      parkingAvailable: parking === 'true' ? true : parking === 'false' ? false : undefined,
-      operationType: structure || undefined,
-    }),
+    hasUnregisteredOnly
+      ? Promise.resolve([])
+      : listPublicBranches({
+          q: q || undefined,
+          sort,
+          sidoCode: region || undefined,
+          gaCompanyIds: registeredGaIds.length > 0 ? registeredGaIds : undefined,
+          minPlannerCount: minPlanners || undefined,
+          parkingAvailable: parking === 'true' ? true : parking === 'false' ? false : undefined,
+          operationType: structure || undefined,
+        }),
     listSidoGroups(),
-    listPublicGaCompanies({}),
+    listGaFilterOptions(),
   ]);
 
   const branches: MapBranch[] = branchResults.map((b) => ({

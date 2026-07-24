@@ -75,9 +75,9 @@ export function AddressSearchField({
       <Script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" strategy="lazyOnload" onReady={() => setScriptReady(true)} />
 
       <div className="flex flex-col gap-1.5">
-        <Label>주소</Label>
+        <Label>주소 검색</Label>
         <div className="flex gap-2">
-          <Input value={value.address} readOnly placeholder="주소 검색 버튼을 눌러주세요" className="flex-1 bg-muted" />
+          <Input value={value.address} readOnly placeholder="① 주소 검색 버튼을 눌러 도로명주소를 불러오세요" className="flex-1 bg-muted" />
           <Button type="button" variant="outline" onClick={openPostcode} disabled={!scriptReady}>
             <Search className="mr-1.5 h-3.5 w-3.5" />
             주소 검색
@@ -101,12 +101,13 @@ export function AddressSearchField({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="address-detail">상세주소</Label>
+        <Label htmlFor="address-detail">② 상세주소 입력</Label>
         <Input
           id="address-detail"
           value={value.addressDetail}
           onChange={(e) => onChange({ ...value, addressDetail: e.target.value })}
-          placeholder="예: 3층 302호"
+          placeholder="예: 3층, 301호, A동 1204호"
+          disabled={!value.address}
         />
       </div>
     </div>

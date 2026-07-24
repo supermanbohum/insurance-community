@@ -113,7 +113,7 @@ export function MapPageClient({
               <MapBranchListItem key={b.id} branch={b} active={b.id === selectedId} onClick={() => handleSelectFromList(b.id)} />
             ))}
             {shownBranches.length === 0 && (
-              <p className="px-2 py-10 text-center text-sm text-ink-faint">조건에 맞는 지점이 없습니다.</p>
+              <p className="px-2 py-10 text-center text-sm text-ink-faint">해당 조건으로 등록되어 있는 지점이 없습니다.</p>
             )}
           </div>
         </aside>
@@ -182,7 +182,7 @@ export function MapPageClient({
                   />
                 ))}
                 {shownBranches.length === 0 && (
-                  <p className="px-2 py-10 text-center text-sm text-ink-faint">조건에 맞는 지점이 없습니다.</p>
+                  <p className="px-2 py-10 text-center text-sm text-ink-faint">해당 조건으로 등록되어 있는 지점이 없습니다.</p>
                 )}
               </div>
             </div>

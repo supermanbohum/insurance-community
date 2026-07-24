@@ -1,5 +1,5 @@
 import { Search, SearchX } from 'lucide-react';
-import { listPublicGaCompanies } from '@/lib/public/ga';
+import { listGaFilterOptions, splitRegisteredGaIds } from '@/lib/public/ga-directory';
 import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
 import { listSidoGroups } from '@/lib/public/region';
 import { BranchCard } from '@/components/branch/BranchCard';
@@ -40,21 +40,22 @@ export default async function SearchPage({
 
   const hasFilters = Boolean(region) || gaIds.length > 0 || minPlanners > 0 || Boolean(parking) || Boolean(structure);
   const shouldSearch = Boolean(q) || hasFilters;
+  const { registeredIds: registeredGaIds, hasUnregisteredOnly } = splitRegisteredGaIds(gaIds);
 
   const [branchResults, regions, allGaOptions] = await Promise.all([
-    shouldSearch
+    shouldSearch && !hasUnregisteredOnly
       ? listPublicBranches({
           q: q || undefined,
           sort,
           sidoCode: region || undefined,
-          gaCompanyIds: gaIds.length > 0 ? gaIds : undefined,
+          gaCompanyIds: registeredGaIds.length > 0 ? registeredGaIds : undefined,
           minPlannerCount: minPlanners || undefined,
           parkingAvailable: parking === 'true' ? true : parking === 'false' ? false : undefined,
           operationType: structure || undefined,
         })
       : Promise.resolve([]),
     listSidoGroups(),
-    listPublicGaCompanies({}),
+    listGaFilterOptions(),
   ]);
 
   const totalCount = branchResults.length;
@@ -128,12 +129,12 @@ export default async function SearchPage({
             <SearchX className="h-6 w-6" strokeWidth={1.5} />
           </span>
           <p className="text-sm">
-            {q ? (
+            {q && !hasFilters ? (
               <>
                 <span className="font-bold text-ink">&ldquo;{q}&rdquo;</span>에 대한 검색 결과가 없습니다.
               </>
             ) : (
-              '조건에 맞는 결과가 없습니다.'
+              '해당 조건으로 등록되어 있는 지점이 없습니다.'
             )}
           </p>
         </div>
