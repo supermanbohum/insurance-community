@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, ShieldCheck, ExternalLink } from 'lucide-react';
@@ -37,6 +37,12 @@ const MENU_GROUPS = [
 export function BohomMapHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const openMenu = () => setMenuOpen(true);
+    window.addEventListener('open-main-menu', openMenu);
+    return () => window.removeEventListener('open-main-menu', openMenu);
+  }, []);
 
   return (
     <>

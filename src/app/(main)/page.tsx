@@ -3,11 +3,13 @@ import { ChevronRight } from 'lucide-react';
 import { listPublicBranches } from '@/lib/public/branch';
 import { IconMenuGrid } from '@/components/home/IconMenuGrid';
 import { HeroSearch } from '@/components/home/HeroSearch';
-import { PlatformStats } from '@/components/home/PlatformStats';
+import { QuickActionCards } from '@/components/home/QuickActionCards';
 import { RegionQuickLinks } from '@/components/home/RegionQuickLinks';
-import { MapPreviewSection } from '@/components/home/MapPreviewSection';
+import { CompanyQuickLinks } from '@/components/home/CompanyQuickLinks';
+import { HomeMapHero } from '@/components/home/HomeMapHero';
 import { HomeFooter } from '@/components/home/HomeFooter';
 import { BranchCard } from '@/components/branch/BranchCard';
+import type { MapBranch } from '@/components/map/types';
 
 // (main)/layout.tsx가 매 요청마다 getCurrentUser()로 로그인 쿠키를 읽기 때문에
 // (헤더에 로그인 상태를 정확히 보여주려면 필요) 이 레이아웃 아래 페이지는 전부
@@ -49,21 +51,40 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [recommended, popular, latest] = await Promise.all([
-    listPublicBranches({ sort: 'recommended', limit: 4 }),
+  const [mapBranches, popular, latest] = await Promise.all([
+    listPublicBranches({ sort: 'recommended' }),
     listPublicBranches({ sort: 'views', limit: 6 }),
     listPublicBranches({ sort: 'newest', limit: 4 }),
   ]);
 
+  const heroMapBranches: MapBranch[] = mapBranches.map((b) => ({
+    id: b.id,
+    slug: b.slug,
+    name: b.name,
+    gaCompanyName: b.gaCompanyName,
+    isGaVerified: b.isGaVerified,
+    sidoName: b.sidoName,
+    sigunguName: b.sigunguName,
+    address: b.address,
+    lat: b.lat,
+    lng: b.lng,
+    operationType: b.operationType,
+    hasActiveRecruit: b.hasActiveRecruit,
+    viewCount: b.viewCount,
+    mainImageUrl: b.mainImageUrl,
+  }));
+
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-9 px-4 pb-6 pt-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-10 px-4 pb-6 pt-4">
       <HeroSearch />
 
-      <PlatformStats />
+      <HomeMapHero branches={heroMapBranches} />
+
+      <QuickActionCards />
 
       <IconMenuGrid />
 
-      <Section title="이번 주 인기 지점" subtitle="가장 많이 찾아본 지점" moreHref="/search">
+      <Section title="🔥 인기 GA" subtitle="가장 많이 찾아본 지점" moreHref="/search?sort=views">
         {popular.length === 0 ? (
           <EmptyRow text="아직 조회 데이터가 없습니다." />
         ) : (
@@ -77,21 +98,9 @@ export default async function HomePage() {
 
       <RegionQuickLinks />
 
-      <MapPreviewSection />
+      <CompanyQuickLinks />
 
-      <Section title="추천 지점" subtitle="보험맵이 선정한 우수 지점" moreHref="/search">
-        {recommended.length === 0 ? (
-          <EmptyRow text="등록된 추천 지점이 없습니다." />
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {recommended.map((b) => (
-              <BranchCard key={b.id} branch={b} />
-            ))}
-          </div>
-        )}
-      </Section>
-
-      <Section title="신규 등록 지점" subtitle="최근에 새로 올라온 지점" moreHref="/search">
+      <Section title="🆕 신규 등록" subtitle="최근에 새로 올라온 지점" moreHref="/search?sort=newest">
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
         ) : (
