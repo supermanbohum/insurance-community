@@ -108,6 +108,7 @@ export function BranchBottomSheet({ branch, onClose }: { branch: MapBranch; onCl
               </span>
             </p>
             <p className="truncate text-sm font-bold text-ink">{branch.name}</p>
+            {branch.tagline && <p className="truncate text-[11px] font-bold text-brand-600">✨ {branch.tagline}</p>}
             <div className="mt-0.5 flex items-center gap-2 text-[11px] text-ink-faint">
               <span className="flex min-w-0 items-center gap-0.5 truncate">
                 <MapPin className="h-3 w-3 shrink-0" />

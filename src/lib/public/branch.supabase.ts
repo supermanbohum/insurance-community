@@ -50,7 +50,8 @@ function toSummary(
   row: BranchSummaryRow,
   imageBaseUrl: string,
   logoBaseUrl: string,
-  contactClickCount: number
+  contactClickCount: number,
+  tagline: string | null
 ): PublicBranchSummary {
   const mainImage = row.branch_media?.find((m) => m.media_type === 'image_main');
   return {
@@ -77,6 +78,7 @@ function toSummary(
     hasActiveRecruit: (row.branch_recruit ?? []).some((r) => r.is_active),
     kakaoContactHref: toKakaoHref(row.branch_contacts),
     contactClickCount,
+    tagline,
   };
 }
 
@@ -168,29 +170,39 @@ export async function listPublicBranches(options: {
   if (error) throw error;
   const rows = (data ?? []) as unknown as BranchSummaryRow[];
 
-  // 문의수(contact_click_count)는 migration 0015 적용 전 배포와도 호환되도록 메인 조회와
-  // 분리한 별도 조회로 채운다 - 컬럼이 아직 없어 실패해도 조용히 0으로 처리하고,
-  // 나머지 지점 데이터(홈/검색/지도)는 정상적으로 계속 동작해야 한다.
-  const clickCounts = new Map<string, number>();
-  if (rows.length > 0) {
-    const { data: clickRows } = await supabase
-      .from('ga_branch')
-      .select('id, contact_click_count')
-      .in(
-        'id',
-        rows.map((r) => r.id)
-      )
-      .then(
-        (res) => res,
-        () => ({ data: null })
-      )
-      .then((res) => res as { data: { id: string; contact_click_count: number }[] | null });
-    for (const row of clickRows ?? []) {
-      clickCounts.set(row.id, row.contact_click_count);
-    }
-  }
+  // 문의수/한줄소개는 각각 별도 마이그레이션(0015/0016)으로 추가되는 컬럼이라, 메인 조회에
+  // 넣으면 그 마이그레이션을 실행하기 전 배포에서 목록 조회 자체가 전부 깨진다. 컬럼이
+  // 아직 없어도 나머지 지점 데이터는 정상 동작해야 하므로 각각 best-effort로 분리 조회한다.
+  const ids = rows.map((r) => r.id);
+  const [clickCounts, taglines] = await Promise.all([
+    fetchOptionalColumn<number>(supabase, ids, 'contact_click_count'),
+    fetchOptionalColumn<string>(supabase, ids, 'tagline'),
+  ]);
 
-  return rows.map((row) => toSummary(row, imageBaseUrl, logoBaseUrl, clickCounts.get(row.id) ?? 0));
+  return rows.map((row) =>
+    toSummary(row, imageBaseUrl, logoBaseUrl, clickCounts.get(row.id) ?? 0, taglines.get(row.id) ?? null)
+  );
+}
+
+/** 아직 마이그레이션이 적용되지 않았을 수 있는 컬럼을 안전하게 조회한다 - 컬럼이 없어
+ * 조회가 실패하면(마이그레이션 미적용) 조용히 빈 Map을 반환하고, 호출부는 기본값을 쓴다. */
+async function fetchOptionalColumn<T>(
+  supabase: ReturnType<typeof createPublicSupabaseClient>,
+  ids: string[],
+  column: string
+): Promise<Map<string, T>> {
+  const result = new Map<string, T>();
+  if (ids.length === 0) return result;
+  try {
+    const { data, error } = await supabase.from('ga_branch').select(`id, ${column}`).in('id', ids);
+    if (error) throw error;
+    for (const row of (data ?? []) as unknown as Record<string, T>[]) {
+      result.set(row.id as unknown as string, row[column]);
+    }
+  } catch {
+    // 마이그레이션 미적용 등으로 실패 - 호출부가 기본값(0, null 등)으로 처리한다.
+  }
+  return result;
 }
 
 export interface BranchDetail {
@@ -214,7 +226,12 @@ export interface BranchDetail {
   plannerCount: number | null;
   parkingAvailable: boolean | null;
   visitConsultAvailable: boolean | null;
+  newRecruitTraining: boolean | null;
+  experiencedHire: boolean | null;
+  dbSupport: boolean | null;
+  settlementSupport: boolean | null;
   businessHours: string | null;
+  tagline: string | null;
   operationType: GaOperationType;
   isHeadquarters: boolean;
   updatedAt: string;
@@ -287,6 +304,27 @@ export async function getPublicBranchDetail(slug: string): Promise<BranchDetail 
   const { data: insurerLinks } = insurerLinksRes;
   const { data: recruits } = recruitsRes;
 
+  // 한줄소개/편의시설 체크박스는 migration 0016으로 추가되는 컬럼 - 적용 전 배포에서도
+  // 상세페이지 자체는 깨지지 않도록 별도 best-effort 조회로 분리한다.
+  let extra: {
+    tagline: string | null;
+    new_recruit_training: boolean | null;
+    experienced_hire: boolean | null;
+    db_support: boolean | null;
+    settlement_support: boolean | null;
+  } | null = null;
+  try {
+    const { data, error: extraError } = await supabase
+      .from('ga_branch')
+      .select('tagline, new_recruit_training, experienced_hire, db_support, settlement_support')
+      .eq('id', branch.id)
+      .single();
+    if (extraError) throw extraError;
+    extra = data;
+  } catch {
+    // 마이그레이션 미적용 - 아래에서 전부 null로 처리.
+  }
+
   return {
     id: branch.id,
     slug: branch.slug,
@@ -308,7 +346,12 @@ export async function getPublicBranchDetail(slug: string): Promise<BranchDetail 
     plannerCount: branch.planner_count,
     parkingAvailable: branch.parking_available,
     visitConsultAvailable: branch.visit_consult_available,
+    newRecruitTraining: extra?.new_recruit_training ?? null,
+    experiencedHire: extra?.experienced_hire ?? null,
+    dbSupport: extra?.db_support ?? null,
+    settlementSupport: extra?.settlement_support ?? null,
     businessHours: branch.business_hours,
+    tagline: extra?.tagline ?? null,
     operationType: branch.operation_type,
     isHeadquarters: branch.is_headquarters,
     updatedAt: branch.updated_at,

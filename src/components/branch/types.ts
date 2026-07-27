@@ -54,7 +54,12 @@ export interface BranchPreviewData {
   plannerCount: number | null;
   parkingAvailable: boolean | null;
   visitConsultAvailable: boolean | null;
+  newRecruitTraining: boolean | null;
+  experiencedHire: boolean | null;
+  dbSupport: boolean | null;
+  settlementSupport: boolean | null;
   businessHours: string | null;
+  tagline: string | null;
   operationType: 'direct' | 'branch';
   isHeadquarters: boolean;
   updatedAt: string;

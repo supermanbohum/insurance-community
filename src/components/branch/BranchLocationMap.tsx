@@ -55,6 +55,7 @@ export function BranchLocationMap({
     mainImageUrl: null,
     kakaoContactHref: null,
     contactClickCount: 0,
+    tagline: null,
   };
 
   return (

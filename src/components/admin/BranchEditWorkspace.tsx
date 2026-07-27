@@ -83,7 +83,13 @@ export function BranchEditWorkspace({
     plannerCount: draft.plannerCount.trim() ? Number(draft.plannerCount) : null,
     parkingAvailable: draft.parkingAvailable,
     visitConsultAvailable: draft.visitConsultAvailable,
+    // 한줄소개/편의시설 체크박스는 아직 관리자 편집 UI가 없다(파트너 등록 화면 전용) - 있으면 그대로 보여준다.
+    newRecruitTraining: null,
+    experiencedHire: null,
+    dbSupport: null,
+    settlementSupport: null,
     businessHours: draft.businessHours || null,
+    tagline: (branch as unknown as { tagline?: string | null }).tagline ?? null,
     operationType: draft.operationType,
     isHeadquarters: draft.isHeadquarters,
     updatedAt: branch.updated_at,

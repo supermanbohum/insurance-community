@@ -15,4 +15,5 @@ export interface MapBranch {
   mainImageUrl: string | null;
   kakaoContactHref: string | null;
   contactClickCount: number;
+  tagline: string | null;
 }

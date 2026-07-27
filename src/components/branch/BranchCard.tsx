@@ -90,6 +90,9 @@ export function BranchCard({
         <p className="truncate text-[15px] font-bold leading-tight text-ink">
           <HighlightText text={branch.name} query={highlightQuery} />
         </p>
+        {branch.tagline && (
+          <p className="truncate text-[11px] font-bold text-brand-600">✨ {branch.tagline}</p>
+        )}
         <div className="mt-auto flex items-center justify-between gap-1.5 pt-1">
           <span className="flex min-w-0 items-center gap-1 truncate rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-soft">
             <MapPin className="h-3 w-3 shrink-0" />

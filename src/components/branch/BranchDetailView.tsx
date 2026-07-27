@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {
   Building2,
+  Briefcase,
   GraduationCap,
   HeartHandshake,
   Database,
@@ -76,13 +77,21 @@ export function BranchDetailView({
   ].filter((block) => block.value?.trim());
 
   const facts = [
-    data.plannerCount !== null && { icon: Users, label: '설계사 수', value: `${data.plannerCount}명` },
+    data.plannerCount !== null && {
+      icon: Users,
+      label: '설계사 수',
+      value: data.plannerCount >= 101 ? '100명 이상' : `${data.plannerCount}명 이하`,
+    },
     data.parkingAvailable !== null && { icon: Car, label: '주차', value: data.parkingAvailable ? '가능' : '불가능' },
     data.visitConsultAvailable !== null && {
       icon: UserCheck,
       label: '방문 상담',
       value: data.visitConsultAvailable ? '가능' : '불가능',
     },
+    data.newRecruitTraining && { icon: GraduationCap, label: '신입 교육', value: '가능' },
+    data.experiencedHire && { icon: Briefcase, label: '경력 채용', value: '가능' },
+    data.dbSupport && { icon: Database, label: 'DB 제공', value: '가능' },
+    data.settlementSupport && { icon: Wallet, label: '정착지원금', value: '있음' },
     data.businessHours && { icon: Clock, label: '운영시간', value: data.businessHours },
   ].filter((f): f is { icon: LucideIcon; label: string; value: string } => Boolean(f));
 
@@ -130,6 +139,12 @@ export function BranchDetailView({
       </header>
 
       <BranchGallery media={data.media} />
+
+      {data.tagline && (
+        <p className="inline-flex w-fit items-center gap-1.5 self-start rounded-full bg-gradient-to-r from-brand-50 to-brand-100/60 px-3.5 py-2 text-[13px] font-bold text-brand-700 ring-1 ring-brand-200">
+          ✨ {data.tagline}
+        </p>
+      )}
 
       <BranchPillTags
         isGaVerified={data.isGaVerified}

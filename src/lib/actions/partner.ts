@@ -8,6 +8,7 @@ import { slugify } from '@/lib/utils';
 import type { BranchMediaSource } from '@/types/database';
 
 export type ActionResult = { success: true } | { success: false; error: string };
+export type RegisterGaResult = { success: true; branchId: string } | { success: false; error: string };
 
 function uniqueSlug(name: string, seed: string): string {
   return `${slugify(name) || 'branch'}-${seed.replace(/-/g, '').slice(-8)}`;
@@ -28,12 +29,16 @@ export async function registerGaAction(input: {
     lat?: number | null;
     lng?: number | null;
     introText?: string;
+    tagline?: string;
     plannerCount?: number | null;
     parkingAvailable?: boolean | null;
     visitConsultAvailable?: boolean | null;
-    businessHours?: string | null;
+    newRecruitTraining?: boolean | null;
+    experiencedHire?: boolean | null;
+    dbSupport?: boolean | null;
+    settlementSupport?: boolean | null;
   };
-}): Promise<ActionResult> {
+}): Promise<RegisterGaResult> {
   if (!input.gaName.trim() || !input.branch.name.trim() || !input.branch.address.trim()) {
     return { success: false, error: 'GA, 지점명, 주소는 필수입니다.' };
   }
@@ -44,24 +49,31 @@ export async function registerGaAction(input: {
   }
 
   const supabase = createServerSupabaseClient();
-  const { error } = await supabase.rpc('register_branch_for_partner', {
-    p_ga_name: input.gaName.trim(),
-    p_branch_slug: uniqueSlug(input.branch.name, partner.id),
-    p_branch_name: input.branch.name.trim(),
-    p_region_id: input.branch.regionId,
-    p_manager_name: input.branch.managerName?.trim() ?? null,
-    p_address: input.branch.address.trim(),
-    p_address_detail: input.branch.addressDetail?.trim() ?? null,
-    p_intro_text: input.branch.introText?.trim() ?? null,
-    p_planner_count: input.branch.plannerCount ?? null,
-    p_parking_available: input.branch.parkingAvailable ?? null,
-    p_visit_consult_available: input.branch.visitConsultAvailable ?? null,
-    p_business_hours: input.branch.businessHours?.trim() ?? null,
-    p_lat: input.branch.lat ?? null,
-    p_lng: input.branch.lng ?? null,
-  });
+  const { data, error } = await supabase
+    .rpc('register_branch_for_partner', {
+      p_ga_name: input.gaName.trim(),
+      p_branch_slug: uniqueSlug(input.branch.name, partner.id),
+      p_branch_name: input.branch.name.trim(),
+      p_region_id: input.branch.regionId,
+      p_manager_name: input.branch.managerName?.trim() ?? null,
+      p_address: input.branch.address.trim(),
+      p_address_detail: input.branch.addressDetail?.trim() ?? null,
+      p_intro_text: input.branch.introText?.trim() ?? null,
+      p_planner_count: input.branch.plannerCount ?? null,
+      p_parking_available: input.branch.parkingAvailable ?? null,
+      p_visit_consult_available: input.branch.visitConsultAvailable ?? null,
+      p_business_hours: null,
+      p_lat: input.branch.lat ?? null,
+      p_lng: input.branch.lng ?? null,
+      p_tagline: input.branch.tagline?.trim() ?? null,
+      p_new_recruit_training: input.branch.newRecruitTraining ?? null,
+      p_experienced_hire: input.branch.experiencedHire ?? null,
+      p_db_support: input.branch.dbSupport ?? null,
+      p_settlement_support: input.branch.settlementSupport ?? null,
+    })
+    .single();
 
-  if (error) {
+  if (error || !data) {
     return { success: false, error: '지점 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
   }
 
@@ -70,7 +82,7 @@ export async function registerGaAction(input: {
   revalidatePath('/');
   revalidatePath('/search');
   revalidatePath('/map');
-  return { success: true };
+  return { success: true, branchId: (data as { branch_id: string }).branch_id };
 }
 
 /** GA 기본 정보(이름/대표자/소개) 수정 - 본인 소속 GA만, 즉시 반영. */
@@ -262,6 +274,58 @@ export async function submitBranchMainImageAction(branchId: string, formData: Fo
   }
 
   revalidatePath(`/partner/branches/${branchId}`);
+  revalidatePath(`/branch/${branch.slug}`);
+  revalidatePath('/');
+  return { success: true };
+}
+
+/** 지점 등록 시 사무실 사진 업로드(최소 3장) - 첫 번째는 대표사진(image_main), 나머지는
+ * image_office로 등록한다. 등록 직후(register_branch_for_partner 성공 직후) 반복 호출한다. */
+export async function uploadPartnerBranchPhotoAction(
+  branchId: string,
+  formData: FormData,
+  isMain: boolean,
+  sortOrder: number
+): Promise<ActionResult> {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: '파일을 선택해주세요.' };
+  }
+  const extension = IMAGE_MIME_EXTENSIONS[file.type];
+  if (!extension) {
+    return { success: false, error: 'jpg, png, webp 형식만 업로드할 수 있습니다.' };
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    return { success: false, error: '이미지는 최대 8MB까지 업로드할 수 있습니다.' };
+  }
+
+  const partner = await requirePartner();
+  const supabase = createServerSupabaseClient();
+  const { data: branch } = await supabase.from('ga_branch').select('id, slug, ga_company_id').eq('id', branchId).maybeSingle();
+  if (!branch || branch.ga_company_id !== partner.ga_company_id) {
+    return { success: false, error: '접근 권한이 없습니다.' };
+  }
+
+  const path = `${branch.ga_company_id}/${branchId}/${crypto.randomUUID()}.${extension}`;
+  const { error: uploadError } = await supabase.storage
+    .from('branch-images')
+    .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
+  if (uploadError) {
+    return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  const { error: registerError } = await supabase.rpc('add_branch_media', {
+    p_branch_id: branchId,
+    p_media_type: isMain ? 'image_main' : 'image_office',
+    p_source: 'storage' as BranchMediaSource,
+    p_value: path,
+    p_sort_order: sortOrder,
+  });
+  if (registerError) {
+    await createAdminClient().storage.from('branch-images').remove([path]);
+    return { success: false, error: '등록하지 못했습니다.' };
+  }
+
   revalidatePath(`/branch/${branch.slug}`);
   revalidatePath('/');
   return { success: true };

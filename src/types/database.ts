@@ -266,7 +266,13 @@ export interface Database {
           planner_count: number | null;
           parking_available: boolean | null;
           visit_consult_available: boolean | null;
+          new_recruit_training: boolean | null;
+          experienced_hire: boolean | null;
+          db_support: boolean | null;
+          settlement_support: boolean | null;
           business_hours: string | null;
+          tagline: string | null;
+          contact_click_count: number;
           operation_type: GaOperationType;
           is_headquarters: boolean;
           organic_view_count: number;
@@ -832,6 +838,11 @@ export interface Database {
           p_business_hours?: string | null;
           p_lat?: number | null;
           p_lng?: number | null;
+          p_tagline?: string | null;
+          p_new_recruit_training?: boolean | null;
+          p_experienced_hire?: boolean | null;
+          p_db_support?: boolean | null;
+          p_settlement_support?: boolean | null;
         };
         Returns: { ga_company_id: string; branch_id: string }[];
       };
@@ -873,6 +884,11 @@ export interface Database {
           p_parking_available?: boolean | null;
           p_visit_consult_available?: boolean | null;
           p_business_hours?: string | null;
+          p_tagline?: string | null;
+          p_new_recruit_training?: boolean | null;
+          p_experienced_hire?: boolean | null;
+          p_db_support?: boolean | null;
+          p_settlement_support?: boolean | null;
         };
         Returns: void;
       };
@@ -925,4 +941,5 @@ export interface PublicBranchSummary {
   hasActiveRecruit: boolean;
   kakaoContactHref: string | null;
   contactClickCount: number;
+  tagline: string | null;
 }

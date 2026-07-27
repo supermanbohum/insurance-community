@@ -74,6 +74,7 @@ export default async function HomePage() {
     mainImageUrl: b.mainImageUrl,
     kakaoContactHref: b.kakaoContactHref,
     contactClickCount: b.contactClickCount,
+    tagline: b.tagline,
   }));
 
   return (
