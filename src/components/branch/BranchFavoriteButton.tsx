@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
 import { toggleFavoriteAction } from '@/lib/actions/favorites';
+import { triggerHaptic } from '@/lib/native/haptics';
 import { cn } from '@/lib/utils';
 
 /**
@@ -23,6 +24,7 @@ export function BranchFavoriteButton({ branchId, initialFavorited }: { branchId:
         return;
       }
       setFavorited(result.favorited);
+      triggerHaptic(result.favorited ? 'success' : 'selection');
     });
   }
 

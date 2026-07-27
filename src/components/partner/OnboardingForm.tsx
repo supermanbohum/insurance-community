@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { triggerHaptic } from '@/lib/native/haptics';
 import { cn } from '@/lib/utils';
 
 const PLANNER_COUNT_OPTIONS = [
@@ -191,6 +192,7 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
       }
 
       toast.success('등록 신청이 접수되었습니다. 관리자 승인 후 지도에 노출됩니다.');
+      triggerHaptic('success');
       router.push('/partner');
       router.refresh();
     });

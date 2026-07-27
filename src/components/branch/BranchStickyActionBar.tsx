@@ -2,6 +2,7 @@
 
 import { Phone, MessageCircle, Navigation } from 'lucide-react';
 import { recordBranchContactClickAction } from '@/lib/actions/public';
+import { triggerHaptic } from '@/lib/native/haptics';
 import type { BranchContactItem } from '@/components/branch/types';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +38,10 @@ export function BranchStickyActionBar({
           label: '전화하기',
           icon: Phone,
           href: `tel:${phone.value.replace(/[^0-9+]/g, '')}`,
-          onClick: () => void recordBranchContactClickAction(phone.id),
+          onClick: () => {
+            triggerHaptic('medium');
+            void recordBranchContactClickAction(phone.id);
+          },
           external: false,
           primary: true,
         }
@@ -48,7 +52,10 @@ export function BranchStickyActionBar({
           label: '카카오',
           icon: MessageCircle,
           href: /^https?:\/\//.test(kakao.value) ? kakao.value : `https://${kakao.value}`,
-          onClick: () => void recordBranchContactClickAction(kakao.id),
+          onClick: () => {
+            triggerHaptic('medium');
+            void recordBranchContactClickAction(kakao.id);
+          },
           external: true,
           primary: false,
         }
