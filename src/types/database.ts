@@ -239,6 +239,19 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['audit_logs']['Row']>;
         Relationships: [];
       };
+      page_layouts: {
+        Row: {
+          id: string;
+          page_key: string;
+          device: string;
+          config: unknown;
+          updated_by_admin_id: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['page_layouts']['Row']>;
+        Update: Partial<Database['public']['Tables']['page_layouts']['Row']>;
+        Relationships: [];
+      };
       ga_company: {
         Row: {
           id: string;
@@ -948,6 +961,10 @@ export interface Database {
       list_monthly_top_branches: {
         Args: { p_limit?: number };
         Returns: { branch_id: string; view_count: number }[];
+      };
+      upsert_page_layout: {
+        Args: { p_page_key: string; p_device: string; p_config: unknown };
+        Returns: void;
       };
     };
   };

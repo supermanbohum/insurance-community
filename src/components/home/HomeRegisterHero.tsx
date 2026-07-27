@@ -7,7 +7,7 @@ import type { HomeStats } from '@/lib/public/branch';
  * 반복하고 있었다 - 그 자리를 "지점을 등록하고 싶은 사람"을 위한 큰 CTA와
  * "지금 서비스가 살아있다"는 걸 보여주는 정보 영역으로 바꾼다.
  */
-export function HomeRegisterHero({ stats }: { stats: HomeStats }) {
+export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
   return (
     <div className="flex flex-col gap-3">
       <Link
@@ -16,7 +16,7 @@ export function HomeRegisterHero({ stats }: { stats: HomeStats }) {
       >
         <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-white/10" />
         <Plus className="relative h-6 w-6 text-white" strokeWidth={2.5} />
-        <span className="relative text-xl font-extrabold tracking-tight text-white">지점 등록하기</span>
+        <span className="relative text-xl font-extrabold tracking-tight text-white">{ctaLabel}</span>
       </Link>
 
       <div className="grid grid-cols-3 gap-2">

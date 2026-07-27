@@ -25,6 +25,8 @@ import { BranchStickyActionBar } from '@/components/branch/BranchStickyActionBar
 import { BranchPillTags } from '@/components/branch/BranchPillTags';
 import { BranchFavoriteButton } from '@/components/branch/BranchFavoriteButton';
 import { BranchLocationMap } from '@/components/branch/BranchLocationMap';
+import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
+import { getDefaultConfig, type Device, type SectionConfig } from '@/lib/design/sections';
 import { cn } from '@/lib/utils';
 
 const BLOCK_ICON: Record<string, LucideIcon> = {
@@ -60,22 +62,51 @@ function Section({ title, icon: Icon, children }: { title: string; icon?: Lucide
   );
 }
 
+/** 디자인 편집모드가 저장한 기기별 설정에서 특정 섹션 키만 뽑아 ResponsiveSection에 넘길
+ * `{mobile, tablet, desktop}` 형태로 재구성한다. */
+function sectionConfigFor(
+  layoutConfig: Record<Device, SectionConfig[]>,
+  key: string
+): Record<Device, SectionConfig | undefined> {
+  return {
+    mobile: layoutConfig.mobile.find((s) => s.key === key),
+    tablet: layoutConfig.tablet.find((s) => s.key === key),
+    desktop: layoutConfig.desktop.find((s) => s.key === key),
+  } as Record<Device, SectionConfig | undefined>;
+}
+
 /**
  * 지점(Branch) 상세의 단일 진실 공급원. 홈/검색/지도/즐겨찾기/관리자 미리보기 등
  * 모든 진입 경로가 동일하게 이 컴포넌트를 렌더링한다 - 데이터 출처(DB fetch vs 편집 폼
  * 상태)만 다르고 마크업/레이아웃은 완전히 동일하다. GA(회사)는 로고+이름만 브랜드
  * 미니블록으로 표시되며 별도 상세페이지로 이어지지 않는다(GA는 상위 브랜드 정보일 뿐).
+ *
+ * 각 섹션의 순서/노출/여백은 디자인 편집모드(0020 page_layouts)가 저장한 layoutConfig를
+ * 따른다 - 저장된 값이 없으면 호출부가 넘기는 기본값(getDefaultConfig)이 지금 순서
+ * 그대로를 재현한다.
  */
 export function BranchDetailView({
   data,
   variant,
   favorite,
+  layoutConfig,
 }: {
   data: BranchPreviewData;
   variant: 'public' | 'preview';
   /** 공개 페이지에서만 넘겨준다 - 관리자 미리보기에는 "지금 보는 사람의 즐겨찾기"라는 개념이 없다. */
   favorite?: { branchId: string; initialFavorited: boolean };
+  /** 디자인 편집모드에서 저장한 값 - 콘텐츠 미리보기(관리자 지점 편집 폼의 "미리보기" 탭)처럼
+   * 레이아웃 자체는 관심사가 아닌 곳에서는 생략하면 기본값(지금 순서 그대로)으로 렌더링된다. */
+  layoutConfig?: Record<Device, SectionConfig[]>;
 }) {
+  const layout =
+    layoutConfig ??
+    {
+      mobile: getDefaultConfig('branch_detail'),
+      tablet: getDefaultConfig('branch_detail'),
+      desktop: getDefaultConfig('branch_detail'),
+    };
+
   const introBlocks = [
     { label: '회사소개', value: data.introText },
     { label: '교육 안내', value: data.educationInfo },
@@ -104,9 +135,11 @@ export function BranchDetailView({
     data.businessHours && { icon: Clock, label: '운영시간', value: data.businessHours },
   ].filter((f): f is { icon: LucideIcon; label: string; value: string } => Boolean(f));
 
+  const section = (key: string) => sectionConfigFor(layout, key);
+
   return (
-    <div className={cn('flex flex-col gap-5', variant === 'public' && 'pb-28 lg:pb-6')}>
-      <header className="flex items-start gap-3">
+    <div className={cn('flex flex-col', variant === 'public' && 'pb-28 lg:pb-6')}>
+      <header className="mb-5 flex items-start gap-3">
         {data.gaCompanyLogoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -147,164 +180,190 @@ export function BranchDetailView({
         {favorite && <BranchFavoriteButton branchId={favorite.branchId} initialFavorited={favorite.initialFavorited} />}
       </header>
 
-      <BranchGallery media={data.media} />
+      <ResponsiveSection sectionKey="gallery" config={section('gallery')}>
+        <BranchGallery media={data.media} />
+      </ResponsiveSection>
 
       {data.tagline && (
-        <p className="inline-flex w-fit items-center gap-1.5 self-start rounded-full bg-gradient-to-r from-brand-50 to-brand-100/60 px-3.5 py-2 text-[13px] font-bold text-brand-700 ring-1 ring-brand-200">
-          ✨ {data.tagline}
-        </p>
+        <ResponsiveSection sectionKey="tagline" config={section('tagline')}>
+          <p className="inline-flex w-fit items-center gap-1.5 self-start rounded-full bg-gradient-to-r from-brand-50 to-brand-100/60 px-3.5 py-2 text-[13px] font-bold text-brand-700 ring-1 ring-brand-200">
+            ✨ {data.tagline}
+          </p>
+        </ResponsiveSection>
       )}
 
       {data.links.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {data.links.map((link) => {
-            const meta = LINK_META[link.type] ?? LINK_META.etc;
-            return (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:border-brand-200 hover:text-brand-600"
-              >
-                <span>{meta.emoji}</span>
-                {meta.label}
-              </a>
-            );
-          })}
-        </div>
+        <ResponsiveSection sectionKey="links" config={section('links')}>
+          <div className="flex flex-wrap gap-2">
+            {data.links.map((link) => {
+              const meta = LINK_META[link.type] ?? LINK_META.etc;
+              return (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:border-brand-200 hover:text-brand-600"
+                >
+                  <span>{meta.emoji}</span>
+                  {meta.label}
+                </a>
+              );
+            })}
+          </div>
+        </ResponsiveSection>
       )}
 
-      <BranchPillTags
-        isGaVerified={data.isGaVerified}
-        sidoName={data.sidoName}
-        sigunguName={data.sigunguName}
-        gaBranchCount={data.gaBranchCount}
-        updatedAt={data.updatedAt}
-      />
+      <ResponsiveSection sectionKey="pillTags" config={section('pillTags')}>
+        <BranchPillTags
+          isGaVerified={data.isGaVerified}
+          sidoName={data.sidoName}
+          sigunguName={data.sigunguName}
+          gaBranchCount={data.gaBranchCount}
+          updatedAt={data.updatedAt}
+        />
+      </ResponsiveSection>
 
-      <BranchStickyActionBar
-        name={data.name}
-        address={data.address}
-        lat={data.lat}
-        lng={data.lng}
-        contacts={data.contacts}
-        variant={variant}
-      />
-
-      {data.lat != null && data.lng != null && (
-        <BranchLocationMap
-          branchId={data.slug || data.name}
-          branchSlug={data.slug}
-          branchName={data.name}
-          gaCompanyName={data.gaCompanyName}
+      <ResponsiveSection sectionKey="actionBar" config={section('actionBar')}>
+        <BranchStickyActionBar
+          name={data.name}
           address={data.address}
           lat={data.lat}
           lng={data.lng}
+          contacts={data.contacts}
+          variant={variant}
         />
+      </ResponsiveSection>
+
+      {data.lat != null && data.lng != null && (
+        <ResponsiveSection sectionKey="map" config={section('map')}>
+          <BranchLocationMap
+            branchId={data.slug || data.name}
+            branchSlug={data.slug}
+            branchName={data.name}
+            gaCompanyName={data.gaCompanyName}
+            address={data.address}
+            lat={data.lat}
+            lng={data.lng}
+          />
+        </ResponsiveSection>
       )}
 
       {introBlocks.length > 0 && (
-        <section className="flex flex-col gap-3">
-          {introBlocks.map((block) => {
-            const Icon = BLOCK_ICON[block.label];
-            return (
-              <Section key={block.label} title={block.label} icon={Icon}>
-                <p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">{block.value}</p>
-              </Section>
-            );
-          })}
-        </section>
+        <ResponsiveSection sectionKey="introBlocks" config={section('introBlocks')}>
+          <section className="flex flex-col gap-3">
+            {introBlocks.map((block) => {
+              const Icon = BLOCK_ICON[block.label];
+              return (
+                <Section key={block.label} title={block.label} icon={Icon}>
+                  <p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">{block.value}</p>
+                </Section>
+              );
+            })}
+          </section>
+        </ResponsiveSection>
       )}
 
       {facts.length > 0 && (
-        <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          {facts.map((fact) => {
-            const Icon = fact.icon;
-            return (
-              <div key={fact.label} className="flex flex-col items-center gap-1 rounded-2xl border border-line bg-white py-3 text-center shadow-card">
-                <Icon className="h-4 w-4 text-brand-600" />
-                <span className="text-[13px] font-bold text-ink">{fact.value}</span>
-                <span className="text-[11px] text-ink-faint">{fact.label}</span>
-              </div>
-            );
-          })}
-        </section>
+        <ResponsiveSection sectionKey="facts" config={section('facts')}>
+          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            {facts.map((fact) => {
+              const Icon = fact.icon;
+              return (
+                <div key={fact.label} className="flex flex-col items-center gap-1 rounded-2xl border border-line bg-white py-3 text-center shadow-card">
+                  <Icon className="h-4 w-4 text-brand-600" />
+                  <span className="text-[13px] font-bold text-ink">{fact.value}</span>
+                  <span className="text-[11px] text-ink-faint">{fact.label}</span>
+                </div>
+              );
+            })}
+          </section>
+        </ResponsiveSection>
       )}
 
       {data.insurerNames.length > 0 && (
-        <Section title="취급 원수사" icon={ShieldCheck}>
-          <div className="flex flex-wrap gap-1.5">
-            {data.insurerNames.map((name) => (
-              <span
-                key={name}
-                className="rounded-xl border border-line bg-surface-sunken px-2.5 py-1.5 text-xs font-semibold text-ink-soft"
-              >
-                {name}
-              </span>
-            ))}
-          </div>
-        </Section>
+        <ResponsiveSection sectionKey="insurers" config={section('insurers')}>
+          <Section title="취급 원수사" icon={ShieldCheck}>
+            <div className="flex flex-wrap gap-1.5">
+              {data.insurerNames.map((name) => (
+                <span
+                  key={name}
+                  className="rounded-xl border border-line bg-surface-sunken px-2.5 py-1.5 text-xs font-semibold text-ink-soft"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          </Section>
+        </ResponsiveSection>
       )}
 
       {data.activeRecruits.length > 0 && (
-        <Section title="채용">
-          <div className="flex flex-col gap-2.5">
-            {data.activeRecruits.map((recruit) => (
-              <div key={recruit.id} className="rounded-xl border border-brand-100 bg-brand-50/50 p-3.5">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="text-sm font-bold text-ink">{recruit.title}</p>
-                  {recruit.employmentType && (
-                    <span className="rounded-full border border-brand-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-brand-600">
-                      {recruit.employmentType}
-                    </span>
-                  )}
+        <ResponsiveSection sectionKey="recruit" config={section('recruit')}>
+          <Section title="채용">
+            <div className="flex flex-col gap-2.5">
+              {data.activeRecruits.map((recruit) => (
+                <div key={recruit.id} className="rounded-xl border border-brand-100 bg-brand-50/50 p-3.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="text-sm font-bold text-ink">{recruit.title}</p>
+                    {recruit.employmentType && (
+                      <span className="rounded-full border border-brand-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-brand-600">
+                        {recruit.employmentType}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1.5 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">{recruit.content}</p>
                 </div>
-                <p className="mt-1.5 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">{recruit.content}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
+              ))}
+            </div>
+          </Section>
+        </ResponsiveSection>
       )}
 
-      <Section title="이용후기" icon={MessageSquareText}>
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-8 text-center">
-          <p className="text-[13px] text-ink-faint">아직 등록된 후기가 없습니다.</p>
-          <Link
-            href={variant === 'preview' ? '#' : '/board/review'}
-            onClick={variant === 'preview' ? (e) => e.preventDefault() : undefined}
-            className="rounded-full bg-brand-50 px-3.5 py-1.5 text-xs font-bold text-brand-600 transition-colors hover:bg-brand-100"
-          >
-            이용후기 게시판에서 후기 남기기
-          </Link>
-        </div>
-      </Section>
-
-      <Section title="연락처">
-        <BranchContactList contacts={data.contacts} variant={variant} />
-      </Section>
-
-      {data.siblingBranches.length > 0 && (
-        <Section title={`${data.gaCompanyName}의 다른 지점 (${data.siblingBranches.length})`}>
-          <div className="flex flex-col divide-y divide-line">
-            {data.siblingBranches.map((sibling) => (
-              <Link
-                key={sibling.id}
-                href={variant === 'preview' ? '#' : `/branch/${sibling.slug}`}
-                onClick={variant === 'preview' ? (e) => e.preventDefault() : undefined}
-                className="flex items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
-              >
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <p className="truncate text-sm font-bold text-ink">{sibling.name}</p>
-                  <p className="truncate text-xs text-ink-faint">
-                    {[sibling.sidoName, sibling.sigunguName].filter(Boolean).join(' ')}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-ink-faint" />
-              </Link>
-            ))}
+      <ResponsiveSection sectionKey="reviews" config={section('reviews')}>
+        <Section title="이용후기" icon={MessageSquareText}>
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-8 text-center">
+            <p className="text-[13px] text-ink-faint">아직 등록된 후기가 없습니다.</p>
+            <Link
+              href={variant === 'preview' ? '#' : '/board/review'}
+              onClick={variant === 'preview' ? (e) => e.preventDefault() : undefined}
+              className="rounded-full bg-brand-50 px-3.5 py-1.5 text-xs font-bold text-brand-600 transition-colors hover:bg-brand-100"
+            >
+              이용후기 게시판에서 후기 남기기
+            </Link>
           </div>
         </Section>
+      </ResponsiveSection>
+
+      <ResponsiveSection sectionKey="contacts" config={section('contacts')}>
+        <Section title="연락처">
+          <BranchContactList contacts={data.contacts} variant={variant} />
+        </Section>
+      </ResponsiveSection>
+
+      {data.siblingBranches.length > 0 && (
+        <ResponsiveSection sectionKey="siblings" config={section('siblings')}>
+          <Section title={`${data.gaCompanyName}의 다른 지점 (${data.siblingBranches.length})`}>
+            <div className="flex flex-col divide-y divide-line">
+              {data.siblingBranches.map((sibling) => (
+                <Link
+                  key={sibling.id}
+                  href={variant === 'preview' ? '#' : `/branch/${sibling.slug}`}
+                  onClick={variant === 'preview' ? (e) => e.preventDefault() : undefined}
+                  className="flex items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
+                >
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <p className="truncate text-sm font-bold text-ink">{sibling.name}</p>
+                    <p className="truncate text-xs text-ink-faint">
+                      {[sibling.sidoName, sibling.sigunguName].filter(Boolean).join(' ')}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-ink-faint" />
+                </Link>
+              ))}
+            </div>
+          </Section>
+        </ResponsiveSection>
       )}
     </div>
   );

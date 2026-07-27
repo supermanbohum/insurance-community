@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
+import { getPageLayoutConfig } from '@/lib/design/layout';
+import { HOME_SECTIONS, type Device } from '@/lib/design/sections';
+import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { IconMenuGrid } from '@/components/home/IconMenuGrid';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickActionCards } from '@/components/home/QuickActionCards';
@@ -51,11 +54,12 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [mapBranches, popular, latest, stats] = await Promise.all([
+  const [mapBranches, popular, latest, stats, layoutConfig] = await Promise.all([
     listPublicBranches({ sort: 'recommended' }),
     listPublicBranches({ sort: 'views', limit: 6 }),
     listPublicBranches({ sort: 'newest', limit: 4 }),
     getHomeStats(),
+    getPageLayoutConfig('home'),
   ]);
 
   const heroMapBranches: MapBranch[] = mapBranches.map((b) => ({
@@ -78,16 +82,14 @@ export default async function HomePage() {
     tagline: b.tagline,
   }));
 
-  return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-10 px-4 pb-6 pt-4">
-      <HomeRegisterHero stats={stats} />
+  const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '지점 등록하기';
 
-      <HomeMapHero branches={heroMapBranches} />
-
-      <QuickActionCards />
-
-      <IconMenuGrid />
-
+  const nodesByKey: Record<(typeof HOME_SECTIONS)[number]['key'], React.ReactNode> = {
+    hero: <HomeRegisterHero stats={stats} ctaLabel={ctaLabel} />,
+    map: <HomeMapHero branches={heroMapBranches} />,
+    quickActions: <QuickActionCards />,
+    iconMenu: <IconMenuGrid />,
+    popularGa: (
       <Section title="🔥 인기 GA" subtitle="가장 많이 찾아본 지점" moreHref="/search?sort=views">
         {popular.length === 0 ? (
           <EmptyRow text="아직 조회 데이터가 없습니다." />
@@ -99,11 +101,10 @@ export default async function HomePage() {
           </div>
         )}
       </Section>
-
-      <RegionQuickLinks />
-
-      <CompanyQuickLinks />
-
+    ),
+    regionLinks: <RegionQuickLinks />,
+    companyLinks: <CompanyQuickLinks />,
+    latest: (
       <Section title="🆕 신규 등록" subtitle="최근에 새로 올라온 지점" moreHref="/search?sort=newest">
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
@@ -115,8 +116,25 @@ export default async function HomePage() {
           </div>
         )}
       </Section>
+    ),
+    footer: <HomeFooter />,
+  };
 
-      <HomeFooter />
+  const devices: Device[] = ['mobile', 'tablet', 'desktop'];
+
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col px-4 pb-6 pt-4">
+      {HOME_SECTIONS.map((def) => (
+        <ResponsiveSection
+          key={def.key}
+          sectionKey={def.key}
+          config={Object.fromEntries(
+            devices.map((device) => [device, layoutConfig[device].find((s) => s.key === def.key)])
+          ) as Record<Device, (typeof layoutConfig.mobile)[number] | undefined>}
+        >
+          {nodesByKey[def.key]}
+        </ResponsiveSection>
+      ))}
     </div>
   );
 }
