@@ -928,6 +928,10 @@ export interface Database {
         Args: { p_link_id: string };
         Returns: void;
       };
+      list_monthly_top_branches: {
+        Args: { p_limit?: number };
+        Returns: { branch_id: string; view_count: number }[];
+      };
     };
   };
 }

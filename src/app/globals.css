@@ -39,7 +39,8 @@ body {
     scroll-behavior: auto;
   }
   .stagger-item,
-  .animate-page-fade {
+  .animate-page-fade,
+  .animate-breathe {
     animation: none;
   }
 }

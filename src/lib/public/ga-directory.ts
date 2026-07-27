@@ -6,45 +6,27 @@ export interface GaFilterOption {
   registered: boolean;
 }
 
-/**
- * 필터에 항상 노출되는 전국 GA 목록. DB(ga_company)에 아직 등록되지 않은 GA도
- * 검색/지도 필터에서 선택할 수 있어야 한다는 요구사항 때문에 유지하는 참조용 명단이다
- * (업계 상위사 기준, 사용자 제공 예시 포함). DB에 이미 등록된 이름은 실제 행으로 대체된다.
- */
-const NATIONWIDE_GA_NAMES = [
-  '메리츠금융서비스',
-  '한화생명금융서비스',
-  '인카금융서비스',
-  '지에이코리아',
-  '글로벌금융판매',
-  '푸본현대생명보험대리점',
-  'KB라이프파트너스',
-  'DB금융서비스',
-  '신한라이프',
-  '교보라이프플래닛',
-  'AIA생명',
-];
-
 const UNREGISTERED_ID_PREFIX = 'unregistered:';
 
+/**
+ * GA는 관리자가 관리하는 고정 마스터 데이터다 - 실제 DB(ga_company)에 있는 회사만
+ * 선택지로 제공한다. 예전에는 여기에 하드코딩된 "전국 GA 이름" 참고 목록을 섞어
+ * 보여줬는데, 그 이름 그대로 지점을 등록하면 register_branch_for_partner가 그
+ * 자리에서 새 ga_company를 만들어버려 오타/테스트 이름이 GA 목록에 그대로
+ * 남는 문제가 있었다. 지금은 DB에 실제로 존재하는 회사만 보여주고, 등록도
+ * 그 회사에 연결만 한다(새로 만들지 않음) - GA Master(고정) → 사용자는 선택만.
+ */
 export async function listGaFilterOptions(): Promise<GaFilterOption[]> {
   const registered = await listPublicGaCompanies({});
-  const registeredNames = new Set(registered.map((ga) => ga.name));
-
-  const options: GaFilterOption[] = registered.map((ga) => ({ id: ga.id, name: ga.name, registered: true }));
-
-  for (const name of NATIONWIDE_GA_NAMES) {
-    if (registeredNames.has(name)) continue;
-    options.push({ id: `${UNREGISTERED_ID_PREFIX}${name}`, name, registered: false });
-  }
-
-  return options.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  return registered
+    .map((ga) => ({ id: ga.id, name: ga.name, registered: true }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 }
 
 /**
  * 필터에서 선택된 GA id 중 실제 DB에 등록된 것만 골라 branch 조회에 사용한다.
- * 미등록 GA만 선택된 경우 branch 쿼리를 실행하지 않고 빈 목록으로 처리해야 하므로
- * hasUnregisteredOnly를 함께 반환한다.
+ * GA 목록이 이제 전부 실제 DB 행이라 "미등록"은 나오지 않지만, 검색/지도 필터
+ * 호출부와의 시그니처 호환을 위해 그대로 둔다.
  */
 export function splitRegisteredGaIds(selectedIds: string[]): {
   registeredIds: string[];

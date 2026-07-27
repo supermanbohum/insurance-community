@@ -411,3 +411,54 @@ export async function recordBranchContactClick(contactId: string): Promise<void>
   const supabase = createServerSupabaseClient();
   await supabase.rpc('record_branch_contact_click', { p_contact_id: contactId });
 }
+
+export interface HomeStats {
+  branchCount: number;
+  plannerTotal: number;
+  todayCount: number;
+}
+
+/**
+ * 홈 화면 실시간 통계 - 등록 지점 수 / 설계사 수(구간 선택값 합계, 실제 인원의 근사치) /
+ * 오늘 신규 등록 지점 수. 공개 조회이므로 RLS(공개+승인된 지점만)에 그대로 의존한다.
+ */
+export async function getHomeStats(): Promise<HomeStats> {
+  const supabase = createPublicSupabaseClient();
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const [branchCountRes, plannerRes, todayCountRes] = await Promise.all([
+    supabase.from('ga_branch').select('id', { count: 'exact', head: true }),
+    supabase.from('ga_branch').select('planner_count'),
+    supabase.from('ga_branch').select('id', { count: 'exact', head: true }).gte('created_at', startOfToday.toISOString()),
+  ]);
+
+  const plannerTotal = (plannerRes.data ?? []).reduce((sum, row) => sum + (row.planner_count ?? 0), 0);
+
+  return {
+    branchCount: branchCountRes.count ?? 0,
+    plannerTotal,
+    todayCount: todayCountRes.count ?? 0,
+  };
+}
+
+/**
+ * 이달의 인기지점 TOP N - branch_views 원본 로그는 비공개라 집계만 반환하는
+ * list_monthly_top_branches RPC(migration 0018)를 쓴다. 마이그레이션 미적용 배포와도
+ * 호환되도록 실패하면 빈 배열로 처리(목록/조회수 없이도 페이지 자체는 떠야 한다).
+ */
+export async function listMonthlyTopBranches(limit = 30): Promise<PublicBranchSummary[]> {
+  const supabase = createPublicSupabaseClient();
+  try {
+    const { data, error } = await supabase.rpc('list_monthly_top_branches', { p_limit: limit });
+    if (error) throw error;
+    const ranked = (data ?? []) as unknown as { branch_id: string; view_count: number }[];
+    if (ranked.length === 0) return [];
+
+    const summaries = await listPublicBranches({ branchIds: ranked.map((r) => r.branch_id) });
+    const byId = new Map(summaries.map((s) => [s.id, s]));
+    return ranked.map((r) => byId.get(r.branch_id)).filter((s): s is PublicBranchSummary => Boolean(s));
+  } catch {
+    return [];
+  }
+}

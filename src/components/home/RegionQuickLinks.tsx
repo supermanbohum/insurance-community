@@ -2,17 +2,9 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { listSidoGroups } from '@/lib/public/region';
 
-const PRIORITY_SIDO_CODES = ['11', '41', '28', '26'];
-
 export async function RegionQuickLinks() {
-  const groups = await listSidoGroups();
-  const byCode = new Map(groups.map((g) => [g.sidoCode, g]));
-
-  const priority = PRIORITY_SIDO_CODES.map((code) => byCode.get(code)).filter(
-    (g): g is NonNullable<typeof g> => Boolean(g)
-  );
-  const rest = groups.filter((g) => !PRIORITY_SIDO_CODES.includes(g.sidoCode));
-  const ordered = [...priority, ...rest];
+  // 지역 선택은 어디서나 가나다순으로 통일한다 - listSidoGroups가 이미 정렬해서 반환한다.
+  const ordered = await listSidoGroups();
 
   return (
     <section className="flex flex-col gap-3">

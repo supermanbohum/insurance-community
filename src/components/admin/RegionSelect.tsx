@@ -23,7 +23,7 @@ export function RegionSelect({
     for (const r of regions) {
       if (!seen.has(r.sido_code)) seen.set(r.sido_code, r.sido_name);
     }
-    return Array.from(seen.entries());
+    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1], 'ko'));
   }, [regions]);
 
   const sigunguList = useMemo(

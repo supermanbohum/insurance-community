@@ -1,3 +1,10 @@
-export type { BranchSortOption, BranchDetail } from './branch.supabase';
+export type { BranchSortOption, BranchDetail, HomeStats } from './branch.supabase';
 
-export { listPublicBranches, getPublicBranchDetail, recordBranchView, recordBranchContactClick } from './branch.supabase';
+export {
+  listPublicBranches,
+  getPublicBranchDetail,
+  recordBranchView,
+  recordBranchContactClick,
+  getHomeStats,
+  listMonthlyTopBranches,
+} from './branch.supabase';

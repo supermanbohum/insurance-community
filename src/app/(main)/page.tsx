@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
-import { listPublicBranches } from '@/lib/public/branch';
+import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
 import { IconMenuGrid } from '@/components/home/IconMenuGrid';
-import { HeroSearch } from '@/components/home/HeroSearch';
+import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickActionCards } from '@/components/home/QuickActionCards';
 import { RegionQuickLinks } from '@/components/home/RegionQuickLinks';
 import { CompanyQuickLinks } from '@/components/home/CompanyQuickLinks';
@@ -51,10 +51,11 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [mapBranches, popular, latest] = await Promise.all([
+  const [mapBranches, popular, latest, stats] = await Promise.all([
     listPublicBranches({ sort: 'recommended' }),
     listPublicBranches({ sort: 'views', limit: 6 }),
     listPublicBranches({ sort: 'newest', limit: 4 }),
+    getHomeStats(),
   ]);
 
   const heroMapBranches: MapBranch[] = mapBranches.map((b) => ({
@@ -79,7 +80,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-10 px-4 pb-6 pt-4">
-      <HeroSearch />
+      <HomeRegisterHero stats={stats} />
 
       <HomeMapHero branches={heroMapBranches} />
 

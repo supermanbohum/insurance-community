@@ -22,7 +22,9 @@ export async function listSidoGroups(): Promise<SidoGroup[]> {
   for (const row of data ?? []) {
     if (!seen.has(row.sido_code)) seen.set(row.sido_code, row.sido_name);
   }
-  return Array.from(seen.entries()).map(([sidoCode, sidoName]) => ({ sidoCode, sidoName }));
+  return Array.from(seen.entries())
+    .map(([sidoCode, sidoName]) => ({ sidoCode, sidoName }))
+    .sort((a, b) => a.sidoName.localeCompare(b.sidoName, 'ko'));
 }
 
 export async function listSigunguBySido(sidoCode: string): Promise<{ sidoName: string; items: SigunguItem[] }> {
