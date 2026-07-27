@@ -71,6 +71,7 @@ export default async function MapPage({
     viewCount: b.viewCount,
     mainImageUrl: b.mainImageUrl,
     kakaoContactHref: b.kakaoContactHref,
+    contactClickCount: b.contactClickCount,
   }));
 
   return (

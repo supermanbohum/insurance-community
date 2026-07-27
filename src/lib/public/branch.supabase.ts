@@ -4,7 +4,7 @@ import type { PublicBranchSummary, GaOperationType } from '@/types/database';
 
 const SUMMARY_SELECT = `
   id, slug, name, address, lat, lng, organic_view_count, imported_view_count, correction_view_count,
-  is_recommended, created_at, updated_at, operation_type, is_headquarters,
+  contact_click_count, is_recommended, created_at, updated_at, operation_type, is_headquarters,
   ga_company:ga_company_id ( id, name, logo_path, is_verified, ga_branch(id) ),
   region:region_id ( sido_name, sigungu_name ),
   branch_media ( value, media_type, source ),
@@ -22,6 +22,7 @@ interface BranchSummaryRow {
   organic_view_count: number;
   imported_view_count: number;
   correction_view_count: number;
+  contact_click_count: number;
   is_recommended: boolean;
   created_at: string;
   updated_at: string;
@@ -71,6 +72,7 @@ function toSummary(row: BranchSummaryRow, imageBaseUrl: string, logoBaseUrl: str
     lng: row.lng,
     hasActiveRecruit: (row.branch_recruit ?? []).some((r) => r.is_active),
     kakaoContactHref: toKakaoHref(row.branch_contacts),
+    contactClickCount: row.contact_click_count,
   };
 }
 

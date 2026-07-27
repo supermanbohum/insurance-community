@@ -10,22 +10,28 @@ import type { MapBranch } from './types';
 
 const DEFAULT_CENTER: [number, number] = [36.4, 127.9];
 const DEFAULT_ZOOM = 7;
+// easeLinearity를 기본값(0.25)보다 낮춰 가속-감속이 뚜렷한 "부드럽게 미끄러지듯" 움직임을 만든다.
+export const FLY_OPTIONS = { duration: 0.9, easeLinearity: 0.2 } as const;
 
+// 기본 Leaflet 물방울 핀 대신 보험맵 로고(방패+체크)를 담은 원형 배지 - 헤더 로고와
+// 같은 언어를 써서 지도 위에서도 "보험맵" 브랜드로 바로 읽히게 한다.
 function createPinIcon(operationType: 'direct' | 'branch', active: boolean) {
   const color = operationType === 'direct' ? '#e0a319' : '#2f6bff';
-  const size = active ? 38 : 28;
-  const ring = active ? `0 0 0 5px ${color}33, 0 4px 10px rgba(15,23,42,0.4)` : '0 2px 6px rgba(15,23,42,0.35)';
+  const w = active ? 38 : 30;
+  const h = Math.round((w * 40) / 32);
+  const filter = active ? `drop-shadow(0 4px 8px rgba(15,23,42,0.45)) drop-shadow(0 0 0 4px ${color}2e)` : 'drop-shadow(0 2px 5px rgba(15,23,42,0.35))';
   return L.divIcon({
     className: 'bohommap-pin',
-    html: `<span style="
-      display:block;width:${size}px;height:${size}px;border-radius:50% 50% 50% 0;
-      background:${color};transform:rotate(-45deg);
-      box-shadow:${ring};
-      border:2.5px solid #fff;
-      transition:width .15s ease,height .15s ease;
-    "></span>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size],
+    html: `
+      <svg width="${w}" height="${h}" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg" style="display:block;filter:${filter};transition:width .15s ease,height .15s ease;">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 24 16 24s16-13 16-24C32 7.163 24.837 0 16 0z" fill="${color}" stroke="#fff" stroke-width="2"/>
+        <circle cx="16" cy="16" r="10.5" fill="#fff"/>
+        <path d="M16 8.7L21 10.8V15.6C21 19 18.85 21.65 16 23.1C13.15 21.65 11 19 11 15.6V10.8Z" fill="${color}"/>
+        <path d="M12.9 16.2L15.15 18.45L19.2 13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    `,
+    iconSize: [w, h],
+    iconAnchor: [w / 2, h],
   });
 }
 
@@ -142,7 +148,7 @@ export function LeafletMapView({
     const map = mapRef.current;
     if (!target || target.lat == null || target.lng == null || !map) return;
     programmaticMoveRef.current = true;
-    map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 13), { duration: 0.6 });
+    map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), 13), FLY_OPTIONS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flyToTarget]);
 

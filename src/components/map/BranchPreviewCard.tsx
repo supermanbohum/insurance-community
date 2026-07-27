@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { BadgeCheck, Briefcase, Building2, ChevronRight, MapPin, MessageCircle, X } from 'lucide-react';
+import { BadgeCheck, Briefcase, Building2, ChevronRight, Eye, MapPin, MessageCircle, X } from 'lucide-react';
 import { avatarGradient, cn } from '@/lib/utils';
 import type { MapBranch } from './types';
 
@@ -40,6 +40,10 @@ export function BranchPreviewCard({ branch, onClose }: { branch: MapBranch; onCl
           <span className="flex min-w-0 items-center gap-0.5 truncate">
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{branch.sidoName ? `${branch.sidoName} ${branch.sigunguName ?? ''}` : branch.address}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-0.5">
+            <Eye className="h-3 w-3" />
+            {branch.viewCount.toLocaleString('ko-KR')}
           </span>
           {branch.hasActiveRecruit && (
             <span className="flex shrink-0 items-center gap-0.5 font-semibold text-brand-600">

@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { BadgeCheck, Briefcase, Building2, Eye, MapPin } from 'lucide-react';
+import { BadgeCheck, Briefcase, Building2, Eye, MapPin, MessageCircle } from 'lucide-react';
 import { avatarGradient, cn } from '@/lib/utils';
 import type { MapBranch } from './types';
 
@@ -59,6 +59,12 @@ export function MapBranchListItem({
             <Eye className="h-3 w-3" />
             {branch.viewCount.toLocaleString('ko-KR')}
           </span>
+          {branch.contactClickCount > 0 && (
+            <span className="flex shrink-0 items-center gap-0.5">
+              <MessageCircle className="h-3 w-3" />
+              {branch.contactClickCount.toLocaleString('ko-KR')}
+            </span>
+          )}
           {branch.hasActiveRecruit && (
             <span className="flex shrink-0 items-center gap-0.5 font-semibold text-brand-600">
               <Briefcase className="h-3 w-3" />

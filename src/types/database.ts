@@ -924,4 +924,5 @@ export interface PublicBranchSummary {
   lng: number | null;
   hasActiveRecruit: boolean;
   kakaoContactHref: string | null;
+  contactClickCount: number;
 }

@@ -67,7 +67,6 @@ export function BohomMapHeader() {
               placeholder="지역, GA명, 지점명 검색"
               iconClassName="left-3.5"
               inputClassName="w-full rounded-full border border-transparent bg-surface-sunken py-2.5 pl-9 pr-3 text-base text-ink outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:bg-white focus:shadow-card"
-              navigateOnFocus
             />
           </div>
           {user ? (

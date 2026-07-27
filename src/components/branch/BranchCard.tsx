@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { BadgeCheck, MapPin, Eye, Building2, RefreshCw } from 'lucide-react';
+import { BadgeCheck, MapPin, Eye, MessageCircle, Building2, RefreshCw } from 'lucide-react';
 import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
 import { HighlightText } from '@/components/search/HighlightText';
@@ -95,10 +95,18 @@ export function BranchCard({
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{branch.sidoName ? `${branch.sidoName} ${branch.sigunguName ?? ''}` : branch.address}</span>
           </span>
-          <p className="flex shrink-0 items-center gap-0.5 text-[11px] text-ink-faint">
-            <Eye className="h-3 w-3" />
-            {branch.viewCount.toLocaleString('ko-KR')}
-          </p>
+          <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-ink-faint">
+            <span className="flex items-center gap-0.5">
+              <Eye className="h-3 w-3" />
+              {branch.viewCount.toLocaleString('ko-KR')}
+            </span>
+            {branch.contactClickCount > 0 && (
+              <span className="flex items-center gap-0.5">
+                <MessageCircle className="h-3 w-3" />
+                {branch.contactClickCount.toLocaleString('ko-KR')}
+              </span>
+            )}
+          </span>
         </div>
 
         {showMeta && (
