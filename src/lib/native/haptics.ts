@@ -1,6 +1,6 @@
 'use client';
 
-export type HapticStyle = 'light' | 'medium' | 'success' | 'selection';
+export type HapticStyle = 'light' | 'medium' | 'success' | 'error' | 'selection';
 
 interface ReactNativeWebViewBridge {
   postMessage: (message: string) => void;

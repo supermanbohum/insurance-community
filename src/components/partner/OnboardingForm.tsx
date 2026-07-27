@@ -165,6 +165,7 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       if (!result.success) {
         toast.error(result.error);
+        triggerHaptic('error');
         return;
       }
 

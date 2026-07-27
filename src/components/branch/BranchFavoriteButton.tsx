@@ -24,7 +24,7 @@ export function BranchFavoriteButton({ branchId, initialFavorited }: { branchId:
         return;
       }
       setFavorited(result.favorited);
-      triggerHaptic(result.favorited ? 'success' : 'selection');
+      triggerHaptic('light');
     });
   }
 

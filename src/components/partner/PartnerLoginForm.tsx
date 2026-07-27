@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginPartnerAction } from '@/lib/actions/partner-auth';
+import { triggerHaptic } from '@/lib/native/haptics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,10 +21,12 @@ export function PartnerLoginForm() {
     startTransition(async () => {
       const result = await loginPartnerAction({ email, password });
       if (result.success) {
+        triggerHaptic('success');
         router.push('/partner');
         router.refresh();
       } else {
         setError(result.error);
+        triggerHaptic('error');
       }
     });
   }
