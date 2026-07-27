@@ -6,15 +6,10 @@ import { getPageLayoutConfig } from '@/lib/design/layout';
 import { HOME_SECTIONS, BRANCH_DETAIL_SECTIONS, getSectionDefs, type PageKey } from '@/lib/design/sections';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DesignEditor } from '@/components/admin/design/DesignEditor';
-import { IconMenuGrid } from '@/components/home/IconMenuGrid';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
-import { QuickActionCards } from '@/components/home/QuickActionCards';
-import { RegionQuickLinks } from '@/components/home/RegionQuickLinks';
-import { CompanyQuickLinks } from '@/components/home/CompanyQuickLinks';
-import { HomeMapHero } from '@/components/home/HomeMapHero';
+import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { HomeFooter } from '@/components/home/HomeFooter';
 import { BranchCard } from '@/components/branch/BranchCard';
-import type { MapBranch } from '@/components/map/types';
 import type { BranchPreviewData } from '@/components/branch/types';
 
 export const dynamic = 'force-dynamic';
@@ -33,38 +28,15 @@ function EmptyRow({ text }: { text: string }) {
 }
 
 async function buildHomePreviewNodes() {
-  const [mapBranches, popular, latest, stats] = await Promise.all([
-    listPublicBranches({ sort: 'recommended' }),
+  const [popular, latest, stats] = await Promise.all([
     listPublicBranches({ sort: 'views', limit: 6 }),
     listPublicBranches({ sort: 'newest', limit: 4 }),
     getHomeStats(),
   ]);
 
-  const heroMapBranches: MapBranch[] = mapBranches.map((b) => ({
-    id: b.id,
-    slug: b.slug,
-    name: b.name,
-    gaCompanyName: b.gaCompanyName,
-    isGaVerified: b.isGaVerified,
-    sidoName: b.sidoName,
-    sigunguName: b.sigunguName,
-    address: b.address,
-    lat: b.lat,
-    lng: b.lng,
-    operationType: b.operationType,
-    hasActiveRecruit: b.hasActiveRecruit,
-    viewCount: b.viewCount,
-    mainImageUrl: b.mainImageUrl,
-    kakaoContactHref: b.kakaoContactHref,
-    contactClickCount: b.contactClickCount,
-    tagline: b.tagline,
-  }));
-
   const nodesByKey: Record<string, React.ReactNode> = {
     hero: <HomeRegisterHero stats={stats} />,
-    map: <HomeMapHero branches={heroMapBranches} />,
-    quickActions: <QuickActionCards />,
-    iconMenu: <IconMenuGrid />,
+    quickMenu: <QuickMenuGrid />,
     popularGa: (
       <section className="flex flex-col gap-3">
         <div className="flex items-end justify-between">
@@ -84,8 +56,6 @@ async function buildHomePreviewNodes() {
         )}
       </section>
     ),
-    regionLinks: <RegionQuickLinks />,
-    companyLinks: <CompanyQuickLinks />,
     latest: (
       <section className="flex flex-col gap-3">
         <div className="flex items-end justify-between">

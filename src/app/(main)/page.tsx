@@ -4,15 +4,10 @@ import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
 import { getPageLayoutConfig } from '@/lib/design/layout';
 import { HOME_SECTIONS, type Device } from '@/lib/design/sections';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
-import { IconMenuGrid } from '@/components/home/IconMenuGrid';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
-import { QuickActionCards } from '@/components/home/QuickActionCards';
-import { RegionQuickLinks } from '@/components/home/RegionQuickLinks';
-import { CompanyQuickLinks } from '@/components/home/CompanyQuickLinks';
-import { HomeMapHero } from '@/components/home/HomeMapHero';
+import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { HomeFooter } from '@/components/home/HomeFooter';
 import { BranchCard } from '@/components/branch/BranchCard';
-import type { MapBranch } from '@/components/map/types';
 
 // (main)/layout.tsx가 매 요청마다 getCurrentUser()로 로그인 쿠키를 읽기 때문에
 // (헤더에 로그인 상태를 정확히 보여주려면 필요) 이 레이아웃 아래 페이지는 전부
@@ -54,41 +49,18 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [mapBranches, popular, latest, stats, layoutConfig] = await Promise.all([
-    listPublicBranches({ sort: 'recommended' }),
+  const [popular, latest, stats, layoutConfig] = await Promise.all([
     listPublicBranches({ sort: 'views', limit: 6 }),
     listPublicBranches({ sort: 'newest', limit: 4 }),
     getHomeStats(),
     getPageLayoutConfig('home'),
   ]);
 
-  const heroMapBranches: MapBranch[] = mapBranches.map((b) => ({
-    id: b.id,
-    slug: b.slug,
-    name: b.name,
-    gaCompanyName: b.gaCompanyName,
-    isGaVerified: b.isGaVerified,
-    sidoName: b.sidoName,
-    sigunguName: b.sigunguName,
-    address: b.address,
-    lat: b.lat,
-    lng: b.lng,
-    operationType: b.operationType,
-    hasActiveRecruit: b.hasActiveRecruit,
-    viewCount: b.viewCount,
-    mainImageUrl: b.mainImageUrl,
-    kakaoContactHref: b.kakaoContactHref,
-    contactClickCount: b.contactClickCount,
-    tagline: b.tagline,
-  }));
-
   const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '지점 등록하기';
 
   const nodesByKey: Record<(typeof HOME_SECTIONS)[number]['key'], React.ReactNode> = {
     hero: <HomeRegisterHero stats={stats} ctaLabel={ctaLabel} />,
-    map: <HomeMapHero branches={heroMapBranches} />,
-    quickActions: <QuickActionCards />,
-    iconMenu: <IconMenuGrid />,
+    quickMenu: <QuickMenuGrid />,
     popularGa: (
       <Section title="🔥 인기 GA" subtitle="가장 많이 찾아본 지점" moreHref="/search?sort=views">
         {popular.length === 0 ? (
@@ -102,8 +74,6 @@ export default async function HomePage() {
         )}
       </Section>
     ),
-    regionLinks: <RegionQuickLinks />,
-    companyLinks: <CompanyQuickLinks />,
     latest: (
       <Section title="🆕 신규 등록" subtitle="최근에 새로 올라온 지점" moreHref="/search?sort=newest">
         {latest.length === 0 ? (

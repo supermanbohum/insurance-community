@@ -33,12 +33,8 @@ export const HOME_SECTIONS: SectionDef[] = [
     label: '등록 CTA + 통계',
     textFields: [{ key: 'ctaLabel', label: 'CTA 버튼 문구', default: '지점 등록하기' }],
   },
-  { key: 'map', label: '지도 미리보기' },
-  { key: 'quickActions', label: '퀵메뉴' },
-  { key: 'iconMenu', label: '아이콘 메뉴' },
+  { key: 'quickMenu', label: '빠른 메뉴 (내 주변/지도/지역별/회사별)' },
   { key: 'popularGa', label: '인기 GA' },
-  { key: 'regionLinks', label: '지역별 바로가기' },
-  { key: 'companyLinks', label: '회사별 바로가기' },
   { key: 'latest', label: '신규 등록' },
   { key: 'footer', label: '푸터' },
 ];
