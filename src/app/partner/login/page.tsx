@@ -22,7 +22,7 @@ export default async function PartnerLoginPage() {
           <p className="text-center text-sm text-muted-foreground">
             아직 계정이 없으신가요?{' '}
             <Link href="/partner/signup" className="font-medium text-primary underline-offset-4 hover:underline">
-              GA 등록 신청
+              지점 등록 신청
             </Link>
           </p>
         </CardContent>

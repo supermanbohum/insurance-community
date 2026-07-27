@@ -13,17 +13,37 @@ const DEFAULT_ZOOM = 7;
 
 function createPinIcon(operationType: 'direct' | 'branch', active: boolean) {
   const color = operationType === 'direct' ? '#e0a319' : '#2f6bff';
-  const size = active ? 36 : 28;
+  const size = active ? 38 : 28;
+  const ring = active ? `0 0 0 5px ${color}33, 0 4px 10px rgba(15,23,42,0.4)` : '0 2px 6px rgba(15,23,42,0.35)';
   return L.divIcon({
     className: 'bohommap-pin',
     html: `<span style="
       display:block;width:${size}px;height:${size}px;border-radius:50% 50% 50% 0;
       background:${color};transform:rotate(-45deg);
-      box-shadow:0 2px 6px rgba(15,23,42,0.35);
-      border:2px solid #fff;
+      box-shadow:${ring};
+      border:2.5px solid #fff;
+      transition:width .15s ease,height .15s ease;
     "></span>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
+  });
+}
+
+/** 네이버부동산 스타일의 숫자 클러스터 - 기본 Leaflet 클러스터의 붉은/노란 링 대신 브랜드 컬러 원형 배지. */
+function createClusterIcon(cluster: L.MarkerCluster) {
+  const count = cluster.getChildCount();
+  const size = count >= 50 ? 52 : count >= 10 ? 44 : 38;
+  const fontSize = count >= 50 ? 15 : count >= 10 ? 14 : 13;
+  return L.divIcon({
+    className: 'bohommap-cluster',
+    html: `<div style="
+      display:flex;align-items:center;justify-content:center;
+      width:${size}px;height:${size}px;border-radius:9999px;
+      background:#2f6bff;color:#fff;font-weight:800;font-size:${fontSize}px;
+      box-shadow:0 3px 10px rgba(47,107,255,0.45),0 0 0 4px rgba(47,107,255,0.16);
+      border:2.5px solid #fff;
+    ">${count}</div>`,
+    iconSize: [size, size],
   });
 }
 
@@ -69,7 +89,11 @@ export function LeafletMapView({
     }).addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    const cluster = L.markerClusterGroup({ maxClusterRadius: 48, spiderfyOnMaxZoom: true });
+    const cluster = L.markerClusterGroup({
+      maxClusterRadius: 48,
+      spiderfyOnMaxZoom: true,
+      iconCreateFunction: createClusterIcon,
+    });
     map.addLayer(cluster);
     clusterRef.current = cluster;
     mapRef.current = map;
@@ -101,7 +125,11 @@ export function LeafletMapView({
     markersRef.current.clear();
     branches.forEach((b) => {
       if (b.lat == null || b.lng == null) return;
-      const marker = L.marker([b.lat, b.lng], { icon: createPinIcon(b.operationType, b.id === selectedId) });
+      const active = b.id === selectedId;
+      const marker = L.marker([b.lat, b.lng], {
+        icon: createPinIcon(b.operationType, active),
+        zIndexOffset: active ? 1000 : 0,
+      });
       marker.on('click', () => onSelect(b.id));
       markersRef.current.set(b.id, marker);
       cluster.addLayer(marker);

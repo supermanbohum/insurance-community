@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import type L from 'leaflet';
 import { Locate, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,7 @@ import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { SearchFilterButton, type SearchFilterCurrent } from '@/components/search/SearchFilterSheet';
 import { MapBranchListItem } from './MapBranchListItem';
 import { BranchPreviewCard } from './BranchPreviewCard';
+import { BranchBottomSheet } from './BranchBottomSheet';
 import type { MapBranch } from './types';
 
 const LeafletMapView = dynamic(() => import('./LeafletMapView').then((m) => m.LeafletMapView), {
@@ -31,47 +33,53 @@ export function MapPageClient({
   regionOptions: { sidoCode: string; sidoName: string }[];
   gaOptions: { id: string; name: string }[];
 }) {
-  const [visibleIds, setVisibleIds] = useState<Set<string> | null>(null);
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [flyToTarget, setFlyToTarget] = useState<{ id: string; token: number } | null>(null);
-  const [showSearchArea, setShowSearchArea] = useState(false);
+  const [liveBounds, setLiveBounds] = useState<L.LatLngBounds | null>(null);
+  const [movedSinceLoad, setMovedSinceLoad] = useState(false);
   const [locating, setLocating] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
-  const boundsRef = useRef<L.LatLngBounds | null>(null);
 
-  useEffect(() => {
-    setVisibleIds(null);
-    setSelectedId(null);
-    setShowSearchArea(false);
-  }, [branches]);
+  // 좌측(모바일: 하단) 리스트는 항상 "지금 화면(Bounds)에 보이는 지점"만 보여준다 - 이미 다
+  // 받아온 데이터를 화면에서 걸러내는 것뿐이라 지도를 움직일 때마다 서버를 부르지 않는다.
+  const visibleBranches = useMemo(() => {
+    if (!liveBounds) return branches;
+    return branches.filter((b) => b.lat != null && b.lng != null && liveBounds.contains([b.lat, b.lng] as [number, number]));
+  }, [branches, liveBounds]);
 
-  const shownBranches = useMemo(
-    () => (visibleIds ? branches.filter((b) => visibleIds.has(b.id)) : branches),
-    [branches, visibleIds]
-  );
+  const selected = branches.find((b) => b.id === selectedId) ?? null;
 
-  const selected = shownBranches.find((b) => b.id === selectedId) ?? null;
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id);
+  }, []);
 
   function handleSelectFromList(id: string) {
     setSelectedId(id);
     setFlyToTarget({ id, token: Date.now() });
   }
 
-  function handleBoundsChanged(bounds: L.LatLngBounds, userInitiated: boolean) {
-    boundsRef.current = bounds;
-    if (userInitiated) setShowSearchArea(true);
+  function handleSelectFromSearch(suggestion: { id: string }) {
+    setSelectedId(suggestion.id);
+    setFlyToTarget({ id: suggestion.id, token: Date.now() });
   }
 
+  const handleBoundsChanged = useCallback((bounds: L.LatLngBounds, userInitiated: boolean) => {
+    setLiveBounds(bounds);
+    if (userInitiated) setMovedSinceLoad(true);
+  }, []);
+
+  // "현재 지도에서 검색" - 지금 뷰포트를 서버에 실제로 다시 조회해 받아온다(필터가 걸린
+  // 상태에서 화면 밖으로 스크롤해도 그 지역의 지점을 새로 가져올 수 있도록). 지도 이동마다
+  // 자동으로 호출하지 않고 사용자가 버튼을 눌렀을 때만 서버를 부른다.
   function searchThisArea() {
-    const bounds = boundsRef.current;
+    const bounds = liveBounds;
     if (!bounds) return;
-    const ids = new Set(
-      branches
-        .filter((b) => b.lat != null && b.lng != null && bounds.contains([b.lat, b.lng] as [number, number]))
-        .map((b) => b.id)
-    );
-    setVisibleIds(ids);
-    setShowSearchArea(false);
+    const bbox = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()].join(',');
+    const params = new URLSearchParams(window.location.search);
+    params.set('bbox', bbox);
+    router.push(`/map?${params.toString()}`);
+    setMovedSinceLoad(false);
   }
 
   function locateMe() {
@@ -88,7 +96,7 @@ export function MapPageClient({
   }
 
   return (
-    <div className="flex h-[calc(100dvh-57px-76px)] flex-col lg:h-[calc(100dvh-57px)]">
+    <div className="flex h-[calc(100dvh-57px)] flex-col">
       <div className="flex items-center gap-2 border-b border-line bg-white px-4 py-2.5">
         <div className="min-w-0 flex-1">
           <SearchCombobox
@@ -96,6 +104,7 @@ export function MapPageClient({
             placeholder="지역, GA명, 지점명 검색"
             inputClassName="w-full rounded-full border border-line bg-surface-sunken py-3 pl-10 pr-4 text-base text-ink outline-none transition-all placeholder:text-ink-faint focus:border-brand-300 focus:bg-white focus:shadow-card"
             basePath="/map"
+            onSelectResult={handleSelectFromSearch}
           />
         </div>
         <SearchFilterButton current={filterCurrent} regionOptions={regionOptions} gaOptions={gaOptions} basePath="/map" />
@@ -105,39 +114,40 @@ export function MapPageClient({
         <aside className="hidden w-[360px] shrink-0 flex-col overflow-y-auto border-r border-line bg-white lg:flex">
           <div className="flex items-center justify-between px-4 py-3">
             <p className="text-sm font-bold text-ink">
-              지점 <span className="text-brand-600">{shownBranches.length}</span>곳
+              지금 화면에 <span className="text-brand-600">{visibleBranches.length}</span>곳
             </p>
           </div>
           <div className="flex flex-col gap-2 px-3 pb-4">
-            {shownBranches.map((b) => (
+            {visibleBranches.map((b) => (
               <MapBranchListItem key={b.id} branch={b} active={b.id === selectedId} onClick={() => handleSelectFromList(b.id)} />
             ))}
-            {shownBranches.length === 0 && (
-              <p className="px-2 py-10 text-center text-sm text-ink-faint">해당 조건으로 등록되어 있는 지점이 없습니다.</p>
+            {visibleBranches.length === 0 && (
+              <p className="px-2 py-10 text-center text-sm text-ink-faint">이 화면 범위에는 등록된 지점이 없습니다.</p>
             )}
           </div>
         </aside>
 
         <div className="relative min-h-0 flex-1">
           <LeafletMapView
-            branches={shownBranches}
+            branches={branches}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleSelect}
             onBoundsChanged={handleBoundsChanged}
             flyToTarget={flyToTarget}
             onMapReady={(map) => {
               mapRef.current = map;
+              setLiveBounds(map.getBounds());
             }}
           />
 
-          {showSearchArea && (
+          {movedSinceLoad && (
             <button
               type="button"
               onClick={searchThisArea}
               className="absolute left-1/2 top-4 z-[500] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-bold text-brand-600 shadow-pop ring-1 ring-line transition-transform active:scale-95"
             >
               <RotateCw className="h-3.5 w-3.5" />
-              현재 지도에서 검색
+              이 지도에서 검색
             </button>
           )}
 
@@ -159,21 +169,19 @@ export function MapPageClient({
 
         <div className="absolute inset-x-0 bottom-0 z-[500] lg:hidden">
           {selected ? (
-            <div className="p-3">
-              <BranchPreviewCard branch={selected} onClose={() => setSelectedId(null)} />
-            </div>
+            <BranchBottomSheet branch={selected} onClose={() => setSelectedId(null)} />
           ) : (
-            <div className="flex max-h-[45vh] flex-col rounded-t-3xl border-t border-line bg-white shadow-2xl">
+            <div className="flex max-h-[42vh] flex-col rounded-t-3xl border-t border-line bg-white shadow-2xl">
               <div className="flex items-center justify-center pt-2">
                 <span className="h-1 w-10 rounded-full bg-line" />
               </div>
               <div className="flex items-center justify-between px-4 py-2">
                 <p className="text-sm font-bold text-ink">
-                  지점 <span className="text-brand-600">{shownBranches.length}</span>곳
+                  지금 화면에 <span className="text-brand-600">{visibleBranches.length}</span>곳
                 </p>
               </div>
               <div className="flex flex-col gap-2 overflow-y-auto px-3 pb-4">
-                {shownBranches.map((b) => (
+                {visibleBranches.map((b) => (
                   <MapBranchListItem
                     key={b.id}
                     branch={b}
@@ -181,8 +189,8 @@ export function MapPageClient({
                     onClick={() => handleSelectFromList(b.id)}
                   />
                 ))}
-                {shownBranches.length === 0 && (
-                  <p className="px-2 py-10 text-center text-sm text-ink-faint">해당 조건으로 등록되어 있는 지점이 없습니다.</p>
+                {visibleBranches.length === 0 && (
+                  <p className="px-2 py-10 text-center text-sm text-ink-faint">이 화면 범위에는 등록된 지점이 없습니다.</p>
                 )}
               </div>
             </div>

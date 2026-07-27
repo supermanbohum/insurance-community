@@ -61,7 +61,7 @@ export function PartnerSignupForm() {
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? '가입 중...' : '가입하고 GA 등록하기'}
+        {isPending ? '가입 중...' : '가입하고 지점 등록하기'}
       </Button>
     </form>
   );

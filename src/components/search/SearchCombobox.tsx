@@ -18,6 +18,7 @@ export function SearchCombobox({
   iconClassName,
   navigateOnFocus = false,
   basePath = '/search',
+  onSelectResult,
 }: {
   defaultValue?: string;
   placeholder?: string;
@@ -28,6 +29,8 @@ export function SearchCombobox({
   navigateOnFocus?: boolean;
   /** 검색 제출/최근·인기검색 클릭 시 이동할 경로. 지도 페이지 등에서 재사용할 때 지정한다. */
   basePath?: string;
+  /** 지정하면 지점 결과 클릭 시 상세페이지로 이동하는 대신 이 콜백을 호출한다(지도 페이지: 마커로 이동+선택). */
+  onSelectResult?: (suggestion: SearchSuggestion) => void;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState(defaultValue);
@@ -177,13 +180,8 @@ export function SearchCombobox({
             <div className="flex flex-col gap-0.5">
               {suggestions.map((s) => {
                 const Icon = MapPin;
-                return (
-                  <Link
-                    key={`${s.type}-${s.id}`}
-                    href={s.href}
-                    onMouseDown={() => commitSearch(s.label)}
-                    className="flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-surface-sunken"
-                  >
+                const content = (
+                  <>
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600">
                       <Icon className="h-4 w-4" />
                     </span>
@@ -191,6 +189,33 @@ export function SearchCombobox({
                       <span className="truncate text-[13px] font-semibold text-ink">{s.label}</span>
                       <span className="truncate text-[11px] text-ink-faint">{s.sublabel}</span>
                     </span>
+                  </>
+                );
+                if (onSelectResult) {
+                  return (
+                    <button
+                      key={`${s.type}-${s.id}`}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        commitSearch(s.label);
+                        setOpen(false);
+                        onSelectResult(s);
+                      }}
+                      className="flex items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-surface-sunken"
+                    >
+                      {content}
+                    </button>
+                  );
+                }
+                return (
+                  <Link
+                    key={`${s.type}-${s.id}`}
+                    href={s.href}
+                    onMouseDown={() => commitSearch(s.label)}
+                    className="flex items-center gap-2.5 rounded-xl px-2 py-2 transition-colors hover:bg-surface-sunken"
+                  >
+                    {content}
                   </Link>
                 );
               })}

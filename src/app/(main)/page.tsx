@@ -72,6 +72,7 @@ export default async function HomePage() {
     hasActiveRecruit: b.hasActiveRecruit,
     viewCount: b.viewCount,
     mainImageUrl: b.mainImageUrl,
+    kakaoContactHref: b.kakaoContactHref,
   }));
 
   return (

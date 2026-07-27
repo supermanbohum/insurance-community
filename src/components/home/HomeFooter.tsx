@@ -14,7 +14,7 @@ const LINK_GROUPS = [
   {
     label: '파트너',
     links: [
-      { href: '/partner/signup', label: 'GA 등록하기' },
+      { href: '/partner/signup', label: '지점 등록하기' },
       { href: '/partner/login', label: '파트너 로그인' },
     ],
   },

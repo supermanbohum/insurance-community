@@ -19,7 +19,7 @@ export function HeroSearch() {
           href="/partner/signup"
           className="flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-ink-faint transition-colors hover:text-brand-600"
         >
-          GA이신가요?
+          우리 지점을 홍보해보세요
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>

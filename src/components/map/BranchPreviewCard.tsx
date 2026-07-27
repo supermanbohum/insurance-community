@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { BadgeCheck, Briefcase, Building2, ChevronRight, MapPin, X } from 'lucide-react';
+import { BadgeCheck, Briefcase, Building2, ChevronRight, MapPin, MessageCircle, X } from 'lucide-react';
 import { avatarGradient, cn } from '@/lib/utils';
 import type { MapBranch } from './types';
 
@@ -49,6 +49,19 @@ export function BranchPreviewCard({ branch, onClose }: { branch: MapBranch; onCl
           )}
         </div>
       </div>
+
+      {branch.kakaoContactHref && (
+        <a
+          href={branch.kakaoContactHref}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FEE500] text-[#3C1E1E] transition-transform active:scale-95"
+          aria-label="카카오톡 문의"
+        >
+          <MessageCircle className="h-4 w-4" fill="#3C1E1E" strokeWidth={0} />
+        </a>
+      )}
 
       <Link
         href={`/branch/${branch.slug}`}

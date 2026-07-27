@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { requirePartner } from '@/lib/partner/session';
 import { listRegions } from '@/lib/admin/branch';
+import { listGaFilterOptions } from '@/lib/public/ga-directory';
 import { OnboardingForm } from '@/components/partner/OnboardingForm';
 import { PartnerStepIndicator } from '@/components/partner/PartnerStepIndicator';
 
@@ -10,18 +11,18 @@ export default async function PartnerOnboardingPage() {
     redirect('/partner');
   }
 
-  const regions = await listRegions();
+  const [regions, gaOptions] = await Promise.all([listRegions(), listGaFilterOptions()]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 px-4 py-10">
       <PartnerStepIndicator status="onboarding" />
       <div>
-        <h1 className="text-xl font-bold">GA 등록 신청</h1>
+        <h1 className="text-xl font-bold">지점 등록 신청</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           입력한 정보는 보험맵 관리자 검토 후 승인되면 공개됩니다.
         </p>
       </div>
-      <OnboardingForm regions={regions} />
+      <OnboardingForm regions={regions} gaOptions={gaOptions} />
     </div>
   );
 }

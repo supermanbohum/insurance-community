@@ -8,7 +8,8 @@ const SUMMARY_SELECT = `
   ga_company:ga_company_id ( id, name, logo_path, is_verified, ga_branch(id) ),
   region:region_id ( sido_name, sigungu_name ),
   branch_media ( value, media_type, source ),
-  branch_recruit ( id, is_active )
+  branch_recruit ( id, is_active ),
+  branch_contacts ( type, value )
 `;
 
 interface BranchSummaryRow {
@@ -36,6 +37,13 @@ interface BranchSummaryRow {
   region: { sido_name: string; sigungu_name: string | null } | null;
   branch_media: { value: string; media_type: string; source: string }[] | null;
   branch_recruit: { id: string; is_active: boolean }[] | null;
+  branch_contacts: { type: string; value: string }[] | null;
+}
+
+function toKakaoHref(contacts: { type: string; value: string }[] | null): string | null {
+  const kakao = contacts?.find((c) => c.type === 'kakao' || c.type === 'kakao_open_chat');
+  if (!kakao) return null;
+  return /^https?:\/\//.test(kakao.value) ? kakao.value : `https://${kakao.value}`;
 }
 
 function toSummary(row: BranchSummaryRow, imageBaseUrl: string, logoBaseUrl: string): PublicBranchSummary {
@@ -62,6 +70,7 @@ function toSummary(row: BranchSummaryRow, imageBaseUrl: string, logoBaseUrl: str
     lat: row.lat,
     lng: row.lng,
     hasActiveRecruit: (row.branch_recruit ?? []).some((r) => r.is_active),
+    kakaoContactHref: toKakaoHref(row.branch_contacts),
   };
 }
 
@@ -86,6 +95,8 @@ export async function listPublicBranches(options: {
   minPlannerCount?: number;
   parkingAvailable?: boolean;
   operationType?: 'direct' | 'branch';
+  /** 지도 "현재 지도에서 검색" - 뷰포트(Bounds) 안의 지점만 서버에서 다시 조회할 때 사용. */
+  bounds?: { south: number; west: number; north: number; east: number };
 }): Promise<PublicBranchSummary[]> {
   // cookies()를 건드리지 않는 공개 클라이언트 - 홈/검색/지도가 ISR 캐시를 쓸 수 있으려면
   // 이 함수가 요청마다 강제로 dynamic 렌더링되게 만들면 안 된다.
@@ -128,6 +139,11 @@ export async function listPublicBranches(options: {
 
   if (options.parkingAvailable !== undefined) {
     query = query.eq('parking_available', options.parkingAvailable);
+  }
+
+  if (options.bounds) {
+    const { south, west, north, east } = options.bounds;
+    query = query.gte('lat', south).lte('lat', north).gte('lng', west).lte('lng', east);
   }
 
   if (options.sort === 'newest') {

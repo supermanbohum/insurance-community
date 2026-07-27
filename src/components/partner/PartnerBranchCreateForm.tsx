@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { createPartnerBranchAction } from '@/lib/actions/partner';
 import type { RegionRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
+import { AddressSearchField, type AddressValue } from '@/components/admin/AddressSearchField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,13 +17,19 @@ export function PartnerBranchCreateForm({ regions }: { regions: RegionRow[] }) {
   const [isPending, startTransition] = useTransition();
   const [regionId, setRegionId] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [addressDetail, setAddressDetail] = useState('');
+  const [addressValue, setAddressValue] = useState<AddressValue>({ address: '', addressDetail: '', zonecode: '', lat: null, lng: null });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const result = await createPartnerBranchAction({ name, regionId, address, addressDetail });
+      const result = await createPartnerBranchAction({
+        name,
+        regionId,
+        address: addressValue.address,
+        addressDetail: addressValue.addressDetail,
+        lat: addressValue.lat,
+        lng: addressValue.lng,
+      });
       if (result.success) {
         toast.success('지점이 등록되었습니다.');
         router.push('/partner/branches');
@@ -42,15 +49,8 @@ export function PartnerBranchCreateForm({ regions }: { regions: RegionRow[] }) {
             <Input id="pb-name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pb-address">주소 *</Label>
-            <Input id="pb-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="pb-address-detail">상세주소</Label>
-            <Input id="pb-address-detail" value={addressDetail} onChange={(e) => setAddressDetail(e.target.value)} />
-          </div>
-          <Button type="submit" disabled={isPending} className="self-start">
+          <AddressSearchField value={addressValue} onChange={setAddressValue} />
+          <Button type="submit" disabled={isPending || !addressValue.address} className="self-start">
             {isPending ? '등록 중...' : '지점 등록'}
           </Button>
         </form>

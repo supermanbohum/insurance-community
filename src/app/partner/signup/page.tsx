@@ -18,8 +18,8 @@ export default async function PartnerSignupPage() {
       </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-xl">GA 등록 신청</CardTitle>
-          <CardDescription>계정을 만들고 GA/지점 정보를 등록하면 보험맵 관리자 승인 후 공개됩니다.</CardDescription>
+          <CardTitle className="text-xl">지점 등록 신청</CardTitle>
+          <CardDescription>계정을 만들고 소속 GA와 지점 정보를 등록하면 보험맵 관리자 승인 후 공개됩니다.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <PartnerSignupForm />

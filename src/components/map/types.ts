@@ -13,4 +13,5 @@ export interface MapBranch {
   hasActiveRecruit: boolean;
   viewCount: number;
   mainImageUrl: string | null;
+  kakaoContactHref: string | null;
 }

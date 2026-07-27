@@ -2,13 +2,14 @@ import { Check, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GaApprovalStatus } from '@/types/database';
 
-const STEP_LABELS = ['회원가입', 'GA 등록', '지점 등록', '승인 대기', '승인 완료'] as const;
+const STEP_LABELS = ['회원가입', '지점 등록', '승인 대기', '승인 완료'] as const;
 
 export type PartnerStepStatus = 'signup' | 'onboarding' | GaApprovalStatus;
 
 /**
- * status로부터 완료된 단계 수(1~5)를 계산한다.
- * GA/지점 등록은 온보딩 한 화면에서 함께 제출되므로 2·3단계는 항상 같이 완료 처리된다.
+ * status로부터 완료된 단계 수(1~4)를 계산한다.
+ * 보험맵은 GA를 새로 만들지 않고 목록에서 선택하므로, 지점 등록 한 화면에서
+ * GA 선택까지 함께 끝난다 - 별도의 "GA 등록" 단계가 없다.
  */
 function resolveStepIndex(status: PartnerStepStatus): { completed: number; hasError: boolean } {
   switch (status) {
@@ -17,12 +18,12 @@ function resolveStepIndex(status: PartnerStepStatus): { completed: number; hasEr
     case 'onboarding':
       return { completed: 1, hasError: false };
     case 'pending':
-      return { completed: 3, hasError: false };
+      return { completed: 2, hasError: false };
     case 'approved':
-      return { completed: 5, hasError: false };
+      return { completed: 4, hasError: false };
     case 'rejected':
     case 'suspended':
-      return { completed: 3, hasError: true };
+      return { completed: 2, hasError: true };
     default:
       return { completed: 1, hasError: false };
   }
@@ -30,7 +31,7 @@ function resolveStepIndex(status: PartnerStepStatus): { completed: number; hasEr
 
 export function PartnerStepIndicator({ status }: { status: PartnerStepStatus }) {
   const { completed, hasError } = resolveStepIndex(status);
-  const currentStep = hasError ? 4 : Math.min(completed + 1, 5);
+  const currentStep = hasError ? 3 : Math.min(completed + 1, 4);
 
   return (
     <div className="flex items-center" role="list" aria-label="파트너 등록 진행 단계">
@@ -38,7 +39,7 @@ export function PartnerStepIndicator({ status }: { status: PartnerStepStatus }) 
         const stepNumber = i + 1;
         const isDone = stepNumber <= completed;
         const isCurrent = stepNumber === currentStep;
-        const isErrorStep = hasError && stepNumber === 4;
+        const isErrorStep = hasError && stepNumber === 3;
 
         return (
           <div key={label} className="flex flex-1 items-center last:flex-none">

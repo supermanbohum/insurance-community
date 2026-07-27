@@ -13,17 +13,20 @@ function uniqueSlug(name: string, seed: string): string {
   return `${slugify(name) || 'branch'}-${seed.replace(/-/g, '').slice(-8)}`;
 }
 
-/** 가입 직후 GA + 첫 지점을 한 번에 등록(pending 상태로 관리자 승인 대기). */
+/** 가입 직후 소속 GA를 선택하고 첫 지점을 등록(pending 상태로 관리자 승인 대기).
+ * 보험맵은 GA를 새로 만드는 사이트가 아니라 지점을 찾는 플랫폼이므로, GA는 항상
+ * 정해진 목록(listGaFilterOptions) 중에서 고른다 - 이미 DB에 있는 GA면 그 회사에
+ * 지점을 붙이고, 마스터 목록에만 있던 이름이면 그 이름으로 회사 행을 이번에 처음 만든다. */
 export async function registerGaAction(input: {
-  name: string;
-  ceoName?: string;
-  description?: string;
+  gaName: string;
   branch: {
     name: string;
     regionId: string | null;
     managerName?: string;
     address: string;
     addressDetail?: string;
+    lat?: number | null;
+    lng?: number | null;
     introText?: string;
     plannerCount?: number | null;
     parkingAvailable?: boolean | null;
@@ -31,23 +34,19 @@ export async function registerGaAction(input: {
     businessHours?: string | null;
   };
 }): Promise<ActionResult> {
-  if (!input.name.trim() || !input.branch.name.trim() || !input.branch.address.trim()) {
-    return { success: false, error: 'GA명, 지점명, 주소는 필수입니다.' };
+  if (!input.gaName.trim() || !input.branch.name.trim() || !input.branch.address.trim()) {
+    return { success: false, error: 'GA, 지점명, 주소는 필수입니다.' };
   }
 
   const partner = await requirePartner();
   if (partner.ga_company_id) {
-    return { success: false, error: '이미 등록된 GA가 있습니다.' };
+    return { success: false, error: '이미 등록된 지점이 있습니다.' };
   }
 
-  const gaSlug = uniqueSlug(input.name, partner.id);
   const supabase = createServerSupabaseClient();
-  const { error } = await supabase.rpc('register_ga_for_partner', {
-    p_slug: gaSlug,
-    p_name: input.name.trim(),
-    p_ceo_name: input.ceoName?.trim() ?? null,
-    p_description: input.description?.trim() ?? null,
-    p_branch_slug: `${gaSlug}-hq`,
+  const { error } = await supabase.rpc('register_branch_for_partner', {
+    p_ga_name: input.gaName.trim(),
+    p_branch_slug: uniqueSlug(input.branch.name, partner.id),
     p_branch_name: input.branch.name.trim(),
     p_region_id: input.branch.regionId,
     p_manager_name: input.branch.managerName?.trim() ?? null,
@@ -58,14 +57,19 @@ export async function registerGaAction(input: {
     p_parking_available: input.branch.parkingAvailable ?? null,
     p_visit_consult_available: input.branch.visitConsultAvailable ?? null,
     p_business_hours: input.branch.businessHours?.trim() ?? null,
+    p_lat: input.branch.lat ?? null,
+    p_lng: input.branch.lng ?? null,
   });
 
   if (error) {
-    return { success: false, error: 'GA 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
+    return { success: false, error: '지점 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
   }
 
   revalidatePath('/partner');
   revalidatePath('/admin/ga');
+  revalidatePath('/');
+  revalidatePath('/search');
+  revalidatePath('/map');
   return { success: true };
 }
 
@@ -269,6 +273,8 @@ export async function createPartnerBranchAction(input: {
   regionId: string | null;
   address: string;
   addressDetail?: string;
+  lat?: number | null;
+  lng?: number | null;
 }): Promise<ActionResult> {
   if (!input.name.trim() || !input.address.trim()) {
     return { success: false, error: '지점명과 주소를 입력해주세요.' };
@@ -287,6 +293,8 @@ export async function createPartnerBranchAction(input: {
     p_manager_name: null,
     p_address: input.address.trim(),
     p_address_detail: input.addressDetail?.trim() ?? null,
+    p_lat: input.lat ?? null,
+    p_lng: input.lng ?? null,
   });
 
   if (error) {

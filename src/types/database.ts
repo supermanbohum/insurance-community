@@ -811,6 +811,27 @@ export interface Database {
           p_parking_available?: boolean | null;
           p_visit_consult_available?: boolean | null;
           p_business_hours?: string | null;
+          p_lat?: number | null;
+          p_lng?: number | null;
+        };
+        Returns: { ga_company_id: string; branch_id: string }[];
+      };
+      register_branch_for_partner: {
+        Args: {
+          p_ga_name: string;
+          p_branch_slug: string;
+          p_branch_name: string;
+          p_region_id: string | null;
+          p_manager_name?: string | null;
+          p_address: string;
+          p_address_detail?: string | null;
+          p_intro_text?: string | null;
+          p_planner_count?: number | null;
+          p_parking_available?: boolean | null;
+          p_visit_consult_available?: boolean | null;
+          p_business_hours?: string | null;
+          p_lat?: number | null;
+          p_lng?: number | null;
         };
         Returns: { ga_company_id: string; branch_id: string }[];
       };
@@ -827,6 +848,8 @@ export interface Database {
           p_parking_available?: boolean | null;
           p_visit_consult_available?: boolean | null;
           p_business_hours?: string | null;
+          p_lat?: number | null;
+          p_lng?: number | null;
         };
         Returns: string;
       };
@@ -900,4 +923,5 @@ export interface PublicBranchSummary {
   lat: number | null;
   lng: number | null;
   hasActiveRecruit: boolean;
+  kakaoContactHref: string | null;
 }

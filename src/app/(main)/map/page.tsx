@@ -16,6 +16,7 @@ export default async function MapPage({
     minPlanners?: string;
     parking?: string;
     structure?: string;
+    bbox?: string;
   };
 }) {
   const q = searchParams.q?.trim() ?? '';
@@ -26,6 +27,13 @@ export default async function MapPage({
     searchParams.parking === 'true' ? 'true' : searchParams.parking === 'false' ? 'false' : '';
   const structure: '' | 'direct' | 'branch' =
     searchParams.structure === 'direct' ? 'direct' : searchParams.structure === 'branch' ? 'branch' : '';
+
+  // "현재 지도에서 검색" 버튼 클릭 시 지도 뷰포트(Bounds)를 URL에 담아 서버에서 그 영역만 다시 조회한다.
+  const bboxParts = searchParams.bbox?.split(',').map(Number);
+  const bounds =
+    bboxParts?.length === 4 && bboxParts.every((n) => Number.isFinite(n))
+      ? { south: bboxParts[0], west: bboxParts[1], north: bboxParts[2], east: bboxParts[3] }
+      : undefined;
 
   const sort: BranchSortOption = 'recommended';
   const { registeredIds: registeredGaIds, hasUnregisteredOnly } = splitRegisteredGaIds(gaIds);
@@ -41,6 +49,7 @@ export default async function MapPage({
           minPlannerCount: minPlanners || undefined,
           parkingAvailable: parking === 'true' ? true : parking === 'false' ? false : undefined,
           operationType: structure || undefined,
+          bounds,
         }),
     listSidoGroups(),
     listGaFilterOptions(),
@@ -61,6 +70,7 @@ export default async function MapPage({
     hasActiveRecruit: b.hasActiveRecruit,
     viewCount: b.viewCount,
     mainImageUrl: b.mainImageUrl,
+    kakaoContactHref: b.kakaoContactHref,
   }));
 
   return (
