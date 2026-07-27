@@ -65,6 +65,9 @@ export function AddressSearchField({
             onChange({ ...valueRef.current, address: nextAddress, zonecode: data.zonecode, lat: coords?.lat ?? null, lng: coords?.lng ?? null });
             if (!coords) toast.info('좌표를 자동으로 찾지 못했습니다. 주소/우편번호는 저장되며, 지도는 표시되지 않습니다.');
           })
+          .catch(() => {
+            toast.info('좌표를 자동으로 찾지 못했습니다. 주소/우편번호는 저장되며, 지도는 표시되지 않습니다.');
+          })
           .finally(() => setGeocoding(false));
       },
     }).open();
