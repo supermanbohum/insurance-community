@@ -20,9 +20,9 @@ export function Pagination({ basePath, currentPage, totalPages }: PaginationProp
   const pages = Array.from({ length: end - start + 1 }, (_, i) => start + i);
 
   return (
-    <nav className="mt-6 flex items-center justify-center gap-1 text-sm">
+    <nav className="mt-2 flex items-center justify-center gap-1 text-sm">
       {currentPage > 1 && (
-        <Link href={pageHref(basePath, currentPage - 1)} className="rounded px-2 py-1 text-gray-600 hover:bg-gray-100">
+        <Link href={pageHref(basePath, currentPage - 1)} className="rounded-full px-2.5 py-1 font-medium text-ink-faint hover:bg-surface-sunken">
           이전
         </Link>
       )}
@@ -32,8 +32,8 @@ export function Pagination({ basePath, currentPage, totalPages }: PaginationProp
           key={page}
           href={pageHref(basePath, page)}
           className={clsx(
-            'rounded px-3 py-1',
-            page === currentPage ? 'bg-brand-700 font-semibold text-white' : 'text-gray-600 hover:bg-gray-100'
+            'rounded-full px-3 py-1 font-medium',
+            page === currentPage ? 'bg-brand-600 font-bold text-white' : 'text-ink-faint hover:bg-surface-sunken'
           )}
         >
           {page}
@@ -41,7 +41,7 @@ export function Pagination({ basePath, currentPage, totalPages }: PaginationProp
       ))}
 
       {currentPage < totalPages && (
-        <Link href={pageHref(basePath, currentPage + 1)} className="rounded px-2 py-1 text-gray-600 hover:bg-gray-100">
+        <Link href={pageHref(basePath, currentPage + 1)} className="rounded-full px-2.5 py-1 font-medium text-ink-faint hover:bg-surface-sunken">
           다음
         </Link>
       )}

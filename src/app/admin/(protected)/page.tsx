@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Building2, MapPin, Sparkles, Eye, PhoneCall, ShieldAlert } from 'lucide-react';
+import { Building2, MapPin, Sparkles, Eye, PhoneCall, ShieldAlert, Briefcase, TrendingUp, History } from 'lucide-react';
 import { getDashboardStats } from '@/lib/admin/dashboard';
+import { listRecentAuditLogs, formatAuditAction } from '@/lib/admin/audit';
 import { StatCard } from '@/components/admin/StatCard';
 import { GaApprovalActions } from '@/components/admin/GaApprovalActions';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 export default async function AdminDashboardPage() {
-  const stats = await getDashboardStats();
+  const [stats, auditLogs] = await Promise.all([getDashboardStats(), listRecentAuditLogs(10)]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -19,12 +20,14 @@ export default async function AdminDashboardPage() {
         <p className="text-sm text-muted-foreground">서비스 현황을 한눈에 확인하세요.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         <StatCard label="등록된 GA 수" value={stats.totalGaCount} icon={Building2} />
         <StatCard label="등록된 지점 수" value={stats.totalBranchCount} icon={MapPin} />
         <StatCard label="오늘 신규 등록" value={stats.todayNewCount} icon={Sparkles} />
         <StatCard label="오늘 조회수" value={stats.todayViewCount} icon={Eye} />
         <StatCard label="오늘 문의 클릭수" value={stats.todayContactClickCount} icon={PhoneCall} />
+        <StatCard label="진행중 채용공고" value={stats.activeRecruitCount} icon={Briefcase} />
+        <StatCard label="최근 7일 문의" value={stats.last7DaysContactClickCount} icon={TrendingUp} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -92,6 +95,36 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <History className="h-4 w-4 text-muted-foreground" />
+            최근 관리자 활동
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {auditLogs.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">기록된 활동이 없습니다.</p>
+          ) : (
+            <div className="flex flex-col divide-y">
+              {auditLogs.map((log) => (
+                <div key={log.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm">
+                      <span className="font-medium">{log.adminName}</span>
+                      <span className="text-muted-foreground"> · {formatAuditAction(log)}</span>
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true, locale: ko })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

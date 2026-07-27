@@ -33,26 +33,26 @@ export default async function PostDetailPage({ params }: { params: { id: string 
   const backHref = post.categories?.slug ? `/board/${post.categories.slug}` : '/';
 
   return (
-    <div className="mx-auto max-w-6xl px-0 py-3 lg:flex lg:gap-6 lg:px-6 lg:py-6">
-      <div className="min-w-0 flex-1 bg-white px-4 py-4 lg:rounded-md lg:border lg:border-gray-200">
-        <div className="text-xs font-semibold text-brand-700">{post.categories?.name}</div>
-        <h1 className="mt-1 break-words text-lg font-bold leading-snug text-gray-900">{post.title}</h1>
+    <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 lg:flex-row lg:gap-6 lg:px-6 lg:py-6">
+      <div className="min-w-0 flex-1 rounded-2xl border border-line bg-white p-4 shadow-card lg:p-6">
+        <div className="text-xs font-bold text-brand-600">{post.categories?.name}</div>
+        <h1 className="mt-1 break-words text-lg font-extrabold leading-snug text-ink">{post.title}</h1>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 border-b border-gray-100 pb-3 text-xs text-gray-500">
-          <span className="max-w-[10rem] truncate">{post.author_display_name}</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-b border-line pb-3 text-xs text-ink-faint">
+          <span className="max-w-[10rem] truncate font-medium text-ink-soft">{post.author_display_name}</span>
           <span>{format(new Date(post.created_at), 'yyyy.MM.dd HH:mm')}</span>
           <span>조회 {viewCount}</span>
           <span>추천 {upvoteCount}</span>
         </div>
 
-        <div className="whitespace-pre-wrap break-words py-4 text-[15px] leading-7 text-gray-800">
+        <div className="whitespace-pre-wrap break-words py-4 text-[15px] leading-7 text-ink-soft">
           {post.content}
         </div>
 
         {imageUrls.length > 0 && (
           <div className="space-y-3 pb-2">
             {imageUrls.map((image) => (
-              <div key={image.id} className="relative aspect-video w-full overflow-hidden rounded-md bg-gray-100">
+              <div key={image.id} className="relative aspect-video w-full overflow-hidden rounded-xl bg-surface-sunken">
                 <Image src={image.url} alt="" fill sizes="(min-width: 1024px) 720px, 100vw" className="object-contain" />
               </div>
             ))}
@@ -60,10 +60,10 @@ export default async function PostDetailPage({ params }: { params: { id: string 
         )}
 
         {isOwner && (
-          <div className="flex items-center gap-2 border-t border-gray-100 pt-3">
+          <div className="flex items-center gap-2 border-t border-line pt-3">
             <Link
               href={`/post/${post.id}/edit`}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-full border border-line px-3.5 py-1.5 text-sm font-semibold text-ink-soft hover:border-brand-200 hover:text-brand-600"
             >
               수정
             </Link>
@@ -71,12 +71,12 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           </div>
         )}
 
-        <div className="mt-4 rounded-md border border-dashed border-gray-300 py-6 text-center text-sm text-gray-400">
+        <div className="mt-4 rounded-2xl border border-dashed border-line py-6 text-center text-sm text-ink-faint">
           댓글 기능은 준비 중입니다.
         </div>
 
-        <div className="mt-4 border-t border-gray-100 pt-3">
-          <Link href={backHref} className="text-sm text-gray-600 hover:text-brand-700">
+        <div className="mt-4 border-t border-line pt-3">
+          <Link href={backHref} className="text-sm font-medium text-ink-faint hover:text-brand-600">
             ← 목록으로 돌아가기
           </Link>
         </div>

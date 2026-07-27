@@ -3,8 +3,8 @@ import Link from 'next/link';
 export default function BestPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 text-center">
-      <p className="text-sm text-gray-500">베스트 게시글 기능은 준비 중입니다.</p>
-      <Link href="/" className="mt-4 inline-block text-sm text-brand-700 underline">
+      <p className="text-sm text-ink-faint">베스트 게시글 기능은 준비 중입니다.</p>
+      <Link href="/" className="mt-4 inline-block text-sm font-semibold text-brand-600 underline">
         홈으로 돌아가기
       </Link>
     </div>

@@ -222,6 +222,23 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['insurers']['Row']>;
         Relationships: [];
       };
+      audit_logs: {
+        Row: {
+          id: string;
+          admin_id: string;
+          target_type: string;
+          target_id: string;
+          action: string;
+          reason_code: string | null;
+          reason_detail: string | null;
+          before_value: unknown | null;
+          after_value: unknown | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['audit_logs']['Row']>;
+        Update: Partial<Database['public']['Tables']['audit_logs']['Row']>;
+        Relationships: [];
+      };
       ga_company: {
         Row: {
           id: string;

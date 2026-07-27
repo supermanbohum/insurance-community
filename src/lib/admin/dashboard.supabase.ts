@@ -8,6 +8,8 @@ export interface DashboardStats {
   todayNewCount: number;
   todayViewCount: number;
   todayContactClickCount: number;
+  activeRecruitCount: number;
+  last7DaysContactClickCount: number;
   pendingGaList: Database['public']['Tables']['ga_company']['Row'][];
   recentGaList: Database['public']['Tables']['ga_company']['Row'][];
 }
@@ -16,6 +18,12 @@ function startOfTodayIso(): string {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   return now.toISOString();
+}
+
+function daysAgoIso(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
 }
 
 /**
@@ -34,6 +42,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     newBranchToday,
     viewsToday,
     clicksToday,
+    activeRecruits,
+    clicksLast7Days,
     pendingGa,
     recentGa,
   ] = await Promise.all([
@@ -43,6 +53,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     supabase.from('ga_branch').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
     supabase.from('branch_views').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
     supabase.from('branch_contact_clicks').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
+    supabase.from('branch_recruit').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    supabase.from('branch_contact_clicks').select('id', { count: 'exact', head: true }).gte('created_at', daysAgoIso(7)),
     supabase
       .from('ga_company')
       .select('*')
@@ -58,6 +70,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     todayNewCount: (newGaToday.count ?? 0) + (newBranchToday.count ?? 0),
     todayViewCount: viewsToday.count ?? 0,
     todayContactClickCount: clicksToday.count ?? 0,
+    activeRecruitCount: activeRecruits.count ?? 0,
+    last7DaysContactClickCount: clicksLast7Days.count ?? 0,
     pendingGaList: pendingGa.data ?? [],
     recentGaList: recentGa.data ?? [],
   };
