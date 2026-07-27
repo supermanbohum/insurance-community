@@ -4,7 +4,7 @@ import type { PublicBranchSummary, GaOperationType } from '@/types/database';
 
 const SUMMARY_SELECT = `
   id, slug, name, address, lat, lng, organic_view_count, imported_view_count, correction_view_count,
-  contact_click_count, is_recommended, created_at, updated_at, operation_type, is_headquarters,
+  is_recommended, created_at, updated_at, operation_type, is_headquarters,
   ga_company:ga_company_id ( id, name, logo_path, is_verified, ga_branch(id) ),
   region:region_id ( sido_name, sigungu_name ),
   branch_media ( value, media_type, source ),
@@ -22,7 +22,6 @@ interface BranchSummaryRow {
   organic_view_count: number;
   imported_view_count: number;
   correction_view_count: number;
-  contact_click_count: number;
   is_recommended: boolean;
   created_at: string;
   updated_at: string;
@@ -47,7 +46,12 @@ function toKakaoHref(contacts: { type: string; value: string }[] | null): string
   return /^https?:\/\//.test(kakao.value) ? kakao.value : `https://${kakao.value}`;
 }
 
-function toSummary(row: BranchSummaryRow, imageBaseUrl: string, logoBaseUrl: string): PublicBranchSummary {
+function toSummary(
+  row: BranchSummaryRow,
+  imageBaseUrl: string,
+  logoBaseUrl: string,
+  contactClickCount: number
+): PublicBranchSummary {
   const mainImage = row.branch_media?.find((m) => m.media_type === 'image_main');
   return {
     id: row.id,
@@ -72,7 +76,7 @@ function toSummary(row: BranchSummaryRow, imageBaseUrl: string, logoBaseUrl: str
     lng: row.lng,
     hasActiveRecruit: (row.branch_recruit ?? []).some((r) => r.is_active),
     kakaoContactHref: toKakaoHref(row.branch_contacts),
-    contactClickCount: row.contact_click_count,
+    contactClickCount,
   };
 }
 
@@ -162,7 +166,31 @@ export async function listPublicBranches(options: {
 
   const { data, error } = await query;
   if (error) throw error;
-  return ((data ?? []) as unknown as BranchSummaryRow[]).map((row) => toSummary(row, imageBaseUrl, logoBaseUrl));
+  const rows = (data ?? []) as unknown as BranchSummaryRow[];
+
+  // 문의수(contact_click_count)는 migration 0015 적용 전 배포와도 호환되도록 메인 조회와
+  // 분리한 별도 조회로 채운다 - 컬럼이 아직 없어 실패해도 조용히 0으로 처리하고,
+  // 나머지 지점 데이터(홈/검색/지도)는 정상적으로 계속 동작해야 한다.
+  const clickCounts = new Map<string, number>();
+  if (rows.length > 0) {
+    const { data: clickRows } = await supabase
+      .from('ga_branch')
+      .select('id, contact_click_count')
+      .in(
+        'id',
+        rows.map((r) => r.id)
+      )
+      .then(
+        (res) => res,
+        () => ({ data: null })
+      )
+      .then((res) => res as { data: { id: string; contact_click_count: number }[] | null });
+    for (const row of clickRows ?? []) {
+      clickCounts.set(row.id, row.contact_click_count);
+    }
+  }
+
+  return rows.map((row) => toSummary(row, imageBaseUrl, logoBaseUrl, clickCounts.get(row.id) ?? 0));
 }
 
 export interface BranchDetail {
