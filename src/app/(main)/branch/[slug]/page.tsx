@@ -59,6 +59,7 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
     isGaVerified: branch.gaCompany.isVerified,
     media: branch.media.map((m) => ({ id: m.id, type: m.type as BranchPreviewData['media'][number]['type'], source: m.source as 'storage' | 'external', url: m.url })),
     contacts: branch.contacts,
+    links: branch.links,
     insurerNames: branch.insurerNames,
     activeRecruits: branch.activeRecruits,
     siblingBranches: siblings

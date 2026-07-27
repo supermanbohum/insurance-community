@@ -68,6 +68,7 @@ export interface BranchPreviewData {
   isGaVerified: boolean;
   media: BranchMediaItem[];
   contacts: BranchContactItem[];
+  links: { id: string; type: string; url: string }[];
   insurerNames: string[];
   activeRecruits: BranchRecruitItem[];
   /** 같은 GA 소속의 다른 지점 목록 (자기 자신 제외). GA는 더 이상 자체 상세페이지가 없으므로 여기서 바로 다음 지점으로 이동한다. */

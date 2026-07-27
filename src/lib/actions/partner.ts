@@ -331,6 +331,95 @@ export async function uploadPartnerBranchPhotoAction(
   return { success: true };
 }
 
+const VIDEO_MIME_EXTENSIONS: Record<string, string> = {
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
+};
+
+/** 홍보 영상 업로드(선택, 최대 1개) - branch_media에 media_type='video'로 등록한다. */
+export async function uploadPartnerBranchVideoAction(branchId: string, formData: FormData): Promise<ActionResult> {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: '파일을 선택해주세요.' };
+  }
+  const extension = VIDEO_MIME_EXTENSIONS[file.type];
+  if (!extension) {
+    return { success: false, error: 'mp4, mov, webm 형식만 업로드할 수 있습니다.' };
+  }
+  if (file.size > 200 * 1024 * 1024) {
+    return { success: false, error: '영상은 최대 200MB까지 업로드할 수 있습니다.' };
+  }
+
+  const partner = await requirePartner();
+  const supabase = createServerSupabaseClient();
+  const { data: branch } = await supabase.from('ga_branch').select('id, slug, ga_company_id').eq('id', branchId).maybeSingle();
+  if (!branch || branch.ga_company_id !== partner.ga_company_id) {
+    return { success: false, error: '접근 권한이 없습니다.' };
+  }
+
+  const path = `${branch.ga_company_id}/${branchId}/${crypto.randomUUID()}.${extension}`;
+  const { error: uploadError } = await supabase.storage
+    .from('branch-videos')
+    .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
+  if (uploadError) {
+    return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  const { error: registerError } = await supabase.rpc('add_branch_media', {
+    p_branch_id: branchId,
+    p_media_type: 'video',
+    p_source: 'storage' as BranchMediaSource,
+    p_value: path,
+    p_sort_order: 0,
+  });
+  if (registerError) {
+    await createAdminClient().storage.from('branch-videos').remove([path]);
+    return { success: false, error: '등록하지 못했습니다.' };
+  }
+
+  revalidatePath(`/branch/${branch.slug}`);
+  revalidatePath('/');
+  return { success: true };
+}
+
+const LINK_TYPES = new Set(['instagram', 'blog', 'youtube', 'website', 'etc']);
+
+/** SNS/외부 링크 저장(선택) - 인스타그램/블로그/유튜브/홈페이지/기타. 값이 있는 것만 저장한다. */
+export async function savePartnerBranchLinksAction(
+  branchId: string,
+  links: { type: string; url: string }[]
+): Promise<ActionResult> {
+  const partner = await requirePartner();
+  const supabase = createServerSupabaseClient();
+  const { data: branch } = await supabase.from('ga_branch').select('id, slug, ga_company_id').eq('id', branchId).maybeSingle();
+  if (!branch || branch.ga_company_id !== partner.ga_company_id) {
+    return { success: false, error: '접근 권한이 없습니다.' };
+  }
+
+  for (const [i, link] of links.entries()) {
+    const trimmed = link.url.trim();
+    if (!trimmed || !LINK_TYPES.has(link.type)) continue;
+    let normalized: string;
+    try {
+      normalized = new URL(/^https?:\/\//.test(trimmed) ? trimmed : `https://${trimmed}`).toString();
+    } catch {
+      continue;
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await supabase.rpc('upsert_branch_link', {
+      p_link_id: null,
+      p_branch_id: branchId,
+      p_type: link.type,
+      p_url: normalized,
+      p_sort_order: i,
+    });
+  }
+
+  revalidatePath(`/branch/${branch.slug}`);
+  return { success: true };
+}
+
 /** 신규 지점 추가 - 소속 GA가 이미 승인된 상태면 관리자 재검토 전까지 비공개(hidden)로 대기. */
 export async function createPartnerBranchAction(input: {
   name: string;

@@ -103,6 +103,7 @@ export function BranchEditWorkspace({
       url: m.source === 'external' ? m.value : `${imageBaseUrl}/${m.value}`,
     })),
     contacts: contacts.map((c) => ({ id: c.id, type: c.type, value: c.value, label: c.label })),
+    links: [],
     insurerNames: selectedInsurerNames,
     activeRecruits: recruits
       .filter((r) => r.is_active)

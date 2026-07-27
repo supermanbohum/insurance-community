@@ -3,8 +3,13 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowDown, ArrowUp, ImagePlus, Star, X } from 'lucide-react';
-import { registerGaAction, uploadPartnerBranchPhotoAction } from '@/lib/actions/partner';
+import { ArrowDown, ArrowUp, ImagePlus, Star, VideoIcon, X } from 'lucide-react';
+import {
+  registerGaAction,
+  savePartnerBranchLinksAction,
+  uploadPartnerBranchPhotoAction,
+  uploadPartnerBranchVideoAction,
+} from '@/lib/actions/partner';
 import type { RegionRow } from '@/lib/admin/branch';
 import type { GaFilterOption } from '@/lib/public/ga-directory';
 import { RegionSelect } from '@/components/admin/RegionSelect';
@@ -32,6 +37,15 @@ const MIN_INTRO_LENGTH = 50;
 const MIN_PHOTOS = 3;
 const MAX_PHOTOS = 10;
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
+
+const LINK_FIELDS = [
+  { key: 'instagram', label: '📷 인스타그램', placeholder: 'https://instagram.com/...' },
+  { key: 'blog', label: '📝 블로그', placeholder: 'https://blog.naver.com/...' },
+  { key: 'youtube', label: '▶ 유튜브', placeholder: 'https://youtube.com/...' },
+  { key: 'website', label: '🌐 홈페이지', placeholder: 'https://...' },
+  { key: 'etc', label: '🔗 기타 링크', placeholder: 'https://...' },
+] as const;
 
 interface AmenityOption {
   key: 'parkingAvailable' | 'visitConsultAvailable' | 'newRecruitTraining' | 'experiencedHire' | 'dbSupport' | 'settlementSupport';
@@ -67,6 +81,14 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
     settlementSupport: false,
   });
   const [photos, setPhotos] = useState<File[]>([]);
+  const [video, setVideo] = useState<File | null>(null);
+  const [links, setLinks] = useState<Record<(typeof LINK_FIELDS)[number]['key'], string>>({
+    instagram: '',
+    blog: '',
+    youtube: '',
+    website: '',
+    etc: '',
+  });
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
 
   const introRemaining = MIN_INTRO_LENGTH - introText.trim().length;
@@ -96,6 +118,29 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
     });
   }
 
+  function pickVideo(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    if (!VIDEO_TYPES.includes(file.type)) {
+      toast.error('mp4, mov, webm 형식만 업로드할 수 있습니다.');
+      return;
+    }
+    if (file.size > 200 * 1024 * 1024) {
+      toast.error('영상은 최대 200MB까지 업로드할 수 있습니다.');
+      return;
+    }
+    const probe = document.createElement('video');
+    probe.preload = 'metadata';
+    probe.onloadedmetadata = () => {
+      URL.revokeObjectURL(probe.src);
+      if (probe.duration < 30 || probe.duration > 120) {
+        toast.info('30초~2분 분량의 영상을 권장합니다. 그대로 업로드는 진행됩니다.');
+      }
+    };
+    probe.src = URL.createObjectURL(file);
+    setVideo(file);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
@@ -122,13 +167,27 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
         return;
       }
 
-      setUploadProgress({ done: 0, total: photos.length });
+      const totalSteps = photos.length + (video ? 1 : 0);
+      setUploadProgress({ done: 0, total: totalSteps });
       for (let i = 0; i < photos.length; i++) {
         const fd = new FormData();
         fd.set('file', photos[i]);
         // eslint-disable-next-line no-await-in-loop
         await uploadPartnerBranchPhotoAction(result.branchId, fd, i === 0, i);
-        setUploadProgress({ done: i + 1, total: photos.length });
+        setUploadProgress((p) => (p ? { done: p.done + 1, total: p.total } : p));
+      }
+      if (video) {
+        const fd = new FormData();
+        fd.set('file', video);
+        await uploadPartnerBranchVideoAction(result.branchId, fd);
+        setUploadProgress((p) => (p ? { done: p.done + 1, total: p.total } : p));
+      }
+
+      const linkEntries = Object.entries(links)
+        .filter(([, url]) => url.trim())
+        .map(([type, url]) => ({ type, url }));
+      if (linkEntries.length > 0) {
+        await savePartnerBranchLinksAction(result.branchId, linkEntries);
       }
 
       toast.success('등록 신청이 접수되었습니다. 관리자 승인 후 지도에 노출됩니다.');
@@ -253,6 +312,56 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">홍보 영상 (선택)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-xs text-muted-foreground">
+            사무실 소개 또는 분위기를 보여주는 영상을 등록하면 더 많은 문의를 받을 수 있습니다. (mp4/mov/webm, 최대 1개, 30초~2분 권장)
+          </p>
+          {video ? (
+            <div className="relative overflow-hidden rounded-2xl border border-line bg-black">
+              <video src={URL.createObjectURL(video)} controls className="aspect-video w-full" />
+              <button
+                type="button"
+                onClick={() => setVideo(null)}
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white"
+                aria-label="영상 삭제"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line py-8 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600">
+              <VideoIcon className="h-6 w-6" />
+              영상을 선택하세요
+              <input type="file" accept={VIDEO_TYPES.join(',')} className="hidden" onChange={(e) => pickVideo(e.target.files)} />
+            </label>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">SNS 및 외부 링크 (선택)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {LINK_FIELDS.map((field) => (
+            <div key={field.key} className="flex flex-col gap-1.5">
+              <Label htmlFor={`onb-link-${field.key}`}>{field.label}</Label>
+              <Input
+                id={`onb-link-${field.key}`}
+                type="url"
+                value={links[field.key]}
+                onChange={(e) => setLinks((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                placeholder={field.placeholder}
+              />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">④ 상세 정보</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -308,8 +417,8 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       <Button type="submit" disabled={isPending || !canSubmit} size="lg">
         {isPending
-          ? uploadProgress
-            ? `사진 업로드 중... (${uploadProgress.done}/${uploadProgress.total})`
+          ? uploadProgress && uploadProgress.total > 0
+            ? `미디어 업로드 중... (${uploadProgress.done}/${uploadProgress.total})`
             : '제출 중...'
           : '⑤ 등록 신청'}
       </Button>

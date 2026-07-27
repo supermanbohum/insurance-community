@@ -35,6 +35,14 @@ const BLOCK_ICON: Record<string, LucideIcon> = {
   '분위기': Sparkles,
 };
 
+const LINK_META: Record<string, { emoji: string; label: string }> = {
+  instagram: { emoji: '📷', label: 'Instagram' },
+  blog: { emoji: '📝', label: 'Blog' },
+  youtube: { emoji: '▶', label: 'YouTube' },
+  website: { emoji: '🌐', label: 'Website' },
+  etc: { emoji: '🔗', label: '기타' },
+};
+
 function Section({ title, icon: Icon, children }: { title: string; icon?: LucideIcon; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-4 shadow-card">
@@ -146,6 +154,26 @@ export function BranchDetailView({
         </p>
       )}
 
+      {data.links.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {data.links.map((link) => {
+            const meta = LINK_META[link.type] ?? LINK_META.etc;
+            return (
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:border-brand-200 hover:text-brand-600"
+              >
+                <span>{meta.emoji}</span>
+                {meta.label}
+              </a>
+            );
+          })}
+        </div>
+      )}
+
       <BranchPillTags
         isGaVerified={data.isGaVerified}
         sidoName={data.sidoName}
@@ -175,6 +203,19 @@ export function BranchDetailView({
         />
       )}
 
+      {introBlocks.length > 0 && (
+        <section className="flex flex-col gap-3">
+          {introBlocks.map((block) => {
+            const Icon = BLOCK_ICON[block.label];
+            return (
+              <Section key={block.label} title={block.label} icon={Icon}>
+                <p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">{block.value}</p>
+              </Section>
+            );
+          })}
+        </section>
+      )}
+
       {facts.length > 0 && (
         <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {facts.map((fact) => {
@@ -185,19 +226,6 @@ export function BranchDetailView({
                 <span className="text-[13px] font-bold text-ink">{fact.value}</span>
                 <span className="text-[11px] text-ink-faint">{fact.label}</span>
               </div>
-            );
-          })}
-        </section>
-      )}
-
-      {introBlocks.length > 0 && (
-        <section className="flex flex-col gap-3">
-          {introBlocks.map((block) => {
-            const Icon = BLOCK_ICON[block.label];
-            return (
-              <Section key={block.label} title={block.label} icon={Icon}>
-                <p className="whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">{block.value}</p>
-              </Section>
             );
           })}
         </section>

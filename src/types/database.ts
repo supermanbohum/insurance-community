@@ -349,6 +349,28 @@ export interface Database {
           },
         ];
       };
+      branch_links: {
+        Row: {
+          id: string;
+          branch_id: string;
+          type: string;
+          url: string;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['branch_links']['Row']>;
+        Update: Partial<Database['public']['Tables']['branch_links']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'branch_links_branch_id_fkey';
+            columns: ['branch_id'];
+            isOneToOne: false;
+            referencedRelation: 'ga_branch';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       branch_recruit: {
         Row: {
           id: string;
@@ -890,6 +912,20 @@ export interface Database {
           p_db_support?: boolean | null;
           p_settlement_support?: boolean | null;
         };
+        Returns: void;
+      };
+      upsert_branch_link: {
+        Args: {
+          p_link_id: string | null;
+          p_branch_id: string;
+          p_type: string;
+          p_url: string;
+          p_sort_order?: number;
+        };
+        Returns: string;
+      };
+      delete_branch_link: {
+        Args: { p_link_id: string };
         Returns: void;
       };
     };

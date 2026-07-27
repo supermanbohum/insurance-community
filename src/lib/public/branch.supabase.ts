@@ -247,6 +247,7 @@ export interface BranchDetail {
   };
   media: { id: string; type: string; source: string; url: string }[];
   contacts: { id: string; type: string; value: string; label: string | null }[];
+  links: { id: string; type: string; url: string }[];
   insurerNames: string[];
   activeRecruits: { id: string; title: string; content: string; employmentType: string | null }[];
 }
@@ -325,6 +326,20 @@ export async function getPublicBranchDetail(slug: string): Promise<BranchDetail 
     // 마이그레이션 미적용 - 아래에서 전부 null로 처리.
   }
 
+  // branch_links(SNS/외부링크)는 migration 0017로 추가되는 테이블 - 적용 전에는 빈 배열로 처리.
+  let links: { id: string; type: string; url: string }[] = [];
+  try {
+    const { data, error: linksError } = await supabase
+      .from('branch_links')
+      .select('id, type, url')
+      .eq('branch_id', branch.id)
+      .order('sort_order');
+    if (linksError) throw linksError;
+    links = data ?? [];
+  } catch {
+    // 마이그레이션 미적용 - 빈 배열 유지.
+  }
+
   return {
     id: branch.id,
     slug: branch.slug,
@@ -372,6 +387,7 @@ export async function getPublicBranchDetail(slug: string): Promise<BranchDetail 
       url: m.source === 'external' ? m.value : `${m.media_type === 'video' ? videoBaseUrl : imageBaseUrl}/${m.value}`,
     })),
     contacts: (contacts ?? []).map((c) => ({ id: c.id, type: c.type, value: c.value, label: c.label })),
+    links,
     insurerNames: (insurerLinks ?? [])
       .map((link) => (link.insurers as unknown as { name: string } | null)?.name)
       .filter((name): name is string => Boolean(name)),
