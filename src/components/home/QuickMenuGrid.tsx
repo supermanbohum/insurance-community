@@ -16,9 +16,11 @@ export function QuickMenuGrid() {
         <Link
           key={action.label}
           href={action.href}
-          className={`group flex flex-col items-center gap-2.5 rounded-3xl border border-line py-6 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover active:scale-95 ${action.tile}`}
+          className={`group flex flex-col items-center gap-2.5 rounded-3xl border border-line py-6 text-center shadow-card transition-all duration-200 ease-out hover:scale-[1.03] hover:shadow-card-hover active:scale-[0.97] ${action.tile}`}
         >
-          <span className="text-[32px] leading-none">{action.emoji}</span>
+          <span className="text-[32px] leading-none transition-transform duration-200 ease-out group-hover:-translate-y-[2px]">
+            {action.emoji}
+          </span>
           <span className="text-[13px] font-bold leading-tight text-ink-soft">{action.label}</span>
         </Link>
       ))}

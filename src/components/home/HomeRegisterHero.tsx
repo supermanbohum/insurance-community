@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Flame, MessageSquareText, Plus } from 'lucide-react';
 import type { HomeStats } from '@/lib/public/branch';
+import { StatCountUp } from '@/components/home/StatCountUp';
 
 /**
  * 헤더에 이미 로고+검색창이 있어(BohomMapHeader) 예전 HeroSearch가 그걸 그대로
@@ -24,7 +25,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { 
           href="/search"
           className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border border-line bg-white py-3.5 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
         >
-          <span className="text-[15px] font-extrabold text-ink">{stats.branchCount.toLocaleString('ko-KR')}건</span>
+          <span className="text-[15px] font-extrabold text-ink"><StatCountUp value={stats.branchCount} />건</span>
           <span className="text-[11px] font-medium text-ink-faint">등록 지점 수</span>
         </Link>
         <Link
@@ -45,15 +46,15 @@ export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { 
 
       <div className="flex items-center justify-between rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
         <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-          📍 등록 지점 <span className="text-brand-600">{stats.branchCount.toLocaleString('ko-KR')}</span>개
+          📍 등록 지점 <span className="text-brand-600"><StatCountUp value={stats.branchCount} /></span>개
         </span>
         <span className="h-3.5 w-px shrink-0 bg-line" />
         <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-          👨‍💼 등록 설계사 <span className="text-brand-600">{stats.plannerTotal.toLocaleString('ko-KR')}</span>명
+          👨‍💼 등록 설계사 <span className="text-brand-600"><StatCountUp value={stats.plannerTotal} /></span>명
         </span>
         <span className="h-3.5 w-px shrink-0 bg-line" />
         <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-          🔥 오늘 신규 <span className="text-brand-600">{stats.todayCount.toLocaleString('ko-KR')}</span>건
+          🔥 오늘 신규 <span className="text-brand-600"><StatCountUp value={stats.todayCount} /></span>건
         </span>
       </div>
     </div>

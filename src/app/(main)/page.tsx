@@ -7,7 +7,9 @@ import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { HomeFooter } from '@/components/home/HomeFooter';
-import { BranchCard } from '@/components/branch/BranchCard';
+import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
+import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
+import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 
 // (main)/layout.tsx가 매 요청마다 getCurrentUser()로 로그인 쿠키를 읽기 때문에
 // (헤더에 로그인 상태를 정확히 보여주려면 필요) 이 레이아웃 아래 페이지는 전부
@@ -50,8 +52,8 @@ function Section({
 
 export default async function HomePage() {
   const [popular, latest, stats, layoutConfig] = await Promise.all([
-    listPublicBranches({ sort: 'views', limit: 6 }),
-    listPublicBranches({ sort: 'newest', limit: 4 }),
+    listPublicBranches({ sort: 'views', limit: 10 }),
+    listPublicBranches({ sort: 'newest', limit: 10 }),
     getHomeStats(),
     getPageLayoutConfig('home'),
   ]);
@@ -66,11 +68,11 @@ export default async function HomePage() {
         {popular.length === 0 ? (
           <EmptyRow text="아직 조회 데이터가 없습니다." />
         ) : (
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 scrollbar-hide">
-            {popular.map((b, i) => (
-              <BranchCard key={b.id} branch={b} rank={i + 1} showMeta className="w-[168px] shrink-0 sm:w-[190px]" />
-            ))}
-          </div>
+          <InfiniteCarousel
+            durationSec={28}
+            itemClassName="w-[170px] sm:w-[190px]"
+            items={popular.map((b, i) => ({ key: b.id, node: <PopularGaCard branch={b} rank={i + 1} /> }))}
+          />
         )}
       </Section>
     ),
@@ -79,11 +81,11 @@ export default async function HomePage() {
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
         ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {latest.map((b) => (
-              <BranchCard key={b.id} branch={b} />
-            ))}
-          </div>
+          <InfiniteCarousel
+            durationSec={38}
+            itemClassName="w-[170px] sm:w-[190px]"
+            items={latest.map((b) => ({ key: b.id, node: <NewBranchCard branch={b} /> }))}
+          />
         )}
       </Section>
     ),

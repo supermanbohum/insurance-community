@@ -9,7 +9,9 @@ import { DesignEditor } from '@/components/admin/design/DesignEditor';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { HomeFooter } from '@/components/home/HomeFooter';
-import { BranchCard } from '@/components/branch/BranchCard';
+import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
+import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
+import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 import type { BranchPreviewData } from '@/components/branch/types';
 
 export const dynamic = 'force-dynamic';
@@ -29,8 +31,8 @@ function EmptyRow({ text }: { text: string }) {
 
 async function buildHomePreviewNodes() {
   const [popular, latest, stats] = await Promise.all([
-    listPublicBranches({ sort: 'views', limit: 6 }),
-    listPublicBranches({ sort: 'newest', limit: 4 }),
+    listPublicBranches({ sort: 'views', limit: 10 }),
+    listPublicBranches({ sort: 'newest', limit: 10 }),
     getHomeStats(),
   ]);
 
@@ -48,11 +50,11 @@ async function buildHomePreviewNodes() {
         {popular.length === 0 ? (
           <EmptyRow text="아직 조회 데이터가 없습니다." />
         ) : (
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 scrollbar-hide">
-            {popular.map((b, i) => (
-              <BranchCard key={b.id} branch={b} rank={i + 1} showMeta className="w-[168px] shrink-0 sm:w-[190px]" />
-            ))}
-          </div>
+          <InfiniteCarousel
+            durationSec={28}
+            itemClassName="w-[170px] sm:w-[190px]"
+            items={popular.map((b, i) => ({ key: b.id, node: <PopularGaCard branch={b} rank={i + 1} /> }))}
+          />
         )}
       </section>
     ),
@@ -67,11 +69,11 @@ async function buildHomePreviewNodes() {
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
         ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {latest.map((b) => (
-              <BranchCard key={b.id} branch={b} />
-            ))}
-          </div>
+          <InfiniteCarousel
+            durationSec={38}
+            itemClassName="w-[170px] sm:w-[190px]"
+            items={latest.map((b) => ({ key: b.id, node: <NewBranchCard branch={b} /> }))}
+          />
         )}
       </section>
     ),
