@@ -7,7 +7,7 @@ import { getSearchSuggestionsAction, type SearchSuggestion } from '@/lib/actions
 import { addRecentSearch, getRecentSearches, removeRecentSearch } from '@/lib/search/recentSearches';
 import { cn } from '@/lib/utils';
 
-const POPULAR_KEYWORDS = ['맵그룹', '메리츠금융서비스', '프라임에셋', 'GA Korea'];
+const POPULAR_KEYWORDS = ['인카금융서비스', '프라임에셋', '지에이코리아', '피플라이프'];
 
 export function SearchCombobox({
   defaultValue = '',
