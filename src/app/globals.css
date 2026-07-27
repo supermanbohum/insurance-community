@@ -19,17 +19,6 @@ body {
   color: #152d70;
 }
 
-/* 모바일 하단 내비게이션 높이만큼 본문 하단 여백 확보 */
-.pb-mobile-nav {
-  padding-bottom: 76px;
-}
-
-@media (min-width: 1024px) {
-  .pb-mobile-nav {
-    padding-bottom: 0;
-  }
-}
-
 /* 가로 스크롤 레일(랭킹/배너)에서 스크롤바를 숨기되 스크롤 기능은 유지 */
 .scrollbar-hide {
   -ms-overflow-style: none;

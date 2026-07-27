@@ -4,7 +4,14 @@ import { createContext, useCallback, useContext, useEffect, useState, useTransit
 import { createClient } from '@/lib/supabase/client';
 import type { UserSession } from './types';
 
-type OAuthProvider = 'kakao' | 'google';
+type OAuthProvider = 'google';
+
+const APP_OAUTH_RETURN_URL = 'boheommap://auth-callback';
+
+/** react-native-webview가 페이지에 주입하는 전역 - 앱(APK) 내부 WebView에서 열렸는지 판별. */
+function isInsideAppWebView(): boolean {
+  return typeof window !== 'undefined' && Boolean((window as unknown as { ReactNativeWebView?: unknown }).ReactNativeWebView);
+}
 
 interface AuthContextValue {
   user: UserSession | null;
@@ -31,9 +38,13 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
     return new Promise<{ success: boolean; error?: string }>((resolve) => {
       startTransition(async () => {
         const supabase = createClient();
+        // 앱(APK) WebView 안에서는 https 콜백으로 보내면 구글 로그인이 외부 Chrome에서 끝나고
+        // 앱으로 돌아오지 못한다. 커스텀 스킴으로 보내면 네이티브 쪽(App.tsx)이 그 리다이렉트를
+        // 가로채 WebBrowser.openAuthSessionAsync로 처리한 뒤 앱 내부로 결과를 되돌려준다.
+        const redirectTo = isInsideAppWebView() ? APP_OAUTH_RETURN_URL : `${window.location.origin}/auth/callback`;
         const { error } = await supabase.auth.signInWithOAuth({
           provider,
-          options: { redirectTo: `${window.location.origin}/auth/callback` },
+          options: { redirectTo },
         });
         if (error) {
           resolve({ success: false, error: error.message });

@@ -58,9 +58,14 @@ export function LeafletMapView({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, { zoomControl: false }).setView(initialCenter, initialZoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 19,
+    // 기본 OpenStreetMap 타일은 도로/라벨이 빽빽하고 색감이 딱딱해 "행정지도" 느낌이 강하다.
+    // CARTO Voyager는 같은 OSM 데이터를 밝고 단순한 색상/라벨로 렌더링해 네이버지도/카카오맵에
+    // 가까운 느낌을 준다 - API 키 없이 쓸 수 있는 무료 타일이라 별도 자격증명이 필요 없다.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20,
     }).addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 

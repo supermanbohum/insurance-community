@@ -62,7 +62,7 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-4">
+    <div className="mx-auto max-w-2xl px-4 pb-28 pt-4 lg:pb-4">
       <BranchDetailView data={data} variant="public" favorite={{ branchId: branch.id, initialFavorited }} />
     </div>
   );

@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Locate, Maximize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BranchPreviewCard } from '@/components/map/BranchPreviewCard';
 import type { MapBranch } from '@/components/map/types';
 
 const LeafletMapView = dynamic(() => import('@/components/map/LeafletMapView').then((m) => m.LeafletMapView), {
@@ -20,14 +21,13 @@ const LeafletMapView = dynamic(() => import('@/components/map/LeafletMapView').t
 export function HomeMapHero({ branches }: { branches: MapBranch[] }) {
   const router = useRouter();
   const [locating, setLocating] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const handleSelect = useCallback(
-    (id: string) => {
-      const target = branches.find((b) => b.id === id);
-      router.push(target ? `/branch/${target.slug}` : '/map');
-    },
-    [branches, router]
-  );
+  const selected = useMemo(() => branches.find((b) => b.id === selectedId) ?? null, [branches, selectedId]);
+
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id);
+  }, []);
 
   function locateMe() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -57,31 +57,45 @@ export function HomeMapHero({ branches }: { branches: MapBranch[] }) {
         </div>
       </div>
 
-      <div className="relative h-[280px] w-full overflow-hidden rounded-3xl border border-line shadow-card-hover sm:h-[360px]">
+      <div className="relative h-[300px] w-full overflow-hidden rounded-3xl border border-line shadow-card-hover sm:h-[380px]">
         <LeafletMapView
           branches={branches}
-          selectedId={null}
+          selectedId={selectedId}
           onSelect={handleSelect}
           onBoundsChanged={() => {}}
           flyToTarget={null}
         />
 
-        <button
-          type="button"
-          onClick={locateMe}
-          className="absolute bottom-4 left-4 z-[500] flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-sm font-bold text-brand-700 shadow-pop ring-1 ring-line transition-transform active:scale-95"
-        >
-          <Locate className={cn('h-4 w-4', locating && 'animate-pulse text-brand-600')} />
-          내 주변 찾기
-        </button>
+        {!selected && (
+          <span className="pointer-events-none absolute left-4 top-4 z-[500] rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-ink shadow-card backdrop-blur">
+            🏢 {branches.length.toLocaleString('ko-KR')}개 지점 표시 중
+          </span>
+        )}
 
-        <Link
-          href="/map"
-          className="absolute bottom-4 right-4 z-[500] flex items-center gap-1 rounded-full bg-ink/80 px-3 py-2 text-xs font-semibold text-white backdrop-blur transition-transform active:scale-95"
-        >
-          <Maximize2 className="h-3.5 w-3.5" />
-          크게 보기
-        </Link>
+        {selected ? (
+          <div className="absolute inset-x-3 bottom-3 z-[500]">
+            <BranchPreviewCard branch={selected} onClose={() => setSelectedId(null)} />
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={locateMe}
+              className="absolute bottom-4 left-4 z-[500] flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-sm font-bold text-brand-700 shadow-pop ring-1 ring-line transition-transform active:scale-95"
+            >
+              <Locate className={cn('h-4 w-4', locating && 'animate-pulse text-brand-600')} />
+              내 주변 찾기
+            </button>
+
+            <Link
+              href="/map"
+              className="absolute bottom-4 right-4 z-[500] flex items-center gap-1 rounded-full bg-ink/80 px-3 py-2 text-xs font-semibold text-white backdrop-blur transition-transform active:scale-95"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+              크게 보기
+            </Link>
+          </>
+        )}
       </div>
     </section>
   );

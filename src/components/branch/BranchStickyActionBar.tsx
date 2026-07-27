@@ -68,7 +68,8 @@ export function BranchStickyActionBar({
     <div
       className={cn(
         'z-30 flex gap-2',
-        variant === 'public' && 'fixed inset-x-0 bottom-[72px] px-4 lg:static lg:bottom-auto lg:px-0'
+        variant === 'public' &&
+          'fixed inset-x-0 bottom-0 bg-white/95 px-4 pb-[max(theme(spacing.3),env(safe-area-inset-bottom))] pt-3 backdrop-blur-md lg:static lg:bottom-auto lg:bg-transparent lg:p-0 lg:backdrop-blur-none'
       )}
     >
       <div
