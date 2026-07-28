@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import type { MapBranch } from '@/components/map/types';
 
-const LeafletMapView = dynamic(() => import('@/components/map/LeafletMapView').then((m) => m.LeafletMapView), {
+const NaverMapView = dynamic(() => import('@/components/map/NaverMapView').then((m) => m.NaverMapView), {
   ssr: false,
   loading: () => (
     <div className="flex h-full w-full items-center justify-center bg-surface-sunken text-sm text-ink-faint">
@@ -14,7 +14,7 @@ const LeafletMapView = dynamic(() => import('@/components/map/LeafletMapView').t
 });
 
 /**
- * 지점 상세 페이지용 미니맵 - LeafletMapView를 그대로 재사용하되 지점 좌표 하나로
+ * 지점 상세 페이지용 미니맵 - NaverMapView를 그대로 재사용하되 지점 좌표 하나로
  * 바로 확대해서 보여준다(전국 뷰에서 시작하지 않음). 좌표가 없으면 아무것도 렌더링하지 않는다.
  */
 export function BranchLocationMap({
@@ -60,7 +60,7 @@ export function BranchLocationMap({
 
   return (
     <div className="h-64 w-full overflow-hidden rounded-2xl border border-line">
-      <LeafletMapView
+      <NaverMapView
         branches={[branch]}
         selectedId={branchId}
         onSelect={noop}

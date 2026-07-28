@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import type L from 'leaflet';
 import { Locate, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRecentMapView, saveRecentMapView } from '@/lib/map/recentMapView';
@@ -12,14 +11,10 @@ import { SearchFilterButton, type SearchFilterCurrent } from '@/components/searc
 import { MapBranchListItem } from './MapBranchListItem';
 import { BranchPreviewCard } from './BranchPreviewCard';
 import { BranchBottomSheet } from './BranchBottomSheet';
+import type { MapBoundsLike, MapControllerLike } from './mapController';
 import type { MapBranch } from './types';
 
-// LeafletMapView 모듈은 leaflet을 최상단에서 import하므로(브라우저 전용) 여기서는
-// 상수만 그대로 복제해 쓴다 - 서버에서도 렌더링되는 MapPageClient가 leaflet을
-// 정적으로 import하면 ssr:false로 격리한 의미가 없어진다.
-const FLY_OPTIONS = { duration: 0.9, easeLinearity: 0.2 } as const;
-
-const LeafletMapView = dynamic(() => import('./LeafletMapView').then((m) => m.LeafletMapView), {
+const NaverMapView = dynamic(() => import('./NaverMapView').then((m) => m.NaverMapView), {
   ssr: false,
   loading: () => (
     <div className="flex h-full w-full items-center justify-center bg-surface-sunken text-sm text-ink-faint">
@@ -42,10 +37,11 @@ export function MapPageClient({
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [flyToTarget, setFlyToTarget] = useState<{ id: string; token: number } | null>(null);
-  const [liveBounds, setLiveBounds] = useState<L.LatLngBounds | null>(null);
+  const [liveBounds, setLiveBounds] = useState<MapBoundsLike | null>(null);
   const [movedSinceLoad, setMovedSinceLoad] = useState(false);
   const [locating, setLocating] = useState(false);
-  const mapRef = useRef<L.Map | null>(null);
+  const [myLocation, setMyLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const mapRef = useRef<MapControllerLike | null>(null);
 
   // 최초 화면은 전국이 아니라 마지막으로 보던 지역에서 시작한다 - 위치 권한이 허용되면
   // onMapReady에서 한 번 더 내 위치로 자연스럽게 이동한다(권한 대화상자 때문에 지도
@@ -59,7 +55,7 @@ export function MapPageClient({
   // 받아온 데이터를 화면에서 걸러내는 것뿐이라 지도를 움직일 때마다 서버를 부르지 않는다.
   const visibleBranches = useMemo(() => {
     if (!liveBounds) return branches;
-    return branches.filter((b) => b.lat != null && b.lng != null && liveBounds.contains([b.lat, b.lng] as [number, number]));
+    return branches.filter((b) => b.lat != null && b.lng != null && liveBounds.contains(b.lat, b.lng));
   }, [branches, liveBounds]);
 
   const selected = branches.find((b) => b.id === selectedId) ?? null;
@@ -78,12 +74,11 @@ export function MapPageClient({
     setFlyToTarget({ id: suggestion.id, token: Date.now() });
   }
 
-  const handleBoundsChanged = useCallback((bounds: L.LatLngBounds, userInitiated: boolean) => {
+  const handleBoundsChanged = useCallback((bounds: MapBoundsLike, userInitiated: boolean) => {
     setLiveBounds(bounds);
     if (userInitiated) {
       setMovedSinceLoad(true);
-      const center = bounds.getCenter();
-      saveRecentMapView({ lat: center.lat, lng: center.lng, zoom: mapRef.current?.getZoom() ?? 12 });
+      saveRecentMapView({ lat: bounds.center.lat, lng: bounds.center.lng, zoom: mapRef.current?.getZoom() ?? 12 });
     }
   }, []);
 
@@ -93,7 +88,7 @@ export function MapPageClient({
   function searchThisArea() {
     const bounds = liveBounds;
     if (!bounds) return;
-    const bbox = [bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()].join(',');
+    const bbox = [bounds.south, bounds.west, bounds.north, bounds.east].join(',');
     const params = new URLSearchParams(window.location.search);
     params.set('bbox', bbox);
     router.push(`/map?${params.toString()}`);
@@ -105,7 +100,8 @@ export function MapPageClient({
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        mapRef.current?.flyTo([pos.coords.latitude, pos.coords.longitude], 13, FLY_OPTIONS);
+        setMyLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        mapRef.current?.flyTo(pos.coords.latitude, pos.coords.longitude, 13);
         setLocating(false);
       },
       () => setLocating(false),
@@ -146,7 +142,7 @@ export function MapPageClient({
         </aside>
 
         <div className="relative min-h-0 flex-1">
-          <LeafletMapView
+          <NaverMapView
             branches={branches}
             selectedId={selectedId}
             onSelect={handleSelect}
@@ -154,9 +150,10 @@ export function MapPageClient({
             flyToTarget={flyToTarget}
             initialCenter={initialView?.center}
             initialZoom={initialView?.zoom}
-            onMapReady={(map) => {
-              mapRef.current = map;
-              setLiveBounds(map.getBounds());
+            myLocation={myLocation}
+            onMapReady={(controller) => {
+              mapRef.current = controller;
+              setLiveBounds(controller.getBounds());
 
               // 위치 권한이 이미 허용돼 있으면(권한 대화상자 없이 바로 응답) 내 위치로
               // 살짝 이동해 "내 주변 지점"이 먼저 보이게 한다 - 없으면 방금 정한 시작
@@ -164,7 +161,8 @@ export function MapPageClient({
               if (typeof navigator !== 'undefined' && navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                   (pos) => {
-                    map.flyTo([pos.coords.latitude, pos.coords.longitude], 13, FLY_OPTIONS);
+                    setMyLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                    controller.flyTo(pos.coords.latitude, pos.coords.longitude, 13);
                   },
                   () => {},
                   { enableHighAccuracy: true, timeout: 5000, maximumAge: 5 * 60 * 1000 }
