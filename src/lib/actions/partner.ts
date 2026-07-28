@@ -232,55 +232,11 @@ const IMAGE_MIME_EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
 };
 
-/** 대표 이미지 교체 - Storage 업로드 후 branch_media에 등록. */
-export async function submitBranchMainImageAction(branchId: string, formData: FormData): Promise<ActionResult> {
-  const file = formData.get('file');
-  if (!(file instanceof File) || file.size === 0) {
-    return { success: false, error: '파일을 선택해주세요.' };
-  }
-  const extension = IMAGE_MIME_EXTENSIONS[file.type];
-  if (!extension) {
-    return { success: false, error: 'jpg, png, webp 형식만 업로드할 수 있습니다.' };
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    return { success: false, error: '이미지는 최대 5MB까지 업로드할 수 있습니다.' };
-  }
-
-  const partner = await requirePartner();
-  const supabase = createServerSupabaseClient();
-  const { data: branch } = await supabase.from('ga_branch').select('id, slug, ga_company_id').eq('id', branchId).maybeSingle();
-  if (!branch || branch.ga_company_id !== partner.ga_company_id) {
-    return { success: false, error: '접근 권한이 없습니다.' };
-  }
-
-  const path = `${branch.ga_company_id}/${branchId}/${crypto.randomUUID()}.${extension}`;
-  const { error: uploadError } = await supabase.storage
-    .from('branch-images')
-    .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
-  if (uploadError) {
-    return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
-  }
-
-  const { error: registerError } = await supabase.rpc('add_branch_media', {
-    p_branch_id: branchId,
-    p_media_type: 'image_main',
-    p_source: 'storage' as BranchMediaSource,
-    p_value: path,
-    p_sort_order: 0,
-  });
-  if (registerError) {
-    await createAdminClient().storage.from('branch-images').remove([path]);
-    return { success: false, error: '등록하지 못했습니다.' };
-  }
-
-  revalidatePath(`/partner/branches/${branchId}`);
-  revalidatePath(`/branch/${branch.slug}`);
-  revalidatePath('/');
-  return { success: true };
-}
-
-/** 지점 등록 시 사무실 사진 업로드(최소 3장) - 첫 번째는 대표사진(image_main), 나머지는
- * image_office로 등록한다. 등록 직후(register_branch_for_partner 성공 직후) 반복 호출한다. */
+/** 지점 등록 시 사무실 사진 업로드(최소 3장) - add_branch_media RPC가 해당 지점에 이미지가
+ * 하나도 없으면 자동으로 대표사진(image_main)으로, 있으면 나머지 사진(image_office)으로
+ * 저장한다(첫 업로드 = 대표사진 정책). isMain/sortOrder 인자는 더 이상 서버 판단에 쓰이지
+ * 않지만(RPC가 실제 업로드 순서로 재계산) 호출부 호환을 위해 그대로 남겨둔다.
+ * 등록 직후(register_branch_for_partner 성공 직후) 반복 호출한다. */
 export async function uploadPartnerBranchPhotoAction(
   branchId: string,
   formData: FormData,

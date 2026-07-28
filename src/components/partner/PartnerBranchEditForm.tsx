@@ -1,9 +1,11 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { submitBranchChangeAction, submitBranchMainImageAction } from '@/lib/actions/partner';
-import type { BranchRow, InsurerRow, RegionRow, BranchContactRow, BranchRecruitRow } from '@/lib/admin/branch';
+import { submitBranchChangeAction } from '@/lib/actions/partner';
+import { uploadBranchImageAction, deleteBranchMediaAction } from '@/lib/actions/branch-media-admin';
+import type { BranchRow, InsurerRow, RegionRow, BranchContactRow, BranchRecruitRow, BranchMediaRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
 import { InsurerMultiSelect } from '@/components/admin/InsurerMultiSelect';
 import { Button } from '@/components/ui/button';
@@ -11,8 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ImagePlus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
+import { ImagePlus, Star, Trash2 } from 'lucide-react';
 
 export function PartnerBranchEditForm({
   branch,
@@ -21,6 +23,8 @@ export function PartnerBranchEditForm({
   selectedInsurerIds,
   contacts,
   activeRecruit,
+  media,
+  imageBaseUrl,
 }: {
   branch: BranchRow;
   regions: RegionRow[];
@@ -28,10 +32,17 @@ export function PartnerBranchEditForm({
   selectedInsurerIds: string[];
   contacts: BranchContactRow[];
   activeRecruit: BranchRecruitRow | null;
+  media: BranchMediaRow[];
+  imageBaseUrl: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const [isUploadingImage, setUploadingImage] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  // sort_order 오름차순으로 이미 정렬되어 오므로 첫 사진이 곧 대표사진이다.
+  const images = media.filter((m) => m.media_type === 'image_main' || m.media_type === 'image_office');
 
   const [name, setName] = useState(branch.name);
   const [regionId, setRegionId] = useState<string | null>(branch.region_id);
@@ -92,39 +103,86 @@ export function PartnerBranchEditForm({
     });
   }
 
-  function handleImageSelect(file: File | undefined) {
-    if (!file) return;
+  function handleImageSelect(files: FileList | null) {
+    if (!files || files.length === 0) return;
     setUploadingImage(true);
-    const formData = new FormData();
-    formData.set('file', file);
-    submitBranchMainImageAction(branch.id, formData)
+    const uploads = Array.from(files).map((file) => {
+      const formData = new FormData();
+      formData.set('file', file);
+      return uploadBranchImageAction(branch.id, branch.ga_company_id, formData);
+    });
+
+    Promise.all(uploads)
+      .then((results) => {
+        const failed = results.find((r) => !r.success);
+        if (failed && !failed.success) {
+          toast.error(failed.error);
+        } else {
+          toast.success('사진을 업로드했습니다.');
+        }
+        router.refresh();
+      })
+      .finally(() => setUploadingImage(false));
+  }
+
+  function handleDeleteImage(item: BranchMediaRow) {
+    setDeletingId(item.id);
+    deleteBranchMediaAction(item.id, branch.id, 'branch-images')
       .then((result) => {
         if (result.success) {
-          notify();
+          toast.success('삭제했습니다.');
+          router.refresh();
         } else {
           toast.error(result.error);
         }
       })
-      .finally(() => setUploadingImage(false));
+      .finally(() => setDeletingId(null));
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">대표 이미지</CardTitle>
+          <CardTitle className="text-base">지점 사진</CardTitle>
+          <CardDescription>가장 먼저 업로드한 사진이 자동으로 대표사진이 됩니다. 대표사진을 삭제하면 다음 사진이 대표사진이 됩니다.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
+          {images.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {images.map((item) => (
+                <div key={item.id} className="group relative aspect-square overflow-hidden rounded-md border bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`${imageBaseUrl}/${item.value}`} alt="" className="h-full w-full object-cover" />
+                  {item.media_type === 'image_main' && (
+                    <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                      <Star className="h-2.5 w-2.5 fill-current" />
+                      대표사진
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    disabled={deletingId === item.id}
+                    onClick={() => handleDeleteImage(item)}
+                    className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label="삭제"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <input
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             className="hidden"
-            onChange={(e) => handleImageSelect(e.target.files?.[0])}
+            onChange={(e) => handleImageSelect(e.target.files)}
           />
           <Button type="button" variant="outline" disabled={isUploadingImage} onClick={() => fileInputRef.current?.click()}>
             <ImagePlus className="h-4 w-4" />
-            {isUploadingImage ? '업로드 중...' : '대표 이미지 교체'}
+            {isUploadingImage ? '업로드 중...' : '사진 추가'}
           </Button>
         </CardContent>
       </Card>

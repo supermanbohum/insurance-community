@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { UploadCloud, Trash2, Video, Link as LinkIcon } from 'lucide-react';
+import { UploadCloud, Trash2, Video, Link as LinkIcon, Star } from 'lucide-react';
 import {
   addBranchVideoUrlAction,
   deleteBranchMediaAction,
@@ -87,19 +87,20 @@ export function BranchMediaTab({
   imageBaseUrl: string;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [uploadingSlot, setUploadingSlot] = useState<'main' | 'office' | 'video' | null>(null);
+  const [uploadingSlot, setUploadingSlot] = useState<'photo' | 'video' | null>(null);
   const [videoUrl, setVideoUrl] = useState('');
 
-  const mainImages = media.filter((m) => m.media_type === 'image_main');
-  const officeImages = media.filter((m) => m.media_type === 'image_office');
+  // sort_order 오름차순으로 이미 정렬되어 오므로, 첫 번째 사진이 곧 대표사진이다
+  // (서버가 "첫 업로드 = 대표사진" 정책을 강제한다 - add_branch_media/delete_branch_media 참고).
+  const images = media.filter((m) => m.media_type === 'image_main' || m.media_type === 'image_office');
   const videos = media.filter((m) => m.media_type === 'video');
 
-  function handleImageDrop(slot: 'main' | 'office', files: FileList) {
-    setUploadingSlot(slot);
+  function handleImageDrop(files: FileList) {
+    setUploadingSlot('photo');
     const uploads = Array.from(files).map((file) => {
       const formData = new FormData();
       formData.set('file', file);
-      return uploadBranchImageAction(branchId, gaCompanyId, slot === 'main' ? 'image_main' : 'image_office', formData);
+      return uploadBranchImageAction(branchId, gaCompanyId, formData);
     });
 
     Promise.all(uploads)
@@ -154,47 +155,29 @@ export function BranchMediaTab({
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">대표사진</CardTitle>
-          <CardDescription>지점 목록/상세 최상단에 노출되는 사진 1장</CardDescription>
+          <CardTitle className="text-base">지점 사진</CardTitle>
+          <CardDescription>가장 먼저 업로드한 사진이 자동으로 대표사진이 됩니다. 대표사진을 삭제하면 다음 사진이 대표사진이 됩니다.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {mainImages.length > 0 ? (
+          {images.length > 0 && (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {mainImages.map((item) => (
-                <MediaThumb key={item.id} src={`${imageBaseUrl}/${item.value}`} onDelete={() => handleDelete(item)} disabled={isPending} />
-              ))}
-            </div>
-          ) : (
-            <Dropzone
-              label="대표사진 업로드"
-              hint="드래그 앤 드롭 또는 클릭 (jpg/png/webp, 5MB 이하)"
-              accept={IMAGE_ACCEPT}
-              isUploading={uploadingSlot === 'main'}
-              onFiles={(files) => handleImageDrop('main', files)}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">사무실사진</CardTitle>
-          <CardDescription>여러 장 등록할 수 있습니다.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {officeImages.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {officeImages.map((item) => (
-                <MediaThumb key={item.id} src={`${imageBaseUrl}/${item.value}`} onDelete={() => handleDelete(item)} disabled={isPending} />
+              {images.map((item) => (
+                <MediaThumb
+                  key={item.id}
+                  src={`${imageBaseUrl}/${item.value}`}
+                  isMain={item.media_type === 'image_main'}
+                  onDelete={() => handleDelete(item)}
+                  disabled={isPending}
+                />
               ))}
             </div>
           )}
           <Dropzone
-            label="사무실사진 업로드"
+            label="사진 추가"
             hint="드래그 앤 드롭 또는 클릭 (jpg/png/webp, 5MB 이하, 여러 장 가능)"
             accept={IMAGE_ACCEPT}
-            isUploading={uploadingSlot === 'office'}
-            onFiles={(files) => handleImageDrop('office', files)}
+            isUploading={uploadingSlot === 'photo'}
+            onFiles={handleImageDrop}
           />
         </CardContent>
       </Card>
@@ -246,11 +229,27 @@ export function BranchMediaTab({
   );
 }
 
-function MediaThumb({ src, onDelete, disabled }: { src: string; onDelete: () => void; disabled?: boolean }) {
+function MediaThumb({
+  src,
+  isMain,
+  onDelete,
+  disabled,
+}: {
+  src: string;
+  isMain?: boolean;
+  onDelete: () => void;
+  disabled?: boolean;
+}) {
   return (
     <div className="group relative aspect-square overflow-hidden rounded-md border bg-muted">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" className="h-full w-full object-cover" />
+      {isMain && (
+        <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+          <Star className="h-2.5 w-2.5 fill-current" />
+          대표사진
+        </span>
+      )}
       <button
         type="button"
         disabled={disabled}

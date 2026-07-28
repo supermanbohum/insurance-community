@@ -25,10 +25,14 @@ const VIDEO_MIME_EXTENSIONS: Record<string, string> = {
   'video/quicktime': 'mov',
 };
 
+/**
+ * 사진 업로드 - "몇 번째 사진이 대표사진인지"는 이 액션이 정하지 않는다.
+ * add_branch_media RPC가 해당 지점에 이미지가 하나도 없으면 자동으로 대표사진(image_main)으로,
+ * 있으면 나머지 사진(image_office)으로 저장한다(첫 업로드 = 대표사진 정책, 0021 참고).
+ */
 export async function uploadBranchImageAction(
   branchId: string,
   gaCompanyId: string,
-  mediaType: Extract<BranchMediaType, 'image_main' | 'image_office'>,
   formData: FormData
 ): Promise<ActionResult> {
   const file = formData.get('file');
@@ -57,10 +61,9 @@ export async function uploadBranchImageAction(
 
   const { error: registerError } = await supabase.rpc('add_branch_media', {
     p_branch_id: branchId,
-    p_media_type: mediaType,
+    p_media_type: 'image_office' as BranchMediaType, // 힌트일 뿐 - 실제 값은 RPC가 자동으로 결정한다
     p_source: 'storage' as BranchMediaSource,
     p_value: path,
-    p_sort_order: 0,
   });
 
   if (registerError) {

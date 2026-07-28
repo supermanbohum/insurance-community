@@ -4,6 +4,7 @@ import {
   getBranchById,
   getBranchContacts,
   getBranchInsurerIds,
+  getBranchMedia,
   getBranchRecruits,
   listInsurers,
   listRegions,
@@ -19,17 +20,19 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
     notFound();
   }
 
-  const [company, regions, insurers, selectedInsurerIds, contacts, recruits] = await Promise.all([
+  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media] = await Promise.all([
     getGaCompanyById(branch.ga_company_id),
     listRegions(),
     listInsurers(),
     getBranchInsurerIds(branch.id),
     getBranchContacts(branch.id),
     getBranchRecruits(branch.id),
+    getBranchMedia(branch.id),
   ]);
 
   const activeRecruit = recruits.find((r) => r.is_active) ?? null;
   const isApproved = company?.approval_status === 'approved';
+  const imageBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/branch-images`;
 
   return (
     <div className="flex flex-col gap-4">
@@ -55,6 +58,8 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
         selectedInsurerIds={selectedInsurerIds}
         contacts={contacts}
         activeRecruit={activeRecruit}
+        media={media}
+        imageBaseUrl={imageBaseUrl}
       />
     </div>
   );
