@@ -8,7 +8,6 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { DesignEditor } from '@/components/admin/design/DesignEditor';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
-import { HomeFooter } from '@/components/home/HomeFooter';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
 import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
@@ -77,7 +76,6 @@ async function buildHomePreviewNodes() {
         )}
       </section>
     ),
-    footer: <HomeFooter />,
   };
 
   return HOME_SECTIONS.map((def) => ({ key: def.key, node: nodesByKey[def.key] }));

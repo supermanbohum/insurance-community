@@ -36,7 +36,6 @@ export const HOME_SECTIONS: SectionDef[] = [
   { key: 'quickMenu', label: '빠른 메뉴 (내 주변/지도/지역별/회사별)' },
   { key: 'popularGa', label: '인기 GA' },
   { key: 'latest', label: '신규 등록' },
-  { key: 'footer', label: '푸터' },
 ];
 
 export const BRANCH_DETAIL_SECTIONS: SectionDef[] = [

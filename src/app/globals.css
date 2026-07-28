@@ -95,3 +95,33 @@ body {
   --input: 0 0% 14.9%;
   --ring: 225 70% 60%;
 }
+
+/*
+ * 약관/개인정보처리방침처럼 긴 텍스트를 읽는 페이지는 OS 다크모드 설정을 그대로
+ * 따라간다. Tailwind의 dark: 유틸(전역 .dark 클래스 토글 필요)과는 별개로, 이
+ * 스코프 안에서만 쓰는 CSS 변수를 prefers-color-scheme로 직접 전환한다 - 사이트
+ * 나머지 영역(관리자/파트너 포함)의 라이트 전용 스타일에는 전혀 영향을 주지 않는다.
+ */
+.legal-page {
+  --lp-bg: #f4f6fb;
+  --lp-card: #ffffff;
+  --lp-ink: #0f172a;
+  --lp-ink-soft: #48546b;
+  --lp-ink-faint: #8b95a8;
+  --lp-line: #e6eaf2;
+  --lp-brand: #1a4ce6;
+  --lp-brand-soft: #eef5ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .legal-page {
+    --lp-bg: #0b0f19;
+    --lp-card: #12172a;
+    --lp-ink: #f1f5f9;
+    --lp-ink-soft: #b6c2d9;
+    --lp-ink-faint: #7c8aa5;
+    --lp-line: #232b3d;
+    --lp-brand: #7ba3ff;
+    --lp-brand-soft: rgba(123, 163, 255, 0.12);
+  }
+}

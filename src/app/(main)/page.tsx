@@ -6,7 +6,6 @@ import { HOME_SECTIONS, type Device } from '@/lib/design/sections';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
-import { HomeFooter } from '@/components/home/HomeFooter';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
 import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
@@ -89,7 +88,6 @@ export default async function HomePage() {
         )}
       </Section>
     ),
-    footer: <HomeFooter />,
   };
 
   const devices: Device[] = ['mobile', 'tablet', 'desktop'];
