@@ -7,9 +7,9 @@
  * 최초 배포 시 기본값만 여기서 바꾸면 된다.
  */
 export const SITE_CONFIG = {
-  name: process.env.NEXT_PUBLIC_SITE_NAME ?? '보험인사이드',
-  shortName: '보험인사이드',
-  englishName: 'Insurance Inside',
+  name: process.env.NEXT_PUBLIC_SITE_NAME ?? '보험맵',
+  shortName: '보험맵',
+  englishName: 'BohumMap',
   description: '보험설계사들의 솔직한 익명 커뮤니티',
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
   logoPath: '/logo.svg',

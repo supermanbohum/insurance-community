@@ -28,7 +28,7 @@ const MENU_GROUPS = [
   {
     label: '커뮤니티',
     items: [
-      { href: '/community', label: '보험인사이드', icon: Users, tile: 'bg-cyan-50 text-cyan-600', external: true },
+      { href: '/community', label: '보험맵', icon: Users, tile: 'bg-cyan-50 text-cyan-600', external: true },
       { href: '/board/notice', label: '공지사항', icon: Megaphone, tile: 'bg-slate-100 text-slate-600' },
     ],
   },

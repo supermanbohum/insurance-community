@@ -20,7 +20,7 @@ const LINK_GROUPS = [
   },
   {
     label: '커뮤니티',
-    links: [{ href: '/community', label: '보험인사이드 ↗' }],
+    links: [{ href: '/community', label: '보험맵 ↗' }],
   },
 ];
 
