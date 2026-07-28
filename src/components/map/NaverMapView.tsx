@@ -193,6 +193,12 @@ export function NaverMapView({
       markers.push(marker);
     });
     cluster.setMarkers(markers);
+    // 벤더링한 MarkerClustering.js는 옵션 키가 markers(복수)인데 changed() 핸들러의
+    // switch는 marker(단수)만 매칭해서, setMarkers()만으로는 재렌더링이 트리거되지
+    // 않는다(다음 지도 idle 이벤트까지 마커가 화면에 전혀 나타나지 않음). setMap을
+    // 껐다 켜서 onRemove→onAdd 라이프사이클을 강제로 다시 태워 즉시 반영한다.
+    cluster.setMap(null);
+    cluster.setMap(map);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branches, selectedId, status]);
 
