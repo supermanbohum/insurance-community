@@ -52,7 +52,7 @@ async function buildHomePreviewNodes() {
         ) : (
           <InfiniteCarousel
             durationSec={28}
-            itemClassName="w-[170px] sm:w-[190px]"
+            itemClassName="w-[190px] sm:w-[210px]"
             items={popular.map((b, i) => ({ key: b.id, node: <PopularGaCard branch={b} rank={i + 1} /> }))}
           />
         )}
@@ -71,7 +71,7 @@ async function buildHomePreviewNodes() {
         ) : (
           <InfiniteCarousel
             durationSec={38}
-            itemClassName="w-[170px] sm:w-[190px]"
+            itemClassName="w-[190px] sm:w-[210px]"
             items={latest.map((b) => ({ key: b.id, node: <NewBranchCard branch={b} /> }))}
           />
         )}
