@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Flame, MessageSquareText, Plus } from 'lucide-react';
+import { Award, Megaphone, MessageSquareText, Plus } from 'lucide-react';
 import type { HomeStats } from '@/lib/public/branch';
 import { StatCountUp } from '@/components/home/StatCountUp';
 
@@ -22,18 +22,18 @@ export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { 
 
       <div className="grid grid-cols-3 gap-2">
         <Link
-          href="/search"
+          href="/partner/planners/new"
           className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border border-line bg-white py-3.5 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
         >
-          <span className="text-[15px] font-extrabold text-ink"><StatCountUp value={stats.branchCount} />건</span>
-          <span className="text-[11px] font-medium text-ink-faint">등록 지점 수</span>
+          <Award className="h-4 w-4 text-amber-500" />
+          <span className="text-[11px] font-bold text-ink-soft">TOP설계사 등록</span>
         </Link>
         <Link
-          href="/popular"
+          href="/board/notice"
           className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border border-line bg-white py-3.5 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
         >
-          <Flame className="h-4 w-4 text-rose-500" />
-          <span className="text-[11px] font-bold text-ink-soft">이달의 인기지점</span>
+          <Megaphone className="h-4 w-4 text-slate-500" />
+          <span className="text-[11px] font-bold text-ink-soft">공지사항</span>
         </Link>
         <Link
           href="/board/review"
