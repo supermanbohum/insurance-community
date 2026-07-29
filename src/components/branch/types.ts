@@ -73,4 +73,6 @@ export interface BranchPreviewData {
   activeRecruits: BranchRecruitItem[];
   /** 같은 GA 소속의 다른 지점 목록 (자기 자신 제외). GA는 더 이상 자체 상세페이지가 없으므로 여기서 바로 다음 지점으로 이동한다. */
   siblingBranches: SiblingBranchItem[];
+  /** 승인+미만료 고소득 설계사 등급별 인원수(배지 노출용, 실명/서류 등 민감정보 없음). */
+  plannerBadges: { tier: 'tier_1' | 'tier_2' | 'tier_3'; count: number }[];
 }

@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { BranchPreviewData } from '@/components/branch/types';
+import { INCOME_TIER_BADGE, TIER_ORDER } from '@/lib/planners/tier';
 import { BranchGallery } from '@/components/branch/BranchGallery';
 import { BranchContactList } from '@/components/branch/BranchContactList';
 import { BranchStickyActionBar } from '@/components/branch/BranchStickyActionBar';
@@ -223,6 +224,24 @@ export function BranchDetailView({
           updatedAt={data.updatedAt}
         />
       </ResponsiveSection>
+
+      {data.plannerBadges.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <span className="text-sm font-extrabold text-amber-900">
+            🏆 고소득 설계사 {data.plannerBadges.reduce((sum, b) => sum + b.count, 0)}명
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {TIER_ORDER.filter((tier) => data.plannerBadges.some((b) => b.tier === tier)).map((tier) => {
+              const count = data.plannerBadges.find((b) => b.tier === tier)?.count ?? 0;
+              return (
+                <span key={tier} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-amber-800 shadow-sm">
+                  {INCOME_TIER_BADGE[tier]} × {count}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <ResponsiveSection sectionKey="actionBar" config={section('actionBar')}>
         <BranchStickyActionBar

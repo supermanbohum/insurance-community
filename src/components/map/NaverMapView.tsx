@@ -11,13 +11,20 @@ export const FLY_DURATION_MS = 900;
 
 // 기본 물방울 핀 대신 보험맵 로고(방패+체크)를 담은 원형 배지 - Leaflet 버전과
 // 완전히 동일한 SVG를 그대로 이식해 지도 엔진이 바뀌어도 브랜드 마커는 똑같이 보인다.
-function pinIconHtml(operationType: 'direct' | 'branch', active: boolean) {
+function pinIconHtml(operationType: 'direct' | 'branch', active: boolean, hasPlannerBadge: boolean) {
   const color = operationType === 'direct' ? '#e0a319' : '#2f6bff';
   const w = active ? 38 : 30;
   const h = Math.round((w * 40) / 32);
   const filter = active
     ? `drop-shadow(0 4px 8px rgba(15,23,42,0.45)) drop-shadow(0 0 0 4px ${color}2e)`
     : 'drop-shadow(0 2px 5px rgba(15,23,42,0.35))';
+  // 고소득 설계사가 있는 지점은 핀 우상단에 작은 골드 별 배지를 얹는다 - 지도 필터
+  // (plannerBadgeTotal>0)와 시각적으로 대응되도록, 배지 색은 상세페이지의 tier 배지와
+  // 동일한 골드 계열(#eab308)을 사용한다.
+  const badge = hasPlannerBadge
+    ? `<circle cx="25.5" cy="7.5" r="6" fill="#eab308" stroke="#fff" stroke-width="1.5"/>
+       <path d="M25.5 4.2l1.1 2.23 2.46.36-1.78 1.73.42 2.45-2.2-1.16-2.2 1.16.42-2.45-1.78-1.73 2.46-.36z" fill="#fff"/>`
+    : '';
   // Naver 마커의 size+anchor가 위치 정렬을 전담한다(Leaflet의 iconSize/iconAnchor와
   // 동일한 역할) - content 안에 CSS transform으로 또 옮기면 이중 오프셋이 생긴다.
   return {
@@ -27,6 +34,7 @@ function pinIconHtml(operationType: 'direct' | 'branch', active: boolean) {
         <circle cx="16" cy="16" r="10.5" fill="#fff"/>
         <path d="M16 8.7L21 10.8V15.6C21 19 18.85 21.65 16 23.1C13.15 21.65 11 19 11 15.6V10.8Z" fill="${color}"/>
         <path d="M12.9 16.2L15.15 18.45L19.2 13.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        ${badge}
       </svg>`,
     w,
     h,
@@ -182,7 +190,7 @@ export function NaverMapView({
     branches.forEach((b) => {
       if (b.lat == null || b.lng == null) return;
       const active = b.id === selectedId;
-      const { html, w, h } = pinIconHtml(b.operationType, active);
+      const { html, w, h } = pinIconHtml(b.operationType, active, b.plannerBadgeTotal > 0);
       const marker = new naverNs.maps.Marker({
         position: new naverNs.maps.LatLng(b.lat, b.lng),
         icon: { content: html, size: new naverNs.maps.Size(w, h), anchor: new naverNs.maps.Point(w / 2, h) },

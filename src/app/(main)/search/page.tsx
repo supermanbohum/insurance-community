@@ -8,6 +8,8 @@ import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { SearchFilters } from '@/components/search/SearchFilters';
 import { SearchFilterButton } from '@/components/search/SearchFilterSheet';
 import { SearchFilterChips, type FilterChip } from '@/components/search/SearchFilterChips';
+import { INCOME_TIER_SHORT_LABEL } from '@/lib/planners/tier';
+import type { PlannerIncomeTier } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +36,8 @@ export default async function SearchPage({
     minPlanners?: string;
     parking?: string;
     structure?: string;
+    highIncome?: string;
+    tiers?: string;
   };
 }) {
   const q = searchParams.q?.trim() ?? '';
@@ -47,8 +51,11 @@ export default async function SearchPage({
     searchParams.parking === 'true' ? 'true' : searchParams.parking === 'false' ? 'false' : '';
   const structure: '' | 'direct' | 'branch' =
     searchParams.structure === 'direct' ? 'direct' : searchParams.structure === 'branch' ? 'branch' : '';
+  const hasHighIncomePlanners = searchParams.highIncome === '1';
+  const plannerTiers = (searchParams.tiers ? searchParams.tiers.split(',').filter(Boolean) : []) as PlannerIncomeTier[];
 
-  const hasFilters = Boolean(region) || gaIds.length > 0 || minPlanners > 0 || Boolean(parking) || Boolean(structure);
+  const hasFilters =
+    Boolean(region) || gaIds.length > 0 || minPlanners > 0 || Boolean(parking) || Boolean(structure) || hasHighIncomePlanners;
   const shouldSearch = Boolean(q) || hasFilters;
   const { registeredIds: registeredGaIds, hasUnregisteredOnly } = splitRegisteredGaIds(gaIds);
 
@@ -62,6 +69,8 @@ export default async function SearchPage({
           minPlannerCount: minPlanners || undefined,
           parkingAvailable: parking === 'true' ? true : parking === 'false' ? false : undefined,
           operationType: structure || undefined,
+          hasHighIncomePlanners: hasHighIncomePlanners || undefined,
+          plannerTiers: plannerTiers.length > 0 ? plannerTiers : undefined,
         })
       : Promise.resolve([]),
     listSidoGroups(),
@@ -73,7 +82,10 @@ export default async function SearchPage({
   const gaNameById = new Map(allGaOptions.map((ga) => [ga.id, ga.name]));
   const regionNameByCode = new Map(regions.map((r) => [r.sidoCode, r.sidoName]));
 
-  function paramsWithout(exclude: 'region' | 'ga' | 'minPlanners' | 'parking' | 'structure', excludeGaId?: string): string {
+  function paramsWithout(
+    exclude: 'region' | 'ga' | 'minPlanners' | 'parking' | 'structure' | 'highIncome',
+    excludeGaId?: string
+  ): string {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (sort !== 'recommended') params.set('sort', sort);
@@ -83,6 +95,10 @@ export default async function SearchPage({
     if (minPlanners > 0 && exclude !== 'minPlanners') params.set('minPlanners', String(minPlanners));
     if (parking && exclude !== 'parking') params.set('parking', parking);
     if (structure && exclude !== 'structure') params.set('structure', structure);
+    if (hasHighIncomePlanners && exclude !== 'highIncome') {
+      params.set('highIncome', '1');
+      if (plannerTiers.length > 0) params.set('tiers', plannerTiers.join(','));
+    }
     return params.toString();
   }
 
@@ -104,6 +120,18 @@ export default async function SearchPage({
     ...(parking
       ? [{ key: 'parking', label: parking === 'true' ? '주차 가능' : '주차 불가', href: `/search?${paramsWithout('parking')}` }]
       : []),
+    ...(hasHighIncomePlanners
+      ? [
+          {
+            key: 'highIncome',
+            label:
+              plannerTiers.length > 0
+                ? `🏆 고소득 설계사(${plannerTiers.map((t) => INCOME_TIER_SHORT_LABEL[t]).join(',')})`
+                : '🏆 고소득 설계사',
+            href: `/search?${paramsWithout('highIncome')}`,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -118,7 +146,7 @@ export default async function SearchPage({
           />
         </div>
         <SearchFilterButton
-          current={{ query: q, sort, region, gaIds, minPlanners, parking, structure }}
+          current={{ query: q, sort, region, gaIds, minPlanners, parking, structure, hasHighIncomePlanners, plannerTiers }}
           regionOptions={regions}
           gaOptions={allGaOptions.map((ga) => ({ id: ga.id, name: ga.name }))}
         />
@@ -167,6 +195,8 @@ export default async function SearchPage({
               minPlanners={minPlanners}
               parking={parking}
               structure={structure}
+              hasHighIncomePlanners={hasHighIncomePlanners}
+              plannerTiers={plannerTiers}
             />
           </div>
 

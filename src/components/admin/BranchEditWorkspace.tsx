@@ -109,6 +109,7 @@ export function BranchEditWorkspace({
       .filter((r) => r.is_active)
       .map((r) => ({ id: r.id, title: r.title, content: r.content, employmentType: r.employment_type })),
     siblingBranches: [],
+    plannerBadges: [],
   };
 
   return (

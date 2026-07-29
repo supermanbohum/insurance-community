@@ -1,7 +1,9 @@
 import { cache } from 'react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createPublicSupabaseClient } from '@/lib/supabase/public';
-import type { PublicBranchSummary, GaOperationType } from '@/types/database';
+import type { PublicBranchSummary, GaOperationType, PlannerIncomeTier } from '@/types/database';
+
+const TIER_RANK: Record<PlannerIncomeTier, number> = { tier_1: 1, tier_2: 2, tier_3: 3 };
 
 const SUMMARY_SELECT = `
   id, slug, name, address, lat, lng, organic_view_count, imported_view_count, correction_view_count,
@@ -52,7 +54,8 @@ function toSummary(
   imageBaseUrl: string,
   logoBaseUrl: string,
   contactClickCount: number,
-  tagline: string | null
+  tagline: string | null,
+  plannerBadge: { total: number; topTier: PlannerIncomeTier | null } = { total: 0, topTier: null }
 ): PublicBranchSummary {
   const mainImage = row.branch_media?.find((m) => m.media_type === 'image_main');
   return {
@@ -80,7 +83,39 @@ function toSummary(
     kakaoContactHref: toKakaoHref(row.branch_contacts),
     contactClickCount,
     tagline,
+    plannerBadgeTotal: plannerBadge.total,
+    plannerTopTier: plannerBadge.topTier,
   };
+}
+
+/** 지점별 승인+미만료 고소득 설계사 인원수/최고 등급을 배치 조회한다 - best-effort
+ * (실패해도 목록 조회 자체는 깨지지 않게 tagline/contact_click_count와 동일한 패턴). */
+async function fetchPlannerBadgeTotals(
+  supabase: ReturnType<typeof createPublicSupabaseClient>,
+  branchIds: string[]
+): Promise<Map<string, { total: number; topTier: PlannerIncomeTier | null }>> {
+  const result = new Map<string, { total: number; topTier: PlannerIncomeTier | null }>();
+  if (branchIds.length === 0) return result;
+  try {
+    const { data, error } = await supabase
+      .from('planner_certifications')
+      .select('branch_id, income_tier')
+      .in('branch_id', branchIds)
+      .eq('status', 'approved')
+      .gt('expires_at', new Date().toISOString());
+    if (error) throw error;
+    for (const row of data ?? []) {
+      const entry = result.get(row.branch_id) ?? { total: 0, topTier: null };
+      entry.total += 1;
+      if (!entry.topTier || TIER_RANK[row.income_tier as PlannerIncomeTier] > TIER_RANK[entry.topTier]) {
+        entry.topTier = row.income_tier as PlannerIncomeTier;
+      }
+      result.set(row.branch_id, entry);
+    }
+  } catch {
+    // 무시 - 배지 없이 나머지 지점 데이터는 정상 표시.
+  }
+  return result;
 }
 
 function getImageBaseUrl(): string {
@@ -106,6 +141,10 @@ export async function listPublicBranches(options: {
   operationType?: 'direct' | 'branch';
   /** 지도 "현재 지도에서 검색" - 뷰포트(Bounds) 안의 지점만 서버에서 다시 조회할 때 사용. */
   bounds?: { south: number; west: number; north: number; east: number };
+  /** "고소득 설계사 보기" 검색 필터 - true면 승인+미만료 인증이 하나 이상 있는 지점만. */
+  hasHighIncomePlanners?: boolean;
+  /** 세부 등급 체크박스(1억+/2억+/3억+) - hasHighIncomePlanners와 함께 사용. */
+  plannerTiers?: PlannerIncomeTier[];
 }): Promise<PublicBranchSummary[]> {
   // cookies()를 건드리지 않는 공개 클라이언트 - 홈/검색/지도가 ISR 캐시를 쓸 수 있으려면
   // 이 함수가 요청마다 강제로 dynamic 렌더링되게 만들면 안 된다.
@@ -161,6 +200,13 @@ export async function listPublicBranches(options: {
     query = query.gte('planner_count', options.minPlannerCount);
   }
 
+  if (options.hasHighIncomePlanners) {
+    const { data: matchedBranches } = await supabase.rpc('list_branches_with_planner_certifications', {
+      p_tiers: options.plannerTiers && options.plannerTiers.length > 0 ? options.plannerTiers : undefined,
+    });
+    query = query.in('id', (matchedBranches ?? []).map((r) => r.branch_id));
+  }
+
   if (options.parkingAvailable !== undefined) {
     query = query.eq('parking_available', options.parkingAvailable);
   }
@@ -190,13 +236,21 @@ export async function listPublicBranches(options: {
   // 넣으면 그 마이그레이션을 실행하기 전 배포에서 목록 조회 자체가 전부 깨진다. 컬럼이
   // 아직 없어도 나머지 지점 데이터는 정상 동작해야 하므로 각각 best-effort로 분리 조회한다.
   const ids = rows.map((r) => r.id);
-  const [clickCounts, taglines] = await Promise.all([
+  const [clickCounts, taglines, plannerBadges] = await Promise.all([
     fetchOptionalColumn<number>(supabase, ids, 'contact_click_count'),
     fetchOptionalColumn<string>(supabase, ids, 'tagline'),
+    fetchPlannerBadgeTotals(supabase, ids),
   ]);
 
   return rows.map((row) =>
-    toSummary(row, imageBaseUrl, logoBaseUrl, clickCounts.get(row.id) ?? 0, taglines.get(row.id) ?? null)
+    toSummary(
+      row,
+      imageBaseUrl,
+      logoBaseUrl,
+      clickCounts.get(row.id) ?? 0,
+      taglines.get(row.id) ?? null,
+      plannerBadges.get(row.id) ?? { total: 0, topTier: null }
+    )
   );
 }
 
@@ -267,6 +321,8 @@ export interface BranchDetail {
   links: { id: string; type: string; url: string }[];
   insurerNames: string[];
   activeRecruits: { id: string; title: string; content: string; employmentType: string | null }[];
+  /** 승인+미만료 고소득 설계사 등급별 인원수. 실명/서류 등 민감정보는 절대 포함하지 않는다. */
+  plannerBadges: { tier: PlannerIncomeTier; count: number }[];
 }
 
 // generateMetadata와 페이지 컴포넌트가 같은 요청 안에서 각각 호출하므로 react cache()로
@@ -359,6 +415,17 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
     // 마이그레이션 미적용 - 빈 배열 유지.
   }
 
+  let plannerBadges: { tier: PlannerIncomeTier; count: number }[] = [];
+  try {
+    const { data: badgeRows, error: badgeError } = await supabase.rpc('get_branch_planner_badge_summary', {
+      p_branch_id: branch.id,
+    });
+    if (badgeError) throw badgeError;
+    plannerBadges = (badgeRows ?? []).map((b) => ({ tier: b.tier as PlannerIncomeTier, count: b.planner_count }));
+  } catch {
+    // 실패해도 배지 없이 나머지 지점 상세는 정상 표시.
+  }
+
   return {
     id: branch.id,
     slug: branch.slug,
@@ -417,6 +484,7 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
       content: r.content,
       employmentType: r.employment_type,
     })),
+    plannerBadges,
   };
 });
 

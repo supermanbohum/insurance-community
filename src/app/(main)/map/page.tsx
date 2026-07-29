@@ -3,6 +3,7 @@ import { listGaFilterOptions, splitRegisteredGaIds } from '@/lib/public/ga-direc
 import { listSidoGroups } from '@/lib/public/region';
 import { MapPageClient } from '@/components/map/MapPageClient';
 import type { MapBranch } from '@/components/map/types';
+import type { PlannerIncomeTier } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,8 @@ export default async function MapPage({
     parking?: string;
     structure?: string;
     bbox?: string;
+    highIncome?: string;
+    tiers?: string;
   };
 }) {
   const q = searchParams.q?.trim() ?? '';
@@ -27,6 +30,8 @@ export default async function MapPage({
     searchParams.parking === 'true' ? 'true' : searchParams.parking === 'false' ? 'false' : '';
   const structure: '' | 'direct' | 'branch' =
     searchParams.structure === 'direct' ? 'direct' : searchParams.structure === 'branch' ? 'branch' : '';
+  const hasHighIncomePlanners = searchParams.highIncome === '1';
+  const plannerTiers = (searchParams.tiers ? searchParams.tiers.split(',').filter(Boolean) : []) as PlannerIncomeTier[];
 
   // "현재 지도에서 검색" 버튼 클릭 시 지도 뷰포트(Bounds)를 URL에 담아 서버에서 그 영역만 다시 조회한다.
   const bboxParts = searchParams.bbox?.split(',').map(Number);
@@ -50,6 +55,8 @@ export default async function MapPage({
           parkingAvailable: parking === 'true' ? true : parking === 'false' ? false : undefined,
           operationType: structure || undefined,
           bounds,
+          hasHighIncomePlanners: hasHighIncomePlanners || undefined,
+          plannerTiers: plannerTiers.length > 0 ? plannerTiers : undefined,
         }),
     listSidoGroups(),
     listGaFilterOptions(),
@@ -73,12 +80,13 @@ export default async function MapPage({
     kakaoContactHref: b.kakaoContactHref,
     contactClickCount: b.contactClickCount,
     tagline: b.tagline,
+    plannerBadgeTotal: b.plannerBadgeTotal,
   }));
 
   return (
     <MapPageClient
       branches={branches}
-      filterCurrent={{ query: q, sort, region, gaIds, minPlanners, parking, structure }}
+      filterCurrent={{ query: q, sort, region, gaIds, minPlanners, parking, structure, hasHighIncomePlanners, plannerTiers }}
       regionOptions={regions}
       gaOptions={allGaOptions.map((ga) => ({ id: ga.id, name: ga.name }))}
     />

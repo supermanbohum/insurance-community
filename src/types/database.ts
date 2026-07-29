@@ -1305,4 +1305,8 @@ export interface PublicBranchSummary {
   kakaoContactHref: string | null;
   contactClickCount: number;
   tagline: string | null;
+  /** 승인+만료 전인 고소득 설계사 인원수 합계. 배지 노출 여부 판단용(0이면 미노출). */
+  plannerBadgeTotal: number;
+  /** 보유한 등급 중 가장 높은 등급(3>2>1) - 카드에 대표로 보여줄 배지 하나를 고를 때 사용. */
+  plannerTopTier: PlannerIncomeTier | null;
 }

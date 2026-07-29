@@ -6,6 +6,7 @@ import { BadgeCheck, MapPin, Eye, MessageCircle, Building2, RefreshCw } from 'lu
 import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
 import { HighlightText } from '@/components/search/HighlightText';
+import { INCOME_TIER_BADGE } from '@/lib/planners/tier';
 
 const RANK_STYLE: Record<number, string> = {
   1: 'bg-gradient-to-br from-amber-300 to-gold-500',
@@ -92,6 +93,11 @@ export function BranchCard({
         </p>
         {branch.tagline && (
           <p className="truncate text-[11px] font-bold text-brand-600">✨ {branch.tagline}</p>
+        )}
+        {branch.plannerBadgeTotal > 0 && branch.plannerTopTier && (
+          <span className="flex w-fit items-center gap-1 truncate rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+            {INCOME_TIER_BADGE[branch.plannerTopTier]} 고소득 설계사 {branch.plannerBadgeTotal}명
+          </span>
         )}
         <div className="mt-auto flex items-center justify-between gap-1.5 pt-1">
           <span className="flex min-w-0 items-center gap-1 truncate rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-soft">

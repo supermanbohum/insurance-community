@@ -16,6 +16,8 @@ export function SearchFilters({
   minPlanners,
   parking,
   structure,
+  hasHighIncomePlanners,
+  plannerTiers,
 }: {
   query: string;
   sort: string;
@@ -24,6 +26,8 @@ export function SearchFilters({
   minPlanners: number;
   parking: string;
   structure: string;
+  hasHighIncomePlanners: boolean;
+  plannerTiers: string[];
 }) {
   const router = useRouter();
 
@@ -36,6 +40,10 @@ export function SearchFilters({
     if (minPlanners > 0) params.set('minPlanners', String(minPlanners));
     if (parking) params.set('parking', parking);
     if (structure) params.set('structure', structure);
+    if (hasHighIncomePlanners) {
+      params.set('highIncome', '1');
+      if (plannerTiers.length > 0) params.set('tiers', plannerTiers.join(','));
+    }
     router.push(`/search?${params.toString()}`);
   }
 

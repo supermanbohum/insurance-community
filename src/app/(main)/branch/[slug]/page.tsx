@@ -92,6 +92,7 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
     siblingBranches: siblings
       .filter((s) => s.id !== branch.id)
       .map((s) => ({ id: s.id, slug: s.slug, name: s.name, sidoName: s.sidoName, sigunguName: s.sigunguName })),
+    plannerBadges: branch.plannerBadges,
   };
 
   const mainPhoto = branch.media.find((m) => m.type === 'image_main')?.url ?? null;

@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { INCOME_TIER_OPTIONS } from '@/lib/planners/tier';
+import type { PlannerIncomeTier } from '@/types/database';
 
 const PLANNER_TIERS = [
   { value: 0, label: '전체' },
@@ -34,6 +36,8 @@ export interface SearchFilterCurrent {
   minPlanners: number;
   parking: '' | 'true' | 'false';
   structure: '' | 'direct' | 'branch';
+  hasHighIncomePlanners: boolean;
+  plannerTiers: PlannerIncomeTier[];
 }
 
 export function SearchFilterButton({
@@ -54,6 +58,8 @@ export function SearchFilterButton({
   const [draftMinPlanners, setDraftMinPlanners] = useState(current.minPlanners);
   const [draftParking, setDraftParking] = useState<'' | 'true' | 'false'>(current.parking);
   const [draftStructure, setDraftStructure] = useState<'' | 'direct' | 'branch'>(current.structure);
+  const [draftHasHighIncomePlanners, setDraftHasHighIncomePlanners] = useState(current.hasHighIncomePlanners);
+  const [draftPlannerTiers, setDraftPlannerTiers] = useState<PlannerIncomeTier[]>(current.plannerTiers);
 
   useEffect(() => {
     if (open) {
@@ -62,15 +68,31 @@ export function SearchFilterButton({
       setDraftMinPlanners(current.minPlanners);
       setDraftParking(current.parking);
       setDraftStructure(current.structure);
+      setDraftHasHighIncomePlanners(current.hasHighIncomePlanners);
+      setDraftPlannerTiers(current.plannerTiers);
     }
-  }, [open, current.region, current.gaIds, current.minPlanners, current.parking, current.structure]);
+  }, [
+    open,
+    current.region,
+    current.gaIds,
+    current.minPlanners,
+    current.parking,
+    current.structure,
+    current.hasHighIncomePlanners,
+    current.plannerTiers,
+  ]);
 
   const activeCount =
     (current.region ? 1 : 0) +
     current.gaIds.length +
     (current.minPlanners > 0 ? 1 : 0) +
     (current.parking ? 1 : 0) +
-    (current.structure ? 1 : 0);
+    (current.structure ? 1 : 0) +
+    (current.hasHighIncomePlanners ? 1 : 0);
+
+  function togglePlannerTier(tier: PlannerIncomeTier) {
+    setDraftPlannerTiers((prev) => (prev.includes(tier) ? prev.filter((v) => v !== tier) : [...prev, tier]));
+  }
 
   function toggleGa(id: string) {
     setDraftGaIds((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
@@ -85,6 +107,10 @@ export function SearchFilterButton({
     if (draftMinPlanners > 0) params.set('minPlanners', String(draftMinPlanners));
     if (draftParking) params.set('parking', draftParking);
     if (draftStructure) params.set('structure', draftStructure);
+    if (draftHasHighIncomePlanners) {
+      params.set('highIncome', '1');
+      if (draftPlannerTiers.length > 0) params.set('tiers', draftPlannerTiers.join(','));
+    }
     router.push(`${basePath}?${params.toString()}`);
     setOpen(false);
   }
@@ -95,6 +121,8 @@ export function SearchFilterButton({
     setDraftMinPlanners(0);
     setDraftParking('');
     setDraftStructure('');
+    setDraftHasHighIncomePlanners(false);
+    setDraftPlannerTiers([]);
   }
 
   return (
@@ -196,6 +224,36 @@ export function SearchFilterButton({
                       </FilterPill>
                     ))}
                   </div>
+                </section>
+
+                <section className="flex flex-col gap-2.5">
+                  <label className="flex cursor-pointer items-center gap-2.5 text-sm font-bold text-ink">
+                    <input
+                      type="checkbox"
+                      checked={draftHasHighIncomePlanners}
+                      onChange={(e) => {
+                        setDraftHasHighIncomePlanners(e.target.checked);
+                        if (!e.target.checked) setDraftPlannerTiers([]);
+                      }}
+                      className="h-4 w-4 rounded border-line text-brand-600 focus:ring-brand-300"
+                    />
+                    🏆 고소득 설계사 보기
+                  </label>
+                  {draftHasHighIncomePlanners && (
+                    <div className="ml-6 flex flex-col gap-1.5">
+                      {INCOME_TIER_OPTIONS.map((opt) => (
+                        <label key={opt.value} className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
+                          <input
+                            type="checkbox"
+                            checked={draftPlannerTiers.includes(opt.value)}
+                            onChange={() => togglePlannerTier(opt.value)}
+                            className="h-4 w-4 rounded border-line text-brand-600 focus:ring-brand-300"
+                          />
+                          {opt.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </section>
 
                 <section className="flex flex-col gap-2.5">
