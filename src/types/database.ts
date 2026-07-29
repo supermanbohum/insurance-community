@@ -31,6 +31,23 @@ export type KnownBranchContactType =
   | 'youtube'
   | 'blog';
 
+/** ga_branch.registration_status - 지점 등록/신뢰도 항목 수정 승인 게이트 (0022) */
+export type GaBranchRegistrationStatus = 'pending' | 'approved' | 'rejected';
+/** ga_branch.status_reason - status='hidden'이 된 원인 구분 (콘텐츠 검수/결제 미납/수동) */
+export type GaBranchStatusReason = 'content_review' | 'payment_suspended' | 'manual';
+export type BranchRegistrationRequestType = 'create' | 'update';
+export type BranchRegistrationStatus = 'pending' | 'approved' | 'rejected';
+/** 고소득 설계사 연봉 구간 - tier_1=1억+, tier_2=2억+, tier_3=3억+ */
+export type PlannerIncomeTier = 'tier_1' | 'tier_2' | 'tier_3';
+export type PlannerCertificationStatus = 'pending_review' | 'approved' | 'rejected' | 'pending_renewal';
+export type PlannerCertificationHistoryEventType = 'initial_approval' | 'renewal_approval' | 'rejection';
+export type VerificationDocumentOwnerType = 'planner_certification';
+export type VerificationDocumentType = 'withholding_tax_certificate';
+export type SubscriptionSubjectType = 'branch_listing' | 'planner_addon';
+export type SubscriptionPlanCode = 'branch_standard' | 'branch_early_bird' | 'planner_addon';
+export type SubscriptionStatus = 'active' | 'past_due' | 'grace_period' | 'suspended' | 'canceled';
+export type PaymentTransactionStatus = 'succeeded' | 'failed' | 'refunded';
+
 export interface Database {
   public: {
     Tables: {
@@ -311,6 +328,8 @@ export interface Database {
           is_recommended: boolean;
           recommended_rank: number | null;
           status: GaStatus;
+          registration_status: GaBranchRegistrationStatus;
+          status_reason: GaBranchStatusReason | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
@@ -342,6 +361,7 @@ export interface Database {
           source: BranchMediaSource;
           value: string;
           sort_order: number;
+          pending_registration_id: string | null;
           created_at: string;
         };
         Insert: Partial<Database['public']['Tables']['branch_media']['Row']>;
@@ -582,6 +602,160 @@ export interface Database {
         Insert: Partial<Database['public']['Tables']['recent_views']['Row']>;
         Update: Partial<Database['public']['Tables']['recent_views']['Row']>;
         Relationships: [];
+      };
+      branch_registrations: {
+        Row: {
+          id: string;
+          request_type: BranchRegistrationRequestType;
+          status: BranchRegistrationStatus;
+          branch_id: string | null;
+          ga_company_id: string | null;
+          submitted_by_ga_admin_id: string;
+          registrant_name: string;
+          registrant_title: string;
+          registrant_phone: string;
+          registrant_company: string;
+          registrant_branch_label: string;
+          lease_contract_path: string | null;
+          business_card_path: string | null;
+          payload: Record<string, unknown>;
+          reviewed_by_admin_id: string | null;
+          reviewed_at: string | null;
+          review_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['branch_registrations']['Row']>;
+        Update: Partial<Database['public']['Tables']['branch_registrations']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'branch_registrations_branch_id_fkey';
+            columns: ['branch_id'];
+            isOneToOne: false;
+            referencedRelation: 'ga_branch';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      planner_certifications: {
+        Row: {
+          id: string;
+          branch_id: string;
+          submitted_by_ga_admin_id: string;
+          planner_name: string;
+          planner_phone: string;
+          planner_company: string;
+          job_title: string;
+          income_tier: PlannerIncomeTier;
+          status: PlannerCertificationStatus;
+          approved_at: string | null;
+          expires_at: string | null;
+          approved_by_admin_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_certifications']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_certifications']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'planner_certifications_branch_id_fkey';
+            columns: ['branch_id'];
+            isOneToOne: false;
+            referencedRelation: 'ga_branch';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      planner_certification_history: {
+        Row: {
+          id: string;
+          certification_id: string;
+          event_type: PlannerCertificationHistoryEventType;
+          income_tier: PlannerIncomeTier;
+          approved_by_admin_id: string | null;
+          approval_memo: string | null;
+          effective_from: string;
+          effective_until: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_certification_history']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_certification_history']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'planner_certification_history_certification_id_fkey';
+            columns: ['certification_id'];
+            isOneToOne: false;
+            referencedRelation: 'planner_certifications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      verification_documents: {
+        Row: {
+          id: string;
+          owner_type: VerificationDocumentOwnerType;
+          owner_id: string;
+          doc_type: VerificationDocumentType;
+          storage_path: string;
+          uploaded_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['verification_documents']['Row']>;
+        Update: Partial<Database['public']['Tables']['verification_documents']['Row']>;
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          subject_type: SubscriptionSubjectType;
+          subject_id: string;
+          ga_company_id: string;
+          plan_code: SubscriptionPlanCode;
+          monthly_amount_krw: number;
+          status: SubscriptionStatus;
+          current_period_end: string;
+          grace_period_ends_at: string | null;
+          last_payment_failure_at: string | null;
+          auto_unpublished_at: string | null;
+          manually_restored_by_admin_id: string | null;
+          manually_restored_at: string | null;
+          payment_provider: string;
+          provider_subscription_ref: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['subscriptions']['Row']>;
+        Update: Partial<Database['public']['Tables']['subscriptions']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'subscriptions_ga_company_id_fkey';
+            columns: ['ga_company_id'];
+            isOneToOne: false;
+            referencedRelation: 'ga_company';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      payment_transactions: {
+        Row: {
+          id: string;
+          subscription_id: string;
+          amount_krw: number;
+          status: PaymentTransactionStatus;
+          provider_transaction_ref: string | null;
+          failure_reason: string | null;
+          attempted_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['payment_transactions']['Row']>;
+        Update: Partial<Database['public']['Tables']['payment_transactions']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'payment_transactions_subscription_id_fkey';
+            columns: ['subscription_id'];
+            isOneToOne: false;
+            referencedRelation: 'subscriptions';
+            referencedColumns: ['id'];
+          },
+        ];
       };
     };
     Views: {
@@ -964,6 +1138,117 @@ export interface Database {
       };
       upsert_page_layout: {
         Args: { p_page_key: string; p_device: string; p_config: unknown };
+        Returns: void;
+      };
+      submit_branch_registration: {
+        Args: {
+          p_ga_name: string;
+          p_branch_slug: string;
+          p_branch_name: string;
+          p_region_id: string | null;
+          p_manager_name?: string | null;
+          p_address: string;
+          p_address_detail?: string | null;
+          p_registrant_name: string;
+          p_registrant_title: string;
+          p_registrant_phone: string;
+          p_registrant_company: string;
+          p_registrant_branch_label: string;
+          p_intro_text?: string | null;
+          p_planner_count?: number | null;
+          p_parking_available?: boolean | null;
+          p_visit_consult_available?: boolean | null;
+          p_business_hours?: string | null;
+          p_lat?: number | null;
+          p_lng?: number | null;
+          p_tagline?: string | null;
+          p_new_recruit_training?: boolean | null;
+          p_experienced_hire?: boolean | null;
+          p_db_support?: boolean | null;
+          p_settlement_support?: boolean | null;
+        };
+        Returns: { registration_id: string; ga_company_id: string; branch_id: string }[];
+      };
+      attach_registration_document: {
+        Args: { p_registration_id: string; p_doc_type: string; p_path: string };
+        Returns: void;
+      };
+      submit_branch_update: {
+        Args: {
+          p_branch_id: string;
+          p_registrant_name: string;
+          p_registrant_title: string;
+          p_registrant_phone: string;
+          p_registrant_company: string;
+          p_registrant_branch_label: string;
+          p_payload: Record<string, unknown>;
+        };
+        Returns: string;
+      };
+      review_branch_registration: {
+        Args: { p_registration_id: string; p_decision: string; p_reason?: string | null };
+        Returns: void;
+      };
+      list_my_branch_registrations: {
+        Args: Record<string, never>;
+        Returns: Database['public']['Tables']['branch_registrations']['Row'][];
+      };
+      is_blocked_planner_title: {
+        Args: { p_job_title: string };
+        Returns: boolean;
+      };
+      submit_planner_certification: {
+        Args: {
+          p_branch_id: string;
+          p_planner_name: string;
+          p_planner_phone: string;
+          p_planner_company: string;
+          p_job_title: string;
+          p_income_tier: string;
+          p_withholding_doc_path: string;
+        };
+        Returns: string;
+      };
+      renew_planner_certification: {
+        Args: { p_certification_id: string; p_withholding_doc_path: string };
+        Returns: void;
+      };
+      review_planner_certification: {
+        Args: { p_certification_id: string; p_decision: string; p_memo?: string | null };
+        Returns: void;
+      };
+      get_branch_planner_badge_summary: {
+        Args: { p_branch_id: string };
+        Returns: { tier: string; planner_count: number }[];
+      };
+      list_branches_with_planner_certifications: {
+        Args: { p_tiers?: string[] | null };
+        Returns: { branch_id: string }[];
+      };
+      create_branch_subscription: {
+        Args: { p_branch_id: string };
+        Returns: string;
+      };
+      create_planner_addon_subscription: {
+        Args: { p_certification_id: string };
+        Returns: string;
+      };
+      record_payment_result: {
+        Args: {
+          p_subscription_id: string;
+          p_succeeded: boolean;
+          p_amount_krw: number;
+          p_provider_transaction_ref?: string | null;
+          p_failure_reason?: string | null;
+        };
+        Returns: void;
+      };
+      advance_grace_period_expirations: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      admin_restore_subscription: {
+        Args: { p_subscription_id: string };
         Returns: void;
       };
     };
