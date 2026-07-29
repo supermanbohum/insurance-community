@@ -6,14 +6,12 @@ const STATUS_LABEL: Record<ChangeRequestListItem['status'], string> = {
   pending: '검토 대기',
   approved: '승인됨',
   rejected: '반려됨',
-  changes_requested: '수정 요청됨',
 };
 
 const STATUS_VARIANT: Record<ChangeRequestListItem['status'], NonNullable<BadgeProps['variant']>> = {
   pending: 'warning',
   approved: 'success',
   rejected: 'destructive',
-  changes_requested: 'outline',
 };
 
 /** GA/지점 변경요청 이력 목록. 파트너 대시보드·이력 페이지, 관리자 GA 상세 페이지가 공유한다. */

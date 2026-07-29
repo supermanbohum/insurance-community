@@ -8,14 +8,12 @@ const STATUS_LABEL: Record<string, string> = {
   pending: '검토 대기',
   approved: '승인됨',
   rejected: '반려됨',
-  changes_requested: '수정 요청됨',
 };
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'> = {
   pending: 'warning',
   approved: 'success',
   rejected: 'destructive',
-  changes_requested: 'outline',
 };
 
 export default async function AdminChangeRequestsPage({ searchParams }: { searchParams: { status?: string } }) {

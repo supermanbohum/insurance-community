@@ -1,38 +1,39 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { IS_MOCK_MODE } from '@/lib/mock/config';
-import { mockReviewChangeRequest } from '@/lib/mock/admin-mutations';
 import { requireAdmin } from '@/lib/admin/session';
-import type { ChangeRequestStatus } from '@/lib/mock/store';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
-/** 슈퍼관리자의 변경요청 승인/반려/수정요청. 승인 시 대상 GA/지점에 즉시 반영된다. */
+/** 관리자의 지점 등록/수정 요청 승인·반려. 승인 시 대상 지점에 즉시 반영된다. */
 export async function reviewChangeRequestAction(
   requestId: string,
-  decision: Exclude<ChangeRequestStatus, 'pending'>,
+  decision: 'approved' | 'rejected',
   reason?: string
 ): Promise<ActionResult> {
-  if ((decision === 'rejected' || decision === 'changes_requested') && !reason?.trim()) {
+  if (decision === 'rejected' && !reason?.trim()) {
     return { success: false, error: '사유를 입력해주세요.' };
   }
-  if (!IS_MOCK_MODE) {
-    return { success: false, error: '현재 준비 중인 기능입니다.' };
-  }
 
-  const admin = await requireAdmin();
+  await requireAdmin();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('review_branch_registration', {
+    p_registration_id: requestId,
+    p_decision: decision,
+    p_reason: reason?.trim() || undefined,
+  });
 
-  try {
-    mockReviewChangeRequest(requestId, admin.id, decision, reason?.trim());
-  } catch {
-    return { success: false, error: '처리하지 못했습니다.' };
+  if (error) {
+    return { success: false, error: error.message.includes('MISSING_') ? '필수 서류 또는 사진이 모두 등록되지 않았습니다.' : '처리하지 못했습니다.' };
   }
 
   revalidatePath('/admin/change-requests');
   revalidatePath(`/admin/change-requests/${requestId}`);
   revalidatePath('/admin/ga');
   revalidatePath('/partner');
-  revalidatePath('/ga');
+  revalidatePath('/search');
+  revalidatePath('/map');
+  revalidatePath('/');
   return { success: true };
 }

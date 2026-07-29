@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, FileText, ScanFace } from 'lucide-react';
 import { getChangeRequestDetail } from '@/lib/change-requests';
 import { ChangeRequestReviewActions } from '@/components/admin/ChangeRequestReviewActions';
 import { Badge } from '@/components/ui/badge';
@@ -10,14 +10,12 @@ const STATUS_LABEL: Record<string, string> = {
   pending: '검토 대기',
   approved: '승인됨',
   rejected: '반려됨',
-  changes_requested: '수정 요청됨',
 };
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'> = {
   pending: 'warning',
   approved: 'success',
   rejected: 'destructive',
-  changes_requested: 'outline',
 };
 
 export default async function AdminChangeRequestDetailPage({ params }: { params: { requestId: string } }) {
@@ -48,6 +46,51 @@ export default async function AdminChangeRequestDetailPage({ params }: { params:
           <ChangeRequestReviewActions requestId={request.id} targetName={request.targetName} />
         )}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">등록자 정보</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+          <InfoRow label="성함" value={request.registrant.name} />
+          <InfoRow label="직책" value={request.registrant.title} />
+          <InfoRow label="연락처" value={request.registrant.phone} />
+          <InfoRow label="회사 소속" value={request.registrant.company} />
+          <InfoRow label="본부/지점명" value={request.registrant.branchLabel} />
+        </CardContent>
+      </Card>
+
+      {(request.leaseContractUrl || request.businessCardUrl) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">첨부 서류</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {request.leaseContractUrl && (
+              <a
+                href={request.leaseContractUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:bg-accent"
+              >
+                <FileText className="h-4 w-4" />
+                임대차계약서 보기
+              </a>
+            )}
+            {request.businessCardUrl && (
+              <a
+                href={request.businessCardUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:bg-accent"
+              >
+                <ScanFace className="h-4 w-4" />
+                명함 보기
+              </a>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -94,6 +137,15 @@ export default async function AdminChangeRequestDetailPage({ params }: { params:
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
     </div>
   );
 }

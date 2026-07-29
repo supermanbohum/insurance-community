@@ -1,21 +1,29 @@
 import 'server-only';
-import { mockStore } from '@/lib/mock/store';
-import type { ChangeFieldDiff, ChangeRequestStatus, ChangeRequestTargetType } from '@/lib/mock/store';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
- * GA/지점 변경요청 조회. 관리자 검토 큐(/admin/change-requests)와 파트너 이력(/partner/history)이
- * 함께 사용한다. 지금은 Mock 전용 구현만 있다 - 실제 Supabase를 붙일 때 이 파일을
- * change-requests.mock.ts/change-requests.supabase.ts로 나누면 된다.
+ * 지점 등록/수정 승인 큐(branch_registrations) 조회 - 관리자 검토 화면(/admin/change-requests)과
+ * 파트너 이력(/partner/history)이 함께 사용한다. admin_users와 동일하게 branch_registrations도
+ * RLS가 제출자 본인만 열어주므로, 여기서는 서비스롤 클라이언트로 전체를 조회한다(호출부가
+ * requireAdmin()으로 이미 관리자 권한을 확인했다는 전제).
  */
+
+export interface ChangeFieldDiff {
+  field: string;
+  label: string;
+  oldValue: string;
+  newValue: string;
+  kind?: 'text' | 'image';
+}
 
 export interface ChangeRequestListItem {
   id: string;
-  targetType: ChangeRequestTargetType;
+  targetType: 'ga_branch';
   targetId: string;
   targetName: string;
   gaCompanyId: string;
   gaCompanyName: string;
-  status: ChangeRequestStatus;
+  status: 'pending' | 'approved' | 'rejected';
   fieldChanges: ChangeFieldDiff[];
   submittedByName: string;
   createdAt: string;
@@ -26,59 +34,165 @@ export interface ChangeRequestListItem {
 
 export interface ChangeRequestDetail extends ChangeRequestListItem {
   action: 'create' | 'update';
+  registrant: { name: string; title: string; phone: string; company: string; branchLabel: string };
+  leaseContractUrl: string | null;
+  businessCardUrl: string | null;
 }
 
-function targetName(targetType: ChangeRequestTargetType, targetId: string, gaCompanyName: string): string {
-  if (targetType === 'ga_company') return gaCompanyName;
-  const branch = mockStore.branches.find((b) => b.id === targetId);
-  return branch?.name ?? '알 수 없는 지점';
+const FIELD_LABELS: Record<string, string> = {
+  name: '지점명',
+  address: '주소',
+  addressDetail: '상세주소',
+  introText: '회사소개',
+  educationInfo: '교육 안내',
+  welfareInfo: '복지 안내',
+  dbSupportInfo: 'DB지원 안내',
+  settlementSupportInfo: '정착지원 안내',
+  plannerCount: '설계사 수',
+  parkingAvailable: '주차 가능',
+  visitConsultAvailable: '방문상담 가능',
+  businessHours: '운영시간',
+};
+
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '(없음)';
+  if (typeof value === 'boolean') return value ? '가능' : '불가능';
+  return String(value);
 }
 
-function toListItem(request: (typeof mockStore.changeRequests)[number]): ChangeRequestListItem {
-  const company = mockStore.gaCompanies.find((c) => c.id === request.ga_company_id);
-  const submittedBy = mockStore.gaAdminUsers.find((g) => g.id === request.submitted_by_ga_admin_id);
-  const reviewedBy = request.reviewed_by_admin_id
-    ? mockStore.adminUsers.find((a) => a.id === request.reviewed_by_admin_id)
-    : null;
+async function buildFieldChanges(
+  requestType: 'create' | 'update',
+  branchId: string | null,
+  payload: Record<string, unknown>
+): Promise<ChangeFieldDiff[]> {
+  if (requestType === 'create') {
+    return [
+      { field: '_create', label: '신규 등록', oldValue: '', newValue: `${payload.gaName ?? ''} · ${payload.branchName ?? ''}` },
+    ];
+  }
+  if (!branchId) return [];
+
+  const admin = createAdminClient();
+  const { data: branch } = await admin.from('ga_branch').select('*').eq('id', branchId).maybeSingle();
+  if (!branch) return [];
+
+  const branchAsRecord = branch as unknown as Record<string, unknown>;
+  const keyMap: Record<string, string> = {
+    name: 'name',
+    address: 'address',
+    addressDetail: 'address_detail',
+    introText: 'intro_text',
+    educationInfo: 'education_info',
+    welfareInfo: 'welfare_info',
+    dbSupportInfo: 'db_support_info',
+    settlementSupportInfo: 'settlement_support_info',
+    plannerCount: 'planner_count',
+    parkingAvailable: 'parking_available',
+    visitConsultAvailable: 'visit_consult_available',
+    businessHours: 'business_hours',
+  };
+
+  const diffs: ChangeFieldDiff[] = [];
+  for (const [payloadKey, label] of Object.entries(FIELD_LABELS)) {
+    if (!(payloadKey in payload)) continue;
+    const newValue = payload[payloadKey];
+    const oldValue = branchAsRecord[keyMap[payloadKey]];
+    if (String(oldValue ?? '') === String(newValue ?? '')) continue;
+    diffs.push({ field: payloadKey, label, oldValue: displayValue(oldValue), newValue: displayValue(newValue) });
+  }
+  return diffs;
+}
+
+async function toListItem(row: {
+  id: string;
+  request_type: 'create' | 'update';
+  branch_id: string | null;
+  ga_company_id: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  payload: Record<string, unknown>;
+  submitted_by_ga_admin_id: string;
+  reviewed_by_admin_id: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  review_reason: string | null;
+}): Promise<ChangeRequestListItem> {
+  const admin = createAdminClient();
+  const [{ data: branch }, { data: company }, { data: submittedBy }, { data: reviewedBy }] = await Promise.all([
+    row.branch_id ? admin.from('ga_branch').select('name').eq('id', row.branch_id).maybeSingle() : Promise.resolve({ data: null }),
+    row.ga_company_id ? admin.from('ga_company').select('name').eq('id', row.ga_company_id).maybeSingle() : Promise.resolve({ data: null }),
+    admin.from('ga_admin_users').select('display_name').eq('id', row.submitted_by_ga_admin_id).maybeSingle(),
+    row.reviewed_by_admin_id
+      ? admin.from('admin_users').select('display_name').eq('id', row.reviewed_by_admin_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
   return {
-    id: request.id,
-    targetType: request.target_type,
-    targetId: request.target_id,
-    targetName: targetName(request.target_type, request.target_id, company?.name ?? '알 수 없는 GA'),
-    gaCompanyId: request.ga_company_id,
-    gaCompanyName: company?.name ?? '알 수 없는 GA',
-    status: request.status,
-    fieldChanges: request.field_changes,
+    id: row.id,
+    targetType: 'ga_branch',
+    targetId: row.branch_id ?? '',
+    targetName: branch?.name ?? (row.payload.branchName as string | undefined) ?? '알 수 없는 지점',
+    gaCompanyId: row.ga_company_id ?? '',
+    gaCompanyName: company?.name ?? (row.payload.gaName as string | undefined) ?? '알 수 없는 GA',
+    status: row.status,
+    fieldChanges: await buildFieldChanges(row.request_type, row.branch_id, row.payload),
     submittedByName: submittedBy?.display_name ?? '알 수 없음',
-    createdAt: request.created_at,
-    reviewedAt: request.reviewed_at,
-    reviewReason: request.review_reason,
+    createdAt: row.created_at,
+    reviewedAt: row.reviewed_at,
+    reviewReason: row.review_reason,
     reviewedByName: reviewedBy?.display_name ?? null,
   };
 }
 
-export async function listChangeRequests(options: {
-  status?: ChangeRequestStatus;
-  gaCompanyId?: string;
-} = {}): Promise<ChangeRequestListItem[]> {
-  let list = [...mockStore.changeRequests];
-  if (options.status) list = list.filter((r) => r.status === options.status);
-  if (options.gaCompanyId) list = list.filter((r) => r.ga_company_id === options.gaCompanyId);
-  list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  return list.map(toListItem);
+export async function listChangeRequests(
+  options: { status?: 'pending' | 'approved' | 'rejected'; gaCompanyId?: string } = {}
+): Promise<ChangeRequestListItem[]> {
+  const admin = createAdminClient();
+  let query = admin.from('branch_registrations').select('*').order('created_at', { ascending: false });
+  if (options.status) query = query.eq('status', options.status);
+  if (options.gaCompanyId) query = query.eq('ga_company_id', options.gaCompanyId);
+
+  const { data, error } = await query;
+  if (error || !data) return [];
+  return Promise.all(data.map((row) => toListItem(row as Parameters<typeof toListItem>[0])));
 }
 
 export async function getChangeRequestDetail(id: string): Promise<ChangeRequestDetail | null> {
-  const request = mockStore.changeRequests.find((r) => r.id === id);
-  if (!request) return null;
+  const admin = createAdminClient();
+  const { data: row } = await admin.from('branch_registrations').select('*').eq('id', id).maybeSingle();
+  if (!row) return null;
+
+  const listItem = await toListItem(row as Parameters<typeof toListItem>[0]);
+
+  let leaseContractUrl: string | null = null;
+  let businessCardUrl: string | null = null;
+  if (row.lease_contract_path) {
+    const { data } = await admin.storage.from('branch-verification-docs').createSignedUrl(row.lease_contract_path, 600);
+    leaseContractUrl = data?.signedUrl ?? null;
+  }
+  if (row.business_card_path) {
+    const { data } = await admin.storage.from('branch-verification-docs').createSignedUrl(row.business_card_path, 600);
+    businessCardUrl = data?.signedUrl ?? null;
+  }
+
   return {
-    ...toListItem(request),
-    action: request.action,
+    ...listItem,
+    action: row.request_type,
+    registrant: {
+      name: row.registrant_name,
+      title: row.registrant_title,
+      phone: row.registrant_phone,
+      company: row.registrant_company,
+      branchLabel: row.registrant_branch_label,
+    },
+    leaseContractUrl,
+    businessCardUrl,
   };
 }
 
 export async function countPendingChangeRequests(gaCompanyId?: string): Promise<number> {
-  return mockStore.changeRequests.filter(
-    (r) => r.status === 'pending' && (!gaCompanyId || r.ga_company_id === gaCompanyId)
-  ).length;
+  const admin = createAdminClient();
+  let query = admin.from('branch_registrations').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+  if (gaCompanyId) query = query.eq('ga_company_id', gaCompanyId);
+  const { count } = await query;
+  return count ?? 0;
 }
