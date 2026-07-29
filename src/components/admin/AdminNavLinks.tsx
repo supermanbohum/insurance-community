@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building2, MapPin, PhoneCall, Briefcase, ClipboardCheck, LayoutTemplate } from 'lucide-react';
+import { LayoutDashboard, Building2, MapPin, PhoneCall, Briefcase, ClipboardCheck, LayoutTemplate, Award, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
@@ -10,6 +10,8 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/ga', label: 'GA 관리', icon: Building2 },
   { href: '/admin/branches', label: '지점 관리', icon: MapPin },
   { href: '/admin/change-requests', label: '변경 요청', icon: ClipboardCheck },
+  { href: '/admin/planners', label: '고소득 설계사', icon: Award },
+  { href: '/admin/billing', label: '결제 관리', icon: CreditCard },
   { href: '/admin/inquiries', label: '문의 관리', icon: PhoneCall },
   { href: '/admin/recruits', label: '채용 관리', icon: Briefcase },
   { href: '/admin/design/home', label: '디자인 편집', icon: LayoutTemplate },

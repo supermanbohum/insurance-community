@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building2, MapPin, History } from 'lucide-react';
+import { LayoutDashboard, Building2, MapPin, History, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { href: '/partner', label: '대시보드', icon: LayoutDashboard, exact: true },
   { href: '/partner/company', label: 'GA 정보', icon: Building2 },
   { href: '/partner/branches', label: '지점 관리', icon: MapPin },
+  { href: '/partner/planners', label: '고소득 설계사', icon: Award },
   { href: '/partner/history', label: '변경 이력', icon: History },
 ];
 
