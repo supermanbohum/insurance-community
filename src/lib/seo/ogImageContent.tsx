@@ -1,8 +1,5 @@
 import { SITE_CONFIG } from '@/lib/config/site';
-
-const SHIELD_PATH =
-  'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z';
-const CHECK_PATH = 'm9 12 2 2 4-4';
+import { BrandMark } from '@/components/brand/BrandMark';
 
 /**
  * 사이트 기본 OG/Twitter 카드 이미지(1200x630). satori(ImageResponse 엔진)는 한글
@@ -35,12 +32,10 @@ export function DefaultOgImage() {
             background: 'rgba(255,255,255,0.1)',
             alignItems: 'center',
             justifyContent: 'center',
+            color: 'white',
           }}
         >
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d={SHIELD_PATH} />
-            <path d={CHECK_PATH} />
-          </svg>
+          <BrandMark width={48} height={48} strokeWidth={2} />
         </div>
         <span style={{ fontSize: 80, fontWeight: 800, color: 'white', letterSpacing: -2 }}>{SITE_CONFIG.englishName}</span>
       </div>
@@ -77,12 +72,10 @@ export function BranchOgImage({ photoUrl }: { photoUrl: string | null }) {
             background: 'rgba(255,255,255,0.15)',
             alignItems: 'center',
             justifyContent: 'center',
+            color: 'white',
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-            <path d={SHIELD_PATH} />
-            <path d={CHECK_PATH} />
-          </svg>
+          <BrandMark width={24} height={24} strokeWidth={2.2} />
         </div>
         <span style={{ fontSize: 30, fontWeight: 800, color: 'white' }}>{SITE_CONFIG.englishName}</span>
       </div>

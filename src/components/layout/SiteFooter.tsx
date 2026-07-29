@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ShieldCheck, MessageCircle, Mail } from 'lucide-react';
+import { MessageCircle, Mail } from 'lucide-react';
+import { BrandMark } from '@/components/brand/BrandMark';
 
 const MENU_LINKS = [
   { href: '/terms', label: '이용약관' },
@@ -29,7 +30,7 @@ export function SiteFooter() {
         <div className="flex flex-col gap-4">
           <Link href="/" className="flex items-center gap-1.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white ring-1 ring-white/15">
-              <ShieldCheck className="h-4 w-4" strokeWidth={2.25} />
+              <BrandMark className="h-4 w-4" strokeWidth={2.25} />
             </span>
             <span className="text-lg font-extrabold tracking-tight text-white">보험맵</span>
           </Link>

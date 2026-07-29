@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck } from 'lucide-react';
+import { BrandMark } from '@/components/brand/BrandMark';
 import { NotFoundContent } from '@/components/seo/NotFoundContent';
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export default function RootNotFound() {
       <div className="flex items-center justify-center py-6">
         <Link href="/" className="flex items-center gap-1.5">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white">
-            <ShieldCheck className="h-4 w-4" strokeWidth={2.25} />
+            <BrandMark className="h-4 w-4" strokeWidth={2.25} />
           </span>
           <span className="text-lg font-extrabold tracking-tight text-ink">보험맵</span>
         </Link>
