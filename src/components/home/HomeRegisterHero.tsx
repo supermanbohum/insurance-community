@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Award, Megaphone, MessageSquareText, Plus } from 'lucide-react';
 import type { HomeStats } from '@/lib/public/branch';
 import { StatCountUp } from '@/components/home/StatCountUp';
-import { BrandIntro } from '@/components/brand/BrandIntro';
 
 /**
  * 헤더에 이미 로고+검색창이 있어(BohomMapHeader) 예전 HeroSearch가 그걸 그대로
@@ -12,8 +11,6 @@ import { BrandIntro } from '@/components/brand/BrandIntro';
 export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
   return (
     <div className="flex flex-col gap-3">
-      <BrandIntro />
-
       <Link
         href="/partner/signup"
         className="group relative flex animate-breathe items-center justify-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 to-brand-700 py-7 shadow-pop transition-shadow hover:shadow-card-hover active:scale-[0.99]"
