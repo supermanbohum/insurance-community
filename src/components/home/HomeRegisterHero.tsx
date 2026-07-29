@@ -22,7 +22,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { 
 
       <div className="grid grid-cols-3 gap-2">
         <Link
-          href="/partner/planners/new"
+          href="/top-register"
           className="flex flex-col items-center justify-center gap-0.5 rounded-2xl border border-line bg-white py-3.5 text-center shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
         >
           <Award className="h-4 w-4 text-amber-500" />

@@ -42,7 +42,10 @@ export default async function AdminPlannerDetailPage({ params }: { params: { cer
             <Badge variant={STATUS_VARIANT[detail.displayStatus]}>{PLANNER_STATUS_LABEL[detail.displayStatus]}</Badge>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {detail.gaCompanyName} · {detail.branchName} · {detail.submittedByName}님이 {new Date(detail.createdAt).toLocaleString('ko-KR')}에 신청
+            {detail.gaCompanyName} · {detail.branchName} ·{' '}
+            {detail.applicationSource === 'public' ? '공개 신청(로그인 없음)' : `${detail.submittedByName}님이 제출`}
+            {' · '}
+            {new Date(detail.createdAt).toLocaleString('ko-KR')}
           </p>
         </div>
         {canReview && <PlannerCertificationReviewActions certificationId={detail.id} plannerName={detail.plannerName} />}
@@ -56,7 +59,7 @@ export default async function AdminPlannerDetailPage({ params }: { params: { cer
           <InfoRow label="이름" value={detail.plannerName} />
           <InfoRow label="연락처" value={detail.plannerPhone} />
           <InfoRow label="회사" value={detail.plannerCompany} />
-          <InfoRow label="직책" value={detail.jobTitle} />
+          <InfoRow label="직책" value={detail.jobTitle ?? '-'} />
           <InfoRow label="연봉 구간" value={INCOME_TIER_SHORT_LABEL[detail.incomeTier]} />
           <InfoRow label="만료일" value={detail.expiresAt ? new Date(detail.expiresAt).toLocaleDateString('ko-KR') : '-'} />
         </CardContent>

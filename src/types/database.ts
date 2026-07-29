@@ -41,6 +41,7 @@ export type BranchRegistrationStatus = 'pending' | 'approved' | 'rejected';
 export type PlannerIncomeTier = 'tier_1' | 'tier_2' | 'tier_3';
 export type PlannerCertificationStatus = 'pending_review' | 'approved' | 'rejected' | 'pending_renewal';
 export type PlannerCertificationHistoryEventType = 'initial_approval' | 'renewal_approval' | 'rejection';
+export type PlannerApplicationSource = 'partner' | 'public';
 export type VerificationDocumentOwnerType = 'planner_certification';
 export type VerificationDocumentType = 'withholding_tax_certificate';
 export type SubscriptionSubjectType = 'branch_listing' | 'planner_addon';
@@ -641,13 +642,14 @@ export interface Database {
         Row: {
           id: string;
           branch_id: string;
-          submitted_by_ga_admin_id: string;
+          submitted_by_ga_admin_id: string | null;
           planner_name: string;
           planner_phone: string;
           planner_company: string;
-          job_title: string;
+          job_title: string | null;
           income_tier: PlannerIncomeTier;
           status: PlannerCertificationStatus;
+          application_source: PlannerApplicationSource;
           approved_at: string | null;
           expires_at: string | null;
           approved_by_admin_id: string | null;
@@ -1204,6 +1206,17 @@ export interface Database {
           p_planner_phone: string;
           p_planner_company: string;
           p_job_title: string;
+          p_income_tier: string;
+          p_withholding_doc_path: string;
+        };
+        Returns: string;
+      };
+      submit_top_planner_application: {
+        Args: {
+          p_branch_id: string;
+          p_planner_name: string;
+          p_planner_phone: string;
+          p_planner_company: string;
           p_income_tier: string;
           p_withholding_doc_path: string;
         };

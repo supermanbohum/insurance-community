@@ -1,4 +1,4 @@
-export type { BranchSortOption, BranchDetail, HomeStats } from './branch.supabase';
+export type { BranchSortOption, BranchDetail, HomeStats, BranchSearchResultLite } from './branch.supabase';
 
 export {
   listPublicBranches,
@@ -8,4 +8,5 @@ export {
   getHomeStats,
   listMonthlyTopBranches,
   listBranchSlugsForSitemap,
+  searchApprovedBranchesLite,
 } from './branch.supabase';

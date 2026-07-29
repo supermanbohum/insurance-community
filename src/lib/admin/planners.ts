@@ -1,16 +1,17 @@
 import 'server-only';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { derivePlannerDisplayStatus } from '@/lib/planners/tier';
-import type { PlannerCertificationStatus, PlannerIncomeTier } from '@/types/database';
+import type { PlannerApplicationSource, PlannerCertificationStatus, PlannerIncomeTier } from '@/types/database';
 
 export interface PlannerCertificationListItem {
   id: string;
   plannerName: string;
   plannerPhone: string;
   plannerCompany: string;
-  jobTitle: string;
+  jobTitle: string | null;
   incomeTier: PlannerIncomeTier;
   status: PlannerCertificationStatus;
+  applicationSource: PlannerApplicationSource;
   displayStatus: ReturnType<typeof derivePlannerDisplayStatus>;
   branchId: string;
   branchName: string;
@@ -31,7 +32,7 @@ export interface PlannerCertificationHistoryItem {
 }
 
 export interface PlannerCertificationDetail extends PlannerCertificationListItem {
-  submittedByName: string;
+  submittedByName: string | null;
   withholdingDocUrl: string | null;
   history: PlannerCertificationHistoryItem[];
 }
@@ -41,9 +42,10 @@ async function toListItem(row: {
   planner_name: string;
   planner_phone: string;
   planner_company: string;
-  job_title: string;
+  job_title: string | null;
   income_tier: PlannerIncomeTier;
   status: PlannerCertificationStatus;
+  application_source: PlannerApplicationSource;
   branch_id: string;
   approved_at: string | null;
   expires_at: string | null;
@@ -65,6 +67,7 @@ async function toListItem(row: {
     jobTitle: row.job_title,
     incomeTier: row.income_tier,
     status: row.status,
+    applicationSource: row.application_source,
     displayStatus: derivePlannerDisplayStatus(row.status, row.expires_at),
     branchId: row.branch_id,
     branchName: branch?.name ?? '알 수 없는 지점',
@@ -100,7 +103,9 @@ export async function getPlannerCertificationDetail(id: string): Promise<Planner
 
   const [listItem, { data: submittedBy }, { data: doc }, { data: historyRows }] = await Promise.all([
     toListItem(row),
-    admin.from('ga_admin_users').select('display_name').eq('id', row.submitted_by_ga_admin_id).maybeSingle(),
+    row.submitted_by_ga_admin_id
+      ? admin.from('ga_admin_users').select('display_name').eq('id', row.submitted_by_ga_admin_id).maybeSingle()
+      : Promise.resolve({ data: null }),
     admin
       .from('verification_documents')
       .select('storage_path')
@@ -134,7 +139,7 @@ export async function getPlannerCertificationDetail(id: string): Promise<Planner
 
   return {
     ...listItem,
-    submittedByName: submittedBy?.display_name ?? '알 수 없음',
+    submittedByName: row.application_source === 'public' ? null : (submittedBy?.display_name ?? '알 수 없음'),
     withholdingDocUrl,
     history,
   };

@@ -65,7 +65,9 @@ export default async function AdminPlannersPage({ searchParams }: { searchParams
                     {item.plannerName} · {item.gaCompanyName} {item.branchName}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {INCOME_TIER_SHORT_LABEL[item.incomeTier]} · {item.jobTitle} · {new Date(item.createdAt).toLocaleDateString('ko-KR')}
+                    {INCOME_TIER_SHORT_LABEL[item.incomeTier]} ·{' '}
+                    {item.applicationSource === 'public' ? '공개 신청' : item.jobTitle} ·{' '}
+                    {new Date(item.createdAt).toLocaleDateString('ko-KR')}
                   </p>
                 </div>
                 <Badge variant={STATUS_VARIANT[item.displayStatus]}>{PLANNER_STATUS_LABEL[item.displayStatus]}</Badge>

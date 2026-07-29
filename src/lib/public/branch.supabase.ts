@@ -254,6 +254,57 @@ export async function listPublicBranches(options: {
   );
 }
 
+export interface BranchSearchResultLite {
+  id: string;
+  name: string;
+  gaCompanyName: string;
+  sidoName: string | null;
+  sigunguName: string | null;
+}
+
+/** TOP설계사 공개 신청 폼의 "본인 지점 검색" 자동완성 전용 - listPublicBranches와 동일한
+ * 지점명/GA명/지역명 2단계 매칭을 재사용하되, 응답을 최소 컬럼으로 줄인다. 공개(anon)
+ * 클라이언트를 쓰므로 RLS("public read visible ga_branch")가 자동으로 registration_status=
+ * approved/status=visible 지점만 결과에 남긴다 - 승인대기/반려/비공개/삭제 지점은 노출되지 않는다. */
+export async function searchApprovedBranchesLite(q: string): Promise<BranchSearchResultLite[]> {
+  const query = q.trim();
+  if (query.length === 0) return [];
+
+  const supabase = createPublicSupabaseClient();
+
+  const [{ data: matchedRegions }, { data: matchedCompanies }] = await Promise.all([
+    supabase.from('regions').select('id').or(`sido_name.ilike.%${query}%,sigungu_name.ilike.%${query}%`),
+    supabase.from('ga_company').select('id').ilike('name', `%${query}%`).eq('approval_status', 'approved'),
+  ]);
+  const regionIds = (matchedRegions ?? []).map((r) => r.id);
+  const companyIds = (matchedCompanies ?? []).map((c) => c.id);
+
+  const orParts = [`name.ilike.%${query}%`];
+  if (regionIds.length > 0) orParts.push(`region_id.in.(${regionIds.join(',')})`);
+  if (companyIds.length > 0) orParts.push(`ga_company_id.in.(${companyIds.join(',')})`);
+
+  const { data, error } = await supabase
+    .from('ga_branch')
+    .select('id, name, ga_company:ga_company_id(name), region:region_id(sido_name, sigungu_name)')
+    .or(orParts.join(','))
+    .order('name', { ascending: true })
+    .limit(20);
+  if (error) throw error;
+
+  return ((data ?? []) as unknown as {
+    id: string;
+    name: string;
+    ga_company: { name: string } | null;
+    region: { sido_name: string; sigungu_name: string | null } | null;
+  }[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    gaCompanyName: row.ga_company?.name ?? '알 수 없는 GA',
+    sidoName: row.region?.sido_name ?? null,
+    sigunguName: row.region?.sigungu_name ?? null,
+  }));
+}
+
 /** 아직 마이그레이션이 적용되지 않았을 수 있는 컬럼을 안전하게 조회한다 - 컬럼이 없어
  * 조회가 실패하면(마이그레이션 미적용) 조용히 빈 Map을 반환하고, 호출부는 기본값을 쓴다. */
 async function fetchOptionalColumn<T>(
