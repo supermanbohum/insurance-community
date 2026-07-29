@@ -114,6 +114,23 @@ const config: Config = {
           '0%, 100%': { transform: 'scale(1)' },
           '50%': { transform: 'scale(1.02)' },
         },
+        'brand-pin': {
+          '0%': { opacity: '0', transform: 'scale(0.75)' },
+          '60%': { opacity: '1', transform: 'scale(1.05)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'brand-shield': {
+          '0%': { opacity: '0', transform: 'scale(0.8)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'brand-people': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'brand-text': {
+          '0%': { opacity: '0', transform: 'translateX(-10px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
@@ -121,6 +138,10 @@ const config: Config = {
         'page-fade': 'page-fade 220ms ease-out both',
         shimmer: 'shimmer 1.6s linear infinite',
         breathe: 'breathe 4s ease-in-out infinite',
+        'brand-pin': 'brand-pin 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        'brand-shield': 'brand-shield 0.3s ease-out 0.22s both',
+        'brand-people': 'brand-people 0.25s ease-out 0.42s both',
+        'brand-text': 'brand-text 0.35s ease-out 0.5s both',
       },
     },
   },

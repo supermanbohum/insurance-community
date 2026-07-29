@@ -40,7 +40,11 @@ body {
   }
   .stagger-item,
   .animate-page-fade,
-  .animate-breathe {
+  .animate-breathe,
+  .animate-brand-pin,
+  .animate-brand-shield,
+  .animate-brand-people,
+  .animate-brand-text {
     animation: none;
   }
 }
