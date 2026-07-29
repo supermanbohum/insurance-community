@@ -1251,6 +1251,10 @@ export interface Database {
         Args: { p_subscription_id: string };
         Returns: void;
       };
+      set_media_pending_registration: {
+        Args: { p_media_id: string; p_registration_id: string };
+        Returns: void;
+      };
     };
   };
 }

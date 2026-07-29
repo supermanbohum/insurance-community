@@ -3,9 +3,10 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowDown, ArrowUp, ImagePlus, Star, VideoIcon, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, FileText, ImagePlus, ScanFace, Star, VideoIcon, X } from 'lucide-react';
 import {
-  registerGaAction,
+  submitBranchRegistrationAction,
+  uploadRegistrationDocumentAction,
   savePartnerBranchLinksAction,
   uploadPartnerBranchPhotoAction,
   uploadPartnerBranchVideoAction,
@@ -35,10 +36,19 @@ const PLANNER_COUNT_OPTIONS = [
 
 const TAGLINE_PLACEHOLDER = '예: 신입 정착률이 높은 지점 / 2030 설계사 환영 / DB 지원';
 const MIN_INTRO_LENGTH = 50;
-const MIN_PHOTOS = 3;
-const MAX_PHOTOS = 10;
+const MIN_OFFICE_PHOTOS = 3;
+const MAX_OFFICE_PHOTOS = 10;
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const DOC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
+
+const REGISTRANT_FIELDS = [
+  { key: 'name', label: '등록자 성함' },
+  { key: 'title', label: '직책' },
+  { key: 'phone', label: '연락처' },
+  { key: 'company', label: '회사 소속' },
+  { key: 'branchLabel', label: '본부 또는 지점명' },
+] as const;
 
 const LINK_FIELDS = [
   { key: 'instagram', label: '📷 인스타그램', placeholder: 'https://instagram.com/...' },
@@ -66,6 +76,15 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const [registrant, setRegistrant] = useState<Record<(typeof REGISTRANT_FIELDS)[number]['key'], string>>({
+    name: '',
+    title: '',
+    phone: '',
+    company: '',
+    branchLabel: '',
+  });
+  const [leaseContract, setLeaseContract] = useState<File | null>(null);
+  const [businessCard, setBusinessCard] = useState<File | null>(null);
   const [gaName, setGaName] = useState('');
   const [branchName, setBranchName] = useState('');
   const [regionId, setRegionId] = useState<string | null>(null);
@@ -81,7 +100,8 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
     dbSupport: false,
     settlementSupport: false,
   });
-  const [photos, setPhotos] = useState<File[]>([]);
+  const [mainPhoto, setMainPhoto] = useState<File | null>(null);
+  const [officePhotos, setOfficePhotos] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
   const [links, setLinks] = useState<Record<(typeof LINK_FIELDS)[number]['key'], string>>({
     instagram: '',
@@ -93,24 +113,58 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
 
   const introRemaining = MIN_INTRO_LENGTH - introText.trim().length;
+  const registrantComplete = REGISTRANT_FIELDS.every((f) => registrant[f.key].trim());
   const canSubmit =
-    gaName && branchName.trim() && addressValue.address && tagline.trim() && introText.trim().length >= MIN_INTRO_LENGTH && photos.length >= MIN_PHOTOS;
+    gaName &&
+    branchName.trim() &&
+    addressValue.address &&
+    tagline.trim() &&
+    introText.trim().length >= MIN_INTRO_LENGTH &&
+    registrantComplete &&
+    leaseContract &&
+    businessCard &&
+    mainPhoto &&
+    officePhotos.length >= MIN_OFFICE_PHOTOS;
 
-  function addPhotos(files: FileList | null) {
+  function pickMainPhoto(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    if (!IMAGE_TYPES.includes(file.type)) {
+      toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
+      return;
+    }
+    setMainPhoto(file);
+  }
+
+  function pickDoc(files: FileList | null, setFile: (f: File) => void) {
+    const file = files?.[0];
+    if (!file) return;
+    if (!DOC_TYPES.includes(file.type)) {
+      toast.error('jpg, png, webp, pdf 형식만 업로드할 수 있습니다.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('파일은 최대 10MB까지 업로드할 수 있습니다.');
+      return;
+    }
+    setFile(file);
+  }
+
+  function addOfficePhotos(files: FileList | null) {
     if (!files) return;
     const accepted = Array.from(files).filter((f) => IMAGE_TYPES.includes(f.type));
     if (accepted.length < files.length) {
       toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
     }
-    setPhotos((prev) => [...prev, ...accepted].slice(0, MAX_PHOTOS));
+    setOfficePhotos((prev) => [...prev, ...accepted].slice(0, MAX_OFFICE_PHOTOS));
   }
 
-  function removePhoto(index: number) {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  function removeOfficePhoto(index: number) {
+    setOfficePhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function movePhoto(index: number, direction: -1 | 1) {
-    setPhotos((prev) => {
+  function moveOfficePhoto(index: number, direction: -1 | 1) {
+    setOfficePhotos((prev) => {
       const next = [...prev];
       const target = index + direction;
       if (target < 0 || target >= next.length) return prev;
@@ -144,11 +198,12 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || !mainPhoto || !leaseContract || !businessCard) return;
 
     startTransition(async () => {
-      const result = await registerGaAction({
+      const result = await submitBranchRegistrationAction({
         gaName,
+        registrant,
         branch: {
           name: branchName,
           regionId,
@@ -169,15 +224,32 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
         return;
       }
 
-      const totalSteps = photos.length + (video ? 1 : 0);
+      const totalSteps = 1 + officePhotos.length + 2 + (video ? 1 : 0);
       setUploadProgress({ done: 0, total: totalSteps });
-      for (let i = 0; i < photos.length; i++) {
+
+      const mainFd = new FormData();
+      mainFd.set('file', mainPhoto);
+      await uploadPartnerBranchPhotoAction(result.branchId, mainFd, true, 0);
+      setUploadProgress((p) => (p ? { done: p.done + 1, total: p.total } : p));
+
+      for (let i = 0; i < officePhotos.length; i++) {
         const fd = new FormData();
-        fd.set('file', photos[i]);
+        fd.set('file', officePhotos[i]);
         // eslint-disable-next-line no-await-in-loop
-        await uploadPartnerBranchPhotoAction(result.branchId, fd, i === 0, i);
+        await uploadPartnerBranchPhotoAction(result.branchId, fd, false, i);
         setUploadProgress((p) => (p ? { done: p.done + 1, total: p.total } : p));
       }
+
+      const leaseFd = new FormData();
+      leaseFd.set('file', leaseContract);
+      await uploadRegistrationDocumentAction(result.registrationId, 'lease_contract', leaseFd);
+      setUploadProgress((p) => (p ? { done: p.done + 1, total: p.total } : p));
+
+      const cardFd = new FormData();
+      cardFd.set('file', businessCard);
+      await uploadRegistrationDocumentAction(result.registrationId, 'business_card', cardFd);
+      setUploadProgress((p) => (p ? { done: p.done + 1, total: p.total } : p));
+
       if (video) {
         const fd = new FormData();
         fd.set('file', video);
@@ -203,7 +275,31 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">① 소속 GA 선택</CardTitle>
+          <CardTitle className="text-base">① 등록자 정보</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-xs text-muted-foreground">
+            실제 지점 확인 및 허위·중복 등록 방지를 위해 등록자 정보를 입력해주세요. 관리자 승인 참고자료로만 사용됩니다.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {REGISTRANT_FIELDS.map((field) => (
+              <div key={field.key} className="flex flex-col gap-1.5">
+                <Label htmlFor={`onb-registrant-${field.key}`}>{field.label}</Label>
+                <Input
+                  id={`onb-registrant-${field.key}`}
+                  value={registrant[field.key]}
+                  onChange={(e) => setRegistrant((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                  required
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">② 소속 GA 선택</CardTitle>
         </CardHeader>
         <CardContent>
           <GaSelect options={gaOptions} value={gaName} onChange={setGaName} />
@@ -212,7 +308,7 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">② 지점명</CardTitle>
+          <CardTitle className="text-base">③ 지점명</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-1.5">
@@ -224,11 +320,104 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">③ 주소 검색</CardTitle>
+          <CardTitle className="text-base">④ 주소 검색</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
           <AddressSearchField value={addressValue} onChange={setAddressValue} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">필수 서류</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <p className="text-xs text-muted-foreground">
+            임대차계약서와 등록자 명함을 첨부해주세요. 실제 지점 확인 및 관리자 승인에만 사용되며 외부에 노출되지 않습니다.
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label>임대차계약서</Label>
+              {leaseContract ? (
+                <div className="flex items-center justify-between rounded-xl border border-line px-3 py-2.5 text-sm">
+                  <span className="flex items-center gap-1.5 truncate text-ink-soft">
+                    <FileText className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{leaseContract.name}</span>
+                  </span>
+                  <button type="button" onClick={() => setLeaseContract(null)} aria-label="임대차계약서 삭제">
+                    <X className="h-4 w-4 text-ink-faint" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-4 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600">
+                  <FileText className="h-4 w-4" />
+                  파일 선택 (jpg/png/pdf)
+                  <input type="file" accept={DOC_TYPES.join(',')} className="hidden" onChange={(e) => pickDoc(e.target.files, setLeaseContract)} />
+                </label>
+              )}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>등록자 명함</Label>
+              {businessCard ? (
+                <div className="flex items-center justify-between rounded-xl border border-line px-3 py-2.5 text-sm">
+                  <span className="flex items-center gap-1.5 truncate text-ink-soft">
+                    <ScanFace className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{businessCard.name}</span>
+                  </span>
+                  <button type="button" onClick={() => setBusinessCard(null)} aria-label="명함 삭제">
+                    <X className="h-4 w-4 text-ink-faint" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-4 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600">
+                  <ScanFace className="h-4 w-4" />
+                  파일 선택 (jpg/png/pdf)
+                  <input type="file" accept={DOC_TYPES.join(',')} className="hidden" onChange={(e) => pickDoc(e.target.files, setBusinessCard)} />
+                </label>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">대표사진 (필수, 1장)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-xs text-muted-foreground">목록/지도/검색결과에 썸네일로 노출되는 사진입니다.</p>
+          {mainPhoto ? (
+            <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-line bg-muted">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={URL.createObjectURL(mainPhoto)} alt="대표사진" className="h-full w-full object-cover" />
+              <span className="absolute left-2 top-2 flex items-center gap-0.5 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                <Star className="h-2.5 w-2.5 fill-white" />
+                대표사진
+              </span>
+              <button
+                type="button"
+                onClick={() => setMainPhoto(null)}
+                className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white"
+                aria-label="대표사진 삭제"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <label
+              className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line py-8 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                pickMainPhoto(e.dataTransfer.files);
+              }}
+            >
+              <ImagePlus className="h-6 w-6" />
+              대표사진을 드래그하거나 눌러서 선택하세요
+              <input type="file" accept={IMAGE_TYPES.join(',')} className="hidden" onChange={(e) => pickMainPhoto(e.target.files)} />
+            </label>
+          )}
         </CardContent>
       </Card>
 
@@ -251,55 +440,49 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">사무실 사진 (필수, 최소 {MIN_PHOTOS}장)</CardTitle>
+          <CardTitle className="text-base">사무실 사진 (필수, 최소 {MIN_OFFICE_PHOTOS}장)</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <p className="text-xs text-muted-foreground">
-            ※ 실제 사무실 사진을 최소 {MIN_PHOTOS}장 이상 등록해주세요. 사진이 많을수록 노출 및 신뢰도가 높아집니다. (권장 5~10장)
+            대표사진과 별도로, 지점 상세페이지에서만 노출되는 사무실 사진을 최소 {MIN_OFFICE_PHOTOS}장 이상 등록해주세요. (권장 5~10장)
           </p>
 
           <label
             className={cn(
               'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line py-8 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600',
-              photos.length >= MAX_PHOTOS && 'pointer-events-none opacity-50'
+              officePhotos.length >= MAX_OFFICE_PHOTOS && 'pointer-events-none opacity-50'
             )}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
-              addPhotos(e.dataTransfer.files);
+              addOfficePhotos(e.dataTransfer.files);
             }}
           >
             <ImagePlus className="h-6 w-6" />
-            사진을 드래그하거나 눌러서 선택하세요 ({photos.length}/{MAX_PHOTOS})
+            사진을 드래그하거나 눌러서 선택하세요 ({officePhotos.length}/{MAX_OFFICE_PHOTOS})
             <input
               type="file"
               accept={IMAGE_TYPES.join(',')}
               multiple
               className="hidden"
-              onChange={(e) => addPhotos(e.target.files)}
+              onChange={(e) => addOfficePhotos(e.target.files)}
             />
           </label>
 
-          {photos.length > 0 && (
+          {officePhotos.length > 0 && (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {photos.map((file, i) => (
+              {officePhotos.map((file, i) => (
                 <div key={`${file.name}-${i}`} className="group relative aspect-square overflow-hidden rounded-xl border border-line bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={URL.createObjectURL(file)} alt={`사무실 사진 ${i + 1}`} className="h-full w-full object-cover" />
-                  {i === 0 && (
-                    <span className="absolute left-1 top-1 flex items-center gap-0.5 rounded-full bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      <Star className="h-2.5 w-2.5 fill-white" />
-                      대표
-                    </span>
-                  )}
                   <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/50 px-1 py-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button type="button" onClick={() => movePhoto(i, -1)} disabled={i === 0} className="p-1 text-white disabled:opacity-30" aria-label="앞으로 이동">
+                    <button type="button" onClick={() => moveOfficePhoto(i, -1)} disabled={i === 0} className="p-1 text-white disabled:opacity-30" aria-label="앞으로 이동">
                       <ArrowUp className="h-3 w-3" />
                     </button>
-                    <button type="button" onClick={() => movePhoto(i, 1)} disabled={i === photos.length - 1} className="p-1 text-white disabled:opacity-30" aria-label="뒤로 이동">
+                    <button type="button" onClick={() => moveOfficePhoto(i, 1)} disabled={i === officePhotos.length - 1} className="p-1 text-white disabled:opacity-30" aria-label="뒤로 이동">
                       <ArrowDown className="h-3 w-3" />
                     </button>
-                    <button type="button" onClick={() => removePhoto(i)} className="p-1 text-white" aria-label="삭제">
+                    <button type="button" onClick={() => removeOfficePhoto(i)} className="p-1 text-white" aria-label="삭제">
                       <X className="h-3 w-3" />
                     </button>
                   </div>
@@ -307,8 +490,8 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
               ))}
             </div>
           )}
-          <p className={cn('text-xs', photos.length >= MIN_PHOTOS ? 'text-brand-600' : 'text-destructive')}>
-            {photos.length}/{MIN_PHOTOS}장 이상 필요
+          <p className={cn('text-xs', officePhotos.length >= MIN_OFFICE_PHOTOS ? 'text-brand-600' : 'text-destructive')}>
+            {officePhotos.length}/{MIN_OFFICE_PHOTOS}장 이상 필요
           </p>
         </CardContent>
       </Card>
@@ -365,7 +548,7 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">④ 상세 정보</CardTitle>
+          <CardTitle className="text-base">⑤ 상세 정보</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -421,12 +604,15 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
       <Button type="submit" disabled={isPending || !canSubmit} size="lg">
         {isPending
           ? uploadProgress && uploadProgress.total > 0
-            ? `미디어 업로드 중... (${uploadProgress.done}/${uploadProgress.total})`
+            ? `업로드 중... (${uploadProgress.done}/${uploadProgress.total})`
             : '제출 중...'
-          : '⑤ 등록 신청'}
+          : '⑥ 등록 신청'}
       </Button>
       {!canSubmit && !isPending && (
-        <p className="text-center text-xs text-muted-foreground">GA/지점명/주소/한줄소개/사진 3장 이상/소개글 50자 이상을 모두 입력해주세요.</p>
+        <p className="text-center text-xs text-muted-foreground">
+          등록자 정보/GA/지점명/주소/한줄소개/필수 서류 2종/대표사진 1장/사무실사진 {MIN_OFFICE_PHOTOS}장 이상/소개글 {MIN_INTRO_LENGTH}자 이상을 모두
+          입력해주세요.
+        </p>
       )}
     </form>
   );

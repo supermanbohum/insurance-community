@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { requirePartner } from '@/lib/partner/session';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
   getBranchById,
   getBranchContacts,
@@ -20,7 +21,8 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
     notFound();
   }
 
-  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media] = await Promise.all([
+  const supabase = createServerSupabaseClient();
+  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media, pendingUpdates] = await Promise.all([
     getGaCompanyById(branch.ga_company_id),
     listRegions(),
     listInsurers(),
@@ -28,10 +30,16 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
     getBranchContacts(branch.id),
     getBranchRecruits(branch.id),
     getBranchMedia(branch.id),
+    supabase
+      .from('branch_registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('branch_id', branch.id)
+      .eq('request_type', 'update')
+      .eq('status', 'pending'),
   ]);
 
   const activeRecruit = recruits.find((r) => r.is_active) ?? null;
-  const isApproved = company?.approval_status === 'approved';
+  const hasPendingUpdate = (pendingUpdates.count ?? 0) > 0;
   const imageBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/branch-images`;
 
   return (
@@ -39,17 +47,19 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
       <div>
         <h1 className="text-xl font-bold">{branch.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {branch.status === 'hidden' ? '신규 등록 후 관리자 승인 대기 중입니다.' : '공개 중인 지점입니다.'}
+          {branch.registration_status === 'pending'
+            ? '신규 등록 후 관리자 승인 대기 중입니다.'
+            : branch.registration_status === 'rejected'
+              ? '등록이 반려되었습니다. 정보를 수정해 다시 제출해주세요.'
+              : '공개 중인 지점입니다.'}
         </p>
       </div>
 
-      {isApproved && (
-        <Card className="border-amber-300 bg-amber-50">
-          <CardContent className="pt-4 text-sm text-amber-900">
-            수정 사항은 저장 즉시 반영됩니다. 다만 지점 자체의 공개 여부는 관리자 승인 상태를 따릅니다.
-          </CardContent>
-        </Card>
-      )}
+      <Card className="border-amber-300 bg-amber-50">
+        <CardContent className="pt-4 text-sm text-amber-900">
+          이름/주소/지역/소개글/설계사수/편의시설/사진 수정은 관리자 승인 후에 반영됩니다. 연락처/취급보험사/채용정보는 저장 즉시 반영됩니다.
+        </CardContent>
+      </Card>
 
       <PartnerBranchEditForm
         branch={branch}
@@ -60,6 +70,7 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
         activeRecruit={activeRecruit}
         media={media}
         imageBaseUrl={imageBaseUrl}
+        hasPendingUpdate={hasPendingUpdate}
       />
     </div>
   );
