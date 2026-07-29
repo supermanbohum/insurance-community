@@ -4,6 +4,7 @@ import { LegalPageLayout, LegalSection, LegalList } from '@/components/legal/Leg
 export const metadata: Metadata = {
   title: '이용약관',
   description: '보험맵 서비스 이용약관',
+  alternates: { canonical: '/terms' },
 };
 
 const EFFECTIVE_DATE = '2026년 7월 29일';

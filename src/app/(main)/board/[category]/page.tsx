@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PenLine } from 'lucide-react';
@@ -7,8 +8,25 @@ import { PostCard } from '@/components/post/PostCard';
 import { CommunityTabs } from '@/components/post/CommunityTabs';
 import { Pagination } from '@/components/post/Pagination';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { Breadcrumb } from '@/components/seo/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
+  const supabase = createServerSupabaseClient();
+  const { data: category } = await supabase
+    .from('categories')
+    .select('name')
+    .eq('slug', params.category)
+    .eq('is_active', true)
+    .single();
+  if (!category) return {};
+  return {
+    title: `${category.name} 게시판`,
+    description: `보험맵 커뮤니티 ${category.name} 게시판 - 보험설계사들의 이야기를 확인하세요.`,
+    alternates: { canonical: `/board/${params.category}` },
+  };
+}
 
 export default async function BoardPage({
   params,
@@ -34,6 +52,7 @@ export default async function BoardPage({
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 lg:flex-row lg:gap-6 lg:px-6 lg:py-6">
       <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <Breadcrumb items={[{ label: '홈', href: '/' }, { label: '커뮤니티', href: '/community' }, { label: category.name }]} />
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-extrabold tracking-tight text-ink">{category.name}</h1>
           <Link

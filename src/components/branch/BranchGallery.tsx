@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Video as VideoIcon, ImageOff, Play } from 'lucide-react';
 import type { BranchMediaItem } from '@/components/branch/types';
 
@@ -11,8 +12,15 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
     <div className="flex flex-col gap-2">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-surface-sunken sm:aspect-video">
         {main ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={main.url} alt="대표사진" className="h-full w-full object-cover" />
+          main.source === 'storage' ? (
+            // Supabase Storage 호스팅 사진만 next/image로 최적화한다 - source가 external인
+            // 경우 파트너가 임의 도메인 URL을 입력할 수 있어 next.config의 remotePatterns에
+            // 없는 도메인이면 최적화 요청이 그대로 실패하므로 원본 <img>를 그대로 쓴다.
+            <Image src={main.url} alt="대표사진" fill sizes="(min-width: 640px) 672px, 100vw" className="object-cover" priority />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={main.url} alt="대표사진" className="h-full w-full object-cover" />
+          )
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-ink-faint">
             <ImageOff className="h-8 w-8" strokeWidth={1.5} />

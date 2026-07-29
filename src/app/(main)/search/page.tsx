@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Search, SearchX } from 'lucide-react';
 import { listGaFilterOptions, splitRegisteredGaIds } from '@/lib/public/ga-directory';
 import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
@@ -9,6 +10,15 @@ import { SearchFilterButton } from '@/components/search/SearchFilterSheet';
 import { SearchFilterChips, type FilterChip } from '@/components/search/SearchFilterChips';
 
 export const dynamic = 'force-dynamic';
+
+// 검색 결과는 필터 조합에 따라 같은 지점이 여러 쿼리스트링으로 중복 노출될 수 있어
+// (전형적인 faceted-search 중복 콘텐츠 문제) canonical은 항상 필터 없는 기본 /search로
+// 고정한다 - 특정 쿼리 조합 URL이 색인되어 서로 경쟁하는 것을 막는다.
+export const metadata: Metadata = {
+  title: '전국 보험대리점 검색',
+  description: '지역, GA명, 지점명으로 전국 보험대리점을 검색하세요. 채용중인 지점, 주차 가능 여부까지 필터로 찾을 수 있습니다.',
+  alternates: { canonical: '/search' },
+};
 
 const VALID_SORTS: BranchSortOption[] = ['recommended', 'newest', 'views'];
 const PLANNER_TIER_LABELS: Record<number, string> = { 30: '30명 이상', 50: '50명 이상', 100: '100명 이상', 300: '300명 이상' };

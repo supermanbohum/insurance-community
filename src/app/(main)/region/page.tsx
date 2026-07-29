@@ -1,14 +1,23 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 import { listSidoGroups } from '@/lib/public/region';
+import { Breadcrumb } from '@/components/seo/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: '지역별 보험대리점 찾기',
+  description: '시/도, 시/군/구별로 전국 보험대리점과 GA 지점을 찾아보세요.',
+  alternates: { canonical: '/region' },
+};
 
 export default async function RegionListPage() {
   const sidoList = await listSidoGroups();
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
+      <Breadcrumb items={[{ label: '홈', href: '/' }, { label: '지역별 검색' }]} />
       <div>
         <h1 className="text-lg font-bold text-gray-900">지역별 검색</h1>
         <p className="mt-0.5 text-sm text-gray-500">시/도를 선택하면 소속 지점을 볼 수 있어요.</p>

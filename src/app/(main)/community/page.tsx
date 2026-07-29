@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PenLine } from 'lucide-react';
 import { getPostListPage } from '@/lib/posts/query';
@@ -6,8 +7,15 @@ import { PostCard } from '@/components/post/PostCard';
 import { CommunityTabs } from '@/components/post/CommunityTabs';
 import { Pagination } from '@/components/post/Pagination';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { Breadcrumb } from '@/components/seo/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: '보험 커뮤니티',
+  description: '보험설계사들이 정보를 나누는 보험맵 커뮤니티. 보험이슈, 자유게시판에서 다양한 이야기를 확인하세요.',
+  alternates: { canonical: '/community' },
+};
 
 async function getCategories() {
   const supabase = createServerSupabaseClient();
@@ -30,6 +38,7 @@ export default async function HomePage({
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 lg:flex-row lg:gap-6 lg:px-6 lg:py-6">
       <div className="flex min-w-0 flex-1 flex-col gap-4">
+        <Breadcrumb items={[{ label: '홈', href: '/' }, { label: '커뮤니티' }]} />
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-extrabold tracking-tight text-ink">커뮤니티</h1>
           <Link

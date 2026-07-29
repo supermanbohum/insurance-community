@@ -1,12 +1,37 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPublicBranchDetail, recordBranchView, listPublicBranches } from '@/lib/public/branch';
 import { getCurrentUser } from '@/lib/auth/session';
 import { isBranchFavorited } from '@/lib/user/favorites';
 import { getPageLayoutConfig } from '@/lib/design/layout';
 import { BranchDetailView } from '@/components/branch/BranchDetailView';
+import { Breadcrumb } from '@/components/seo/Breadcrumb';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { localBusinessJsonLd } from '@/lib/seo/jsonld';
 import type { BranchPreviewData } from '@/components/branch/types';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const slug = decodeURIComponent(params.slug);
+  const branch = await getPublicBranchDetail(slug);
+  if (!branch) return {};
+
+  const regionLabel = branch.sigunguName ?? branch.sidoName ?? '';
+  const title = regionLabel ? `${branch.name} | ${regionLabel} 보험대리점` : branch.name;
+  const description =
+    branch.tagline ??
+    `${branch.gaCompany.name} ${branch.name} - ${branch.address}. 채용정보와 상세 안내를 보험맵에서 확인하세요.`;
+
+  // og:image는 여기서 지정하지 않는다 - 같은 디렉터리의 opengraph-image.tsx가 지점 대표
+  // 사진을 브랜드 오버레이와 합성해 자동으로 만들어준다(둘 다 설정하면 이미지가 중복 노출됨).
+  return {
+    title,
+    description,
+    alternates: { canonical: `/branch/${branch.slug}` },
+    openGraph: { title, description },
+  };
+}
 
 export default async function BranchDetailPage({ params }: { params: { slug: string } }) {
   // Next.js 14 App Router: 페이지 컴포넌트의 동적 세그먼트 params는 Route Handler와 달리
@@ -69,8 +94,35 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
       .map((s) => ({ id: s.id, slug: s.slug, name: s.name, sidoName: s.sidoName, sigunguName: s.sigunguName })),
   };
 
+  const mainPhoto = branch.media.find((m) => m.type === 'image_main')?.url ?? null;
+  const phone = branch.contacts.find((c) => c.type === 'phone')?.value ?? null;
+
   return (
     <div className="mx-auto max-w-2xl px-4 pb-28 pt-4 lg:pb-4">
+      <JsonLd
+        data={localBusinessJsonLd({
+          name: branch.name,
+          slug: branch.slug,
+          address: branch.address,
+          sidoName: branch.sidoName,
+          sigunguName: branch.sigunguName,
+          lat: branch.lat,
+          lng: branch.lng,
+          imageUrl: mainPhoto,
+          tagline: branch.tagline,
+          gaCompanyName: branch.gaCompany.name,
+          gaCompanyLogoUrl: branch.gaCompany.logoUrl,
+          phone,
+        })}
+      />
+      <Breadcrumb
+        items={[
+          { label: '홈', href: '/' },
+          ...(branch.sidoCode ? [{ label: branch.sidoName ?? '지역', href: `/region/${branch.sidoCode}` }] : []),
+          { label: branch.gaCompany.name },
+          { label: branch.name },
+        ]}
+      />
       <BranchDetailView
         data={data}
         variant="public"

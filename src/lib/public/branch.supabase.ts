@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import type { PublicBranchSummary, GaOperationType } from '@/types/database';
@@ -212,6 +213,7 @@ export interface BranchDetail {
   managerName: string | null;
   address: string;
   addressDetail: string | null;
+  sidoCode: string | null;
   sidoName: string | null;
   sigunguName: string | null;
   gaBranchCount: number;
@@ -252,7 +254,9 @@ export interface BranchDetail {
   activeRecruits: { id: string; title: string; content: string; employmentType: string | null }[];
 }
 
-export async function getPublicBranchDetail(slug: string): Promise<BranchDetail | null> {
+// generateMetadata와 페이지 컴포넌트가 같은 요청 안에서 각각 호출하므로 react cache()로
+// 요청 단위 메모이제이션한다(요청 간에는 공유되지 않음 - 오래된 데이터가 남지 않는다).
+export const getPublicBranchDetail = cache(async function getPublicBranchDetail(slug: string): Promise<BranchDetail | null> {
   const supabase = createServerSupabaseClient();
   const imageBaseUrl = getImageBaseUrl();
   const logoBaseUrl = getLogoBaseUrl();
@@ -266,7 +270,7 @@ export async function getPublicBranchDetail(slug: string): Promise<BranchDetail 
        business_hours, operation_type, is_headquarters, updated_at, organic_view_count, imported_view_count,
        correction_view_count, is_recommended,
        ga_company:ga_company_id ( id, name, logo_path, is_verified, ceo_name, description ),
-       region:region_id ( sido_name, sigungu_name )`
+       region:region_id ( sido_code, sido_name, sigungu_name )`
     )
     .eq('slug', slug)
     .single();
@@ -281,7 +285,7 @@ export async function getPublicBranchDetail(slug: string): Promise<BranchDetail 
     ceo_name: string | null;
     description: string | null;
   } | null;
-  const region = branch.region as unknown as { sido_name: string; sigungu_name: string | null } | null;
+  const region = branch.region as unknown as { sido_code: string; sido_name: string; sigungu_name: string | null } | null;
 
   const [mediaRes, contactsRes, insurerLinksRes, recruitsRes, branchCountRes] = await Promise.all([
     supabase.from('branch_media').select('id, media_type, source, value, sort_order').eq('branch_id', branch.id).order('sort_order'),
@@ -347,6 +351,7 @@ export async function getPublicBranchDetail(slug: string): Promise<BranchDetail 
     managerName: branch.manager_name,
     address: branch.address,
     addressDetail: branch.address_detail,
+    sidoCode: region?.sido_code ?? null,
     sidoName: region?.sido_name ?? null,
     sigunguName: region?.sigungu_name ?? null,
     gaBranchCount: branchCountRes.count ?? 0,
@@ -398,7 +403,7 @@ export async function getPublicBranchDetail(slug: string): Promise<BranchDetail 
       employmentType: r.employment_type,
     })),
   };
-}
+});
 
 /** 지점 상세 진입 시 조회수 집계 (record_post_view와 동일한 중복 방지 패턴). */
 export async function recordBranchView(branchId: string): Promise<void> {
@@ -461,4 +466,16 @@ export async function listMonthlyTopBranches(limit = 30): Promise<PublicBranchSu
   } catch {
     return [];
   }
+}
+
+/**
+ * sitemap.xml 전용 - listPublicBranches의 무거운 조인(ga_company/region/media/recruit/
+ * contacts) 없이 slug와 updated_at만 가볍게 조회한다. RLS로 공개 지점만 내려오는 건
+ * listPublicBranches와 동일하다.
+ */
+export async function listBranchSlugsForSitemap(): Promise<{ slug: string; updatedAt: string }[]> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await supabase.from('ga_branch').select('slug, updated_at');
+  if (error) throw error;
+  return (data ?? []).map((row) => ({ slug: row.slug as string, updatedAt: row.updated_at as string }));
 }

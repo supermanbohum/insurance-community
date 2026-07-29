@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
@@ -9,6 +10,15 @@ import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
 import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { websiteJsonLd, organizationJsonLd } from '@/lib/seo/jsonld';
+import { DEFAULT_META_DESCRIPTION } from '@/lib/seo/config';
+
+export const metadata: Metadata = {
+  title: { absolute: '보험맵 | 전국 보험대리점 정보 플랫폼' },
+  description: DEFAULT_META_DESCRIPTION,
+  alternates: { canonical: '/' },
+};
 
 // (main)/layout.tsx가 매 요청마다 getCurrentUser()로 로그인 쿠키를 읽기 때문에
 // (헤더에 로그인 상태를 정확히 보여주려면 필요) 이 레이아웃 아래 페이지는 전부
@@ -94,6 +104,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col px-4 pb-6 pt-4">
+      <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
       {HOME_SECTIONS.map((def) => (
         <ResponsiveSection
           key={def.key}

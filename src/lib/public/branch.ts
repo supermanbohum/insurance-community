@@ -7,4 +7,5 @@ export {
   recordBranchContactClick,
   getHomeStats,
   listMonthlyTopBranches,
+  listBranchSlugsForSitemap,
 } from './branch.supabase';
