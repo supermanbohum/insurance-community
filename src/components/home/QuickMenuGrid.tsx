@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 const ACTIONS = [
-  { href: '/map', emoji: '📍', label: '내 주변 찾기', tile: 'bg-blue-50' },
+  { href: '/map', emoji: '🧭', label: '내 주변 찾기', tile: 'bg-blue-50' },
   { href: '/map', emoji: '🗺️', label: '지도에서 찾기', tile: 'bg-cyan-50' },
   { href: '/region', emoji: '📍', label: '지역별 찾기', tile: 'bg-emerald-50' },
   { href: '/search', emoji: '🏢', label: '회사별 찾기', tile: 'bg-indigo-50' },

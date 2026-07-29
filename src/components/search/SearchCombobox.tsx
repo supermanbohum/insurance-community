@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Search, Clock, TrendingUp, MapPin, X } from 'lucide-react';
+import { Search, Clock, TrendingUp, MapPin, Building2, X } from 'lucide-react';
 import { getSearchSuggestionsAction, type SearchSuggestion } from '@/lib/actions/public';
 import { addRecentSearch, getRecentSearches, removeRecentSearch } from '@/lib/search/recentSearches';
 import { cn } from '@/lib/utils';
@@ -208,7 +208,7 @@ export function SearchCombobox({
           ) : (
             <div className="flex flex-col gap-0.5">
               {suggestions.map((s, i) => {
-                const Icon = MapPin;
+                const Icon = s.type === 'region' ? MapPin : Building2;
                 const content = (
                   <>
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600">

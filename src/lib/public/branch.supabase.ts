@@ -131,7 +131,22 @@ export async function listPublicBranches(options: {
   }
 
   if (options.q) {
-    query = query.ilike('name', `%${options.q}%`);
+    const q = options.q.trim();
+    // 지점명뿐 아니라 지역명("수원", "강남")/GA 회사명("메타리치")으로도 검색되게
+    // 2단계로 확장한다 - PostgREST의 or()는 조인된 테이블 컬럼을 직접 참조하지 못해서
+    // (sidoCode 필터가 이미 쓰는 것과 동일한 패턴) 먼저 매칭되는 region_id/ga_company_id를
+    // 구한 뒤 최종 쿼리의 or()에 in() 조건으로 합친다.
+    const [{ data: matchedRegions }, { data: matchedCompanies }] = await Promise.all([
+      supabase.from('regions').select('id').or(`sido_name.ilike.%${q}%,sigungu_name.ilike.%${q}%`),
+      supabase.from('ga_company').select('id').ilike('name', `%${q}%`).eq('approval_status', 'approved'),
+    ]);
+    const regionIds = (matchedRegions ?? []).map((r) => r.id);
+    const companyIds = (matchedCompanies ?? []).map((c) => c.id);
+
+    const orParts = [`name.ilike.%${q}%`, `address.ilike.%${q}%`];
+    if (regionIds.length > 0) orParts.push(`region_id.in.(${regionIds.join(',')})`);
+    if (companyIds.length > 0) orParts.push(`ga_company_id.in.(${companyIds.join(',')})`);
+    query = query.or(orParts.join(','));
   }
 
   if (options.gaCompanyIds && options.gaCompanyIds.length > 0) {
