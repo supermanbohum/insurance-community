@@ -46,8 +46,7 @@ const REGISTRANT_FIELDS = [
   { key: 'name', label: '등록자 성함' },
   { key: 'title', label: '직책' },
   { key: 'phone', label: '연락처' },
-  { key: 'company', label: '회사 소속' },
-  { key: 'branchLabel', label: '본부 또는 지점명' },
+  { key: 'branchLabel', label: '지점명' },
 ] as const;
 
 const LINK_FIELDS = [
@@ -80,13 +79,11 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
     name: '',
     title: '',
     phone: '',
-    company: '',
     branchLabel: '',
   });
   const [leaseContract, setLeaseContract] = useState<File | null>(null);
   const [businessCard, setBusinessCard] = useState<File | null>(null);
   const [gaName, setGaName] = useState('');
-  const [branchName, setBranchName] = useState('');
   const [regionId, setRegionId] = useState<string | null>(null);
   const [addressValue, setAddressValue] = useState<AddressValue>({ address: '', addressDetail: '', zonecode: '', lat: null, lng: null });
   const [tagline, setTagline] = useState('');
@@ -116,7 +113,6 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
   const registrantComplete = REGISTRANT_FIELDS.every((f) => registrant[f.key].trim());
   const canSubmit =
     gaName &&
-    branchName.trim() &&
     addressValue.address &&
     tagline.trim() &&
     introText.trim().length >= MIN_INTRO_LENGTH &&
@@ -203,9 +199,9 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
     startTransition(async () => {
       const result = await submitBranchRegistrationAction({
         gaName,
-        registrant,
+        registrant: { ...registrant, company: gaName },
         branch: {
-          name: branchName,
+          name: registrant.branchLabel,
           regionId,
           address: addressValue.address,
           addressDetail: addressValue.addressDetail,
@@ -281,6 +277,10 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
           <p className="text-xs text-muted-foreground">
             실제 지점 확인 및 허위·중복 등록 방지를 위해 등록자 정보를 입력해주세요. 관리자 승인 참고자료로만 사용됩니다.
           </p>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="onb-ga-select">소속 GA</Label>
+            <GaSelect options={gaOptions} value={gaName} onChange={setGaName} />
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {REGISTRANT_FIELDS.map((field) => (
               <div key={field.key} className="flex flex-col gap-1.5">
@@ -299,28 +299,7 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">② 소속 GA 선택</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <GaSelect options={gaOptions} value={gaName} onChange={setGaName} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">③ 지점명</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="onb-branch-name">지점명</Label>
-            <Input id="onb-branch-name" value={branchName} onChange={(e) => setBranchName(e.target.value)} required />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">④ 주소 검색</CardTitle>
+          <CardTitle className="text-base">② 주소 검색</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
@@ -548,7 +527,7 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">⑤ 상세 정보</CardTitle>
+          <CardTitle className="text-base">③ 상세 정보</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -606,11 +585,11 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
           ? uploadProgress && uploadProgress.total > 0
             ? `업로드 중... (${uploadProgress.done}/${uploadProgress.total})`
             : '제출 중...'
-          : '⑥ 등록 신청'}
+          : '④ 등록 신청'}
       </Button>
       {!canSubmit && !isPending && (
         <p className="text-center text-xs text-muted-foreground">
-          등록자 정보/GA/지점명/주소/한줄소개/필수 서류 2종/대표사진 1장/사무실사진 {MIN_OFFICE_PHOTOS}장 이상/소개글 {MIN_INTRO_LENGTH}자 이상을 모두
+          등록자 정보(소속 GA 포함)/주소/한줄소개/필수 서류 2종/대표사진 1장/사무실사진 {MIN_OFFICE_PHOTOS}장 이상/소개글 {MIN_INTRO_LENGTH}자 이상을 모두
           입력해주세요.
         </p>
       )}
