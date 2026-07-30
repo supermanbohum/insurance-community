@@ -27,9 +27,15 @@ export async function GET(request: NextRequest) {
   const provider: AuthProviderType =
     authUser.app_metadata?.provider === 'google' ? 'google' : authUser.app_metadata?.provider === 'kakao' ? 'kakao' : 'email';
 
-  const { data: existing } = await supabase.from('users').select('id').eq('auth_user_id', authUser.id).maybeSingle();
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id, provider, approval_status')
+    .eq('auth_user_id', authUser.id)
+    .maybeSingle();
 
   if (!existing) {
+    // 구글/카카오 OAuth 최초 로그인 - 일반회원(이메일) 가입은 signup_email_member RPC가
+    // signUp() 직후(이 콜백이 오기 전) 이미 행을 만들어두므로 여기로 오지 않는다.
     const meta = authUser.user_metadata ?? {};
     const nickname: string = meta.full_name || meta.name || meta.nickname || (authUser.email ? authUser.email.split('@')[0] : '보험맵 회원');
     const profileImage: string | null = meta.avatar_url || meta.picture || null;
@@ -41,6 +47,10 @@ export async function GET(request: NextRequest) {
       profile_image: profileImage,
       provider,
     });
+  } else if (existing.provider === 'email' && existing.approval_status === 'pending') {
+    // 일반회원 이메일 인증 완료 처리 - 링크를 두 번 클릭해도(이미 approved) RPC가
+    // 멱등하게 아무 일도 하지 않는다.
+    await supabase.rpc('confirm_email_signup');
   }
 
   return NextResponse.redirect(`${origin}${next}`);

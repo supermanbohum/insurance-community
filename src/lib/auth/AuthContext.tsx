@@ -13,11 +13,25 @@ function isInsideAppWebView(): boolean {
   return typeof window !== 'undefined' && Boolean((window as unknown as { ReactNativeWebView?: unknown }).ReactNativeWebView);
 }
 
+export interface SignUpInput {
+  username: string;
+  password: string;
+  name: string;
+  email: string;
+  contact: string;
+  gaCompanyId: string;
+}
+
 interface AuthContextValue {
   user: UserSession | null;
   /** 로그인 요청이 진행 중인지 (버튼 로딩 상태 표시용). */
   isPending: boolean;
   login: (provider: OAuthProvider) => Promise<{ success: boolean; error?: string }>;
+  /** 일반 회원가입 - 이메일 인증 전이라 세션이 없을 수 있다. 성공해도 로그인 상태가
+   * 되는 게 아니라 "이메일을 확인해주세요" 안내로 이어진다. */
+  signUpWithEmail: (input: SignUpInput) => Promise<{ success: boolean; error?: string }>;
+  /** 아이디 로그인 - Supabase Auth 자체는 이메일 기반이라 아이디→이메일 변환을 먼저 한다. */
+  loginWithEmail: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const UserContext = createContext<AuthContextValue | null>(null);
@@ -54,7 +68,69 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
     });
   }, []);
 
-  return <UserContext.Provider value={{ user, isPending, login }}>{children}</UserContext.Provider>;
+  const signUpWithEmail = useCallback((input: SignUpInput) => {
+    return new Promise<{ success: boolean; error?: string }>((resolve) => {
+      startTransition(async () => {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.signUp({
+          email: input.email,
+          password: input.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/my`,
+            data: { username: input.username, name: input.name, contact: input.contact, gaCompanyId: input.gaCompanyId },
+          },
+        });
+        if (error) {
+          resolve({ success: false, error: error.message.includes('already registered') ? '이미 가입된 이메일입니다.' : error.message });
+          return;
+        }
+        if (!data.user) {
+          resolve({ success: false, error: '가입 처리 중 오류가 발생했습니다.' });
+          return;
+        }
+        const { error: profileError } = await supabase.rpc('signup_email_member', {
+          p_auth_user_id: data.user.id,
+          p_username: input.username,
+          p_name: input.name,
+          p_contact: input.contact,
+          p_ga_company_id: input.gaCompanyId,
+        });
+        if (profileError) {
+          const message = profileError.message.includes('USERNAME_TAKEN')
+            ? '이미 사용 중인 아이디입니다.'
+            : profileError.message.includes('INVALID_GA_COMPANY')
+              ? '소속 GA를 다시 선택해주세요.'
+              : '가입 처리 중 오류가 발생했습니다.';
+          resolve({ success: false, error: message });
+          return;
+        }
+        resolve({ success: true });
+      });
+    });
+  }, []);
+
+  const loginWithEmail = useCallback((username: string, password: string) => {
+    return new Promise<{ success: boolean; error?: string }>((resolve) => {
+      startTransition(async () => {
+        const supabase = createClient();
+        const { data: email, error: lookupError } = await supabase.rpc('get_email_by_username', { p_username: username });
+        if (lookupError || !email) {
+          resolve({ success: false, error: '존재하지 않는 아이디입니다.' });
+          return;
+        }
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          resolve({ success: false, error: '아이디 또는 비밀번호가 일치하지 않습니다.' });
+          return;
+        }
+        resolve({ success: true });
+      });
+    });
+  }, []);
+
+  return (
+    <UserContext.Provider value={{ user, isPending, login, signUpWithEmail, loginWithEmail }}>{children}</UserContext.Provider>
+  );
 }
 
 /** Auth Hook - 현재 로그인 사용자와 로그인 액션을 제공한다. 로그아웃은 폼(action={logoutAction})으로 처리한다. */

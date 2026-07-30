@@ -1,8 +1,13 @@
 import { LogOut } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/session';
 import { logoutAction } from '@/lib/actions/user-auth';
+import { listMyGaChangeRequestsAction } from '@/lib/actions/ga-change-request';
 import { listFavoriteBranches } from '@/lib/user/favorites';
+import { listGaFilterOptions } from '@/lib/public/ga-directory';
 import { BranchCard } from '@/components/branch/BranchCard';
+import { ChangePasswordForm } from '@/components/mypage/ChangePasswordForm';
+import { ChangeContactForm } from '@/components/mypage/ChangeContactForm';
+import { GaChangeRequestForm } from '@/components/mypage/GaChangeRequestForm';
 import { avatarGradient, cn } from '@/lib/utils';
 
 const PROVIDER_LABEL: Record<string, string> = {
@@ -14,7 +19,13 @@ const PROVIDER_LABEL: Record<string, string> = {
 export default async function MyPage() {
   // my/layout.tsx가 이미 로그인 여부를 가드하므로 여기서는 항상 로그인된 상태다.
   const user = (await getCurrentUser())!;
-  const favorites = await listFavoriteBranches(user.id);
+  const [favorites, gaOptions, myGaChangeRequests] = await Promise.all([
+    listFavoriteBranches(user.id),
+    user.provider === 'email' ? listGaFilterOptions() : Promise.resolve([]),
+    user.provider === 'email' ? listMyGaChangeRequestsAction() : Promise.resolve([]),
+  ]);
+  const currentGaName = gaOptions.find((o) => o.id === user.gaCompanyId)?.name ?? null;
+  const pendingGaChangeRequest = myGaChangeRequests.find((r) => r.status === 'pending') ?? null;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6">
@@ -70,6 +81,15 @@ export default async function MyPage() {
           </div>
         )}
       </section>
+
+      {user.provider === 'email' && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-[15px] font-extrabold tracking-tight text-ink">계정 관리</h2>
+          <ChangePasswordForm />
+          <ChangeContactForm currentContact={user.contact} />
+          <GaChangeRequestForm gaOptions={gaOptions} currentGaName={currentGaName} pendingRequest={pendingGaChangeRequest} />
+        </section>
+      )}
     </div>
   );
 }

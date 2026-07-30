@@ -545,12 +545,60 @@ export interface Database {
           profile_image: string | null;
           provider: AuthProviderType;
           approval_status: 'approved' | 'pending' | 'rejected';
+          username: string | null;
+          contact: string | null;
+          ga_company_id: string | null;
+          email_verified_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: Partial<Database['public']['Tables']['users']['Row']>;
         Update: Partial<Database['public']['Tables']['users']['Row']>;
         Relationships: [];
+      };
+      user_ga_change_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          current_ga_company_id: string | null;
+          requested_ga_company_id: string;
+          status: 'pending' | 'approved' | 'rejected';
+          reviewed_by_admin_id: string | null;
+          reviewed_at: string | null;
+          review_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['user_ga_change_requests']['Row']>;
+        Update: Partial<Database['public']['Tables']['user_ga_change_requests']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'user_ga_change_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          user_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['chat_messages']['Row']>;
+        Update: Partial<Database['public']['Tables']['chat_messages']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'chat_messages_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       favorites: {
         Row: {
@@ -1267,6 +1315,68 @@ export interface Database {
       set_media_pending_registration: {
         Args: { p_media_id: string; p_registration_id: string };
         Returns: void;
+      };
+      current_member_id: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      is_full_member: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      check_username_available: {
+        Args: { p_username: string };
+        Returns: boolean;
+      };
+      get_email_by_username: {
+        Args: { p_username: string };
+        Returns: string;
+      };
+      signup_email_member: {
+        Args: {
+          p_auth_user_id: string;
+          p_username: string;
+          p_name: string;
+          p_contact: string;
+          p_ga_company_id: string;
+        };
+        Returns: Database['public']['Tables']['users']['Row'];
+      };
+      confirm_email_signup: {
+        Args: Record<string, never>;
+        Returns: void;
+      };
+      update_my_contact: {
+        Args: { p_contact: string };
+        Returns: void;
+      };
+      request_ga_change: {
+        Args: { p_ga_company_id: string };
+        Returns: string;
+      };
+      review_ga_change_request: {
+        Args: { p_request_id: string; p_decision: string; p_reason?: string | null };
+        Returns: void;
+      };
+      list_my_ga_change_requests: {
+        Args: Record<string, never>;
+        Returns: Database['public']['Tables']['user_ga_change_requests']['Row'][];
+      };
+      send_chat_message: {
+        Args: { p_body: string };
+        Returns: Database['public']['Tables']['chat_messages']['Row'];
+      };
+      list_chat_messages: {
+        Args: { p_before?: string | null; p_limit?: number };
+        Returns: { id: string; user_id: string; nickname: string; ga_company_name: string | null; body: string; created_at: string }[];
+      };
+      get_chat_message: {
+        Args: { p_message_id: string };
+        Returns: { id: string; user_id: string; nickname: string; ga_company_name: string | null; body: string; created_at: string }[];
+      };
+      get_chat_sender_labels: {
+        Args: { p_user_ids: string[] };
+        Returns: { user_id: string; nickname: string; ga_company_name: string | null }[];
       };
     };
   };

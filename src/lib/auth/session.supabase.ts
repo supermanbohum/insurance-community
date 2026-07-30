@@ -19,7 +19,7 @@ export async function getCurrentUser(): Promise<UserSession | null> {
 
   const { data } = await supabase
     .from('users')
-    .select('id, email, nickname, profile_image, provider, approval_status')
+    .select('id, email, nickname, profile_image, provider, approval_status, username, contact, email_verified_at, ga_company_id')
     .eq('auth_user_id', authUser.id)
     .maybeSingle();
 
@@ -31,6 +31,11 @@ export async function getCurrentUser(): Promise<UserSession | null> {
     nickname: data.nickname,
     profileImage: data.profile_image,
     provider: data.provider,
+    username: data.username,
+    contact: data.contact,
+    gaCompanyId: data.ga_company_id,
+    // is_full_member() SQL 헬퍼(0028)와 동일한 조건 - 한쪽만 바뀌지 않도록 주의.
+    isFullMember: data.provider === 'email' && data.email_verified_at !== null,
   };
 }
 
