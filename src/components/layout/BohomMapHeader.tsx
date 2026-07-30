@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, Award, ExternalLink } from 'lucide-react';
+import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, Award, ExternalLink, MessageCircle } from 'lucide-react';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { AnimatedHeaderBrandMark } from '@/components/brand/AnimatedHeaderBrandMark';
@@ -19,6 +19,8 @@ const MENU_GROUPS = [
       { href: '/ga', label: '인기 GA', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
       { href: '/ga', label: '신규 GA', icon: Sparkles, tile: 'bg-amber-50 text-amber-600' },
       { href: '/search?highIncome=1', label: '우리동네TOP설계사', icon: Award, tile: 'bg-amber-50 text-amber-600' },
+      // PC(lg 이상)에서는 우측에 채팅 패널이 항상 떠 있어 이 메뉴 항목이 중복이라 숨긴다.
+      { href: '/chat', label: '실시간 채팅', icon: MessageCircle, tile: 'bg-brand-50 text-brand-600', hideOnDesktop: true },
     ],
   },
   {
@@ -132,7 +134,10 @@ export function BohomMapHeader() {
                           key={item.label}
                           href={item.href}
                           onClick={() => setMenuOpen(false)}
-                          className="flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-sunken hover:text-ink"
+                          className={cn(
+                            'flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-sunken hover:text-ink',
+                            'hideOnDesktop' in item && item.hideOnDesktop && 'lg:hidden'
+                          )}
                         >
                           <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${item.tile}`}>
                             <Icon className="h-4 w-4" />
