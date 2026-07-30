@@ -60,17 +60,47 @@ export function SignupForm({ gaOptions }: { gaOptions: GaFilterOption[] }) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || !gaCompanyId) return;
 
-    signUpWithEmail({ username: username.trim(), password, name: name.trim(), email: email.trim(), contact: contact.trim(), gaCompanyId }).then(
-      (result) => {
+    // 버튼을 disabled로만 막으면 "눌러도 반응이 없다"는 인상을 주므로, 어떤 항목이
+    // 비어있는지 항상 토스트로 알려준다 - 클릭이 아무 피드백 없이 사라지지 않게 한다.
+    if (!canSubmit || !gaCompanyId) {
+      const reason =
+        username.trim().length < 3
+          ? '아이디를 3자 이상 입력해주세요.'
+          : usernameStatus === 'checking'
+            ? '아이디 중복 확인이 끝날 때까지 잠시만 기다려주세요.'
+            : usernameStatus === 'taken'
+              ? '이미 사용 중인 아이디입니다.'
+              : password.length < 8
+                ? '비밀번호를 8자 이상 입력해주세요.'
+                : !passwordsMatch
+                  ? '비밀번호가 일치하지 않습니다.'
+                  : !name.trim()
+                    ? '이름을 입력해주세요.'
+                    : !email.trim()
+                      ? '이메일을 입력해주세요.'
+                      : !contact.trim()
+                        ? '연락처를 입력해주세요.'
+                        : !gaCompanyId
+                          ? '소속 GA를 검색해서 선택해주세요.'
+                          : '입력값을 확인해주세요.';
+      toast.error(reason);
+      return;
+    }
+
+    signUpWithEmail({ username: username.trim(), password, name: name.trim(), email: email.trim(), contact: contact.trim(), gaCompanyId })
+      .then((result) => {
         if (!result.success) {
           toast.error(result.error ?? '가입에 실패했습니다.');
           return;
         }
+        toast.success('인증 메일을 발송했습니다. 이메일을 확인해주세요.');
         setSubmitted(true);
-      }
-    );
+      })
+      .catch((err) => {
+        console.error('[SignupForm] signUpWithEmail 처리 중 오류:', err);
+        toast.error('가입 처리 중 예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      });
   }
 
   if (submitted) {
@@ -139,7 +169,7 @@ export function SignupForm({ gaOptions }: { gaOptions: GaFilterOption[] }) {
         <GaSearchSelect options={gaOptions} value={gaCompanyId} onChange={setGaCompanyId} />
       </div>
 
-      <Button type="submit" disabled={isPending || !canSubmit} size="lg">
+      <Button type="submit" disabled={isPending} size="lg">
         {isPending ? '가입 처리 중...' : '회원가입'}
       </Button>
       <p className="text-center text-xs text-ink-faint">

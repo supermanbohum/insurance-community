@@ -71,40 +71,51 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
   const signUpWithEmail = useCallback((input: SignUpInput) => {
     return new Promise<{ success: boolean; error?: string }>((resolve) => {
       startTransition(async () => {
-        const supabase = createClient();
-        const { data, error } = await supabase.auth.signUp({
-          email: input.email,
-          password: input.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/my`,
-            data: { username: input.username, name: input.name, contact: input.contact, gaCompanyId: input.gaCompanyId },
-          },
-        });
-        if (error) {
-          resolve({ success: false, error: error.message.includes('already registered') ? '이미 가입된 이메일입니다.' : error.message });
-          return;
+        // signUp()/rpc() 호출이 예상치 못하게 throw하면(네트워크 오류 등) try/catch 없이는
+        // 이 Promise가 영원히 resolve되지 않아 "버튼을 눌러도 아무 반응이 없는" 것처럼
+        // 보인다 - 반드시 모든 경로에서 resolve되도록 감싼다.
+        try {
+          const supabase = createClient();
+          const { data, error } = await supabase.auth.signUp({
+            email: input.email,
+            password: input.password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=/my`,
+              data: { username: input.username, name: input.name, contact: input.contact, gaCompanyId: input.gaCompanyId },
+            },
+          });
+          if (error) {
+            console.error('[signUpWithEmail] auth.signUp 실패:', error);
+            resolve({ success: false, error: error.message.includes('already registered') ? '이미 가입된 이메일입니다.' : error.message });
+            return;
+          }
+          if (!data.user) {
+            console.error('[signUpWithEmail] signUp 응답에 user가 없음:', data);
+            resolve({ success: false, error: '가입 처리 중 오류가 발생했습니다.' });
+            return;
+          }
+          const { error: profileError } = await supabase.rpc('signup_email_member', {
+            p_auth_user_id: data.user.id,
+            p_username: input.username,
+            p_name: input.name,
+            p_contact: input.contact,
+            p_ga_company_id: input.gaCompanyId,
+          });
+          if (profileError) {
+            console.error('[signUpWithEmail] signup_email_member 실패:', profileError);
+            const message = profileError.message.includes('USERNAME_TAKEN')
+              ? '이미 사용 중인 아이디입니다.'
+              : profileError.message.includes('INVALID_GA_COMPANY')
+                ? '소속 GA를 다시 선택해주세요.'
+                : '가입 처리 중 오류가 발생했습니다.';
+            resolve({ success: false, error: message });
+            return;
+          }
+          resolve({ success: true });
+        } catch (err) {
+          console.error('[signUpWithEmail] 예상치 못한 오류:', err);
+          resolve({ success: false, error: '가입 처리 중 예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' });
         }
-        if (!data.user) {
-          resolve({ success: false, error: '가입 처리 중 오류가 발생했습니다.' });
-          return;
-        }
-        const { error: profileError } = await supabase.rpc('signup_email_member', {
-          p_auth_user_id: data.user.id,
-          p_username: input.username,
-          p_name: input.name,
-          p_contact: input.contact,
-          p_ga_company_id: input.gaCompanyId,
-        });
-        if (profileError) {
-          const message = profileError.message.includes('USERNAME_TAKEN')
-            ? '이미 사용 중인 아이디입니다.'
-            : profileError.message.includes('INVALID_GA_COMPANY')
-              ? '소속 GA를 다시 선택해주세요.'
-              : '가입 처리 중 오류가 발생했습니다.';
-          resolve({ success: false, error: message });
-          return;
-        }
-        resolve({ success: true });
       });
     });
   }, []);
@@ -112,18 +123,25 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
   const loginWithEmail = useCallback((username: string, password: string) => {
     return new Promise<{ success: boolean; error?: string }>((resolve) => {
       startTransition(async () => {
-        const supabase = createClient();
-        const { data: email, error: lookupError } = await supabase.rpc('get_email_by_username', { p_username: username });
-        if (lookupError || !email) {
-          resolve({ success: false, error: '존재하지 않는 아이디입니다.' });
-          return;
+        try {
+          const supabase = createClient();
+          const { data: email, error: lookupError } = await supabase.rpc('get_email_by_username', { p_username: username });
+          if (lookupError || !email) {
+            console.error('[loginWithEmail] get_email_by_username 실패:', lookupError);
+            resolve({ success: false, error: '존재하지 않는 아이디입니다.' });
+            return;
+          }
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) {
+            console.error('[loginWithEmail] signInWithPassword 실패:', error);
+            resolve({ success: false, error: '아이디 또는 비밀번호가 일치하지 않습니다.' });
+            return;
+          }
+          resolve({ success: true });
+        } catch (err) {
+          console.error('[loginWithEmail] 예상치 못한 오류:', err);
+          resolve({ success: false, error: '로그인 중 예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' });
         }
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          resolve({ success: false, error: '아이디 또는 비밀번호가 일치하지 않습니다.' });
-          return;
-        }
-        resolve({ success: true });
       });
     });
   }, []);
