@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, ExternalLink } from 'lucide-react';
+import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, Award, ExternalLink } from 'lucide-react';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { AnimatedHeaderBrandMark } from '@/components/brand/AnimatedHeaderBrandMark';
@@ -18,12 +18,13 @@ const MENU_GROUPS = [
       { href: '/ga', label: 'GA별', icon: Building2, tile: 'bg-indigo-50 text-indigo-600' },
       { href: '/ga', label: '인기 GA', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
       { href: '/ga', label: '신규 GA', icon: Sparkles, tile: 'bg-amber-50 text-amber-600' },
+      { href: '/search?highIncome=1', label: '우리동네TOP설계사', icon: Award, tile: 'bg-amber-50 text-amber-600' },
     ],
   },
   {
     label: '채용 · 이벤트',
     items: [
-      { href: '/jobs', label: '채용', icon: Briefcase, tile: 'bg-emerald-50 text-emerald-600' },
+      { href: '/jobs', label: '우리회사자랑', icon: Briefcase, tile: 'bg-emerald-50 text-emerald-600' },
       { href: '/events', label: '이벤트', icon: CalendarDays, tile: 'bg-violet-50 text-violet-600' },
     ],
   },
