@@ -3,6 +3,7 @@ import { Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
 import { SITE_CONFIG } from '@/lib/config/site';
 import { SITE_URL, DEFAULT_META_DESCRIPTION, getVerificationMeta } from '@/lib/seo/config';
+import { Toaster } from '@/components/ui/sonner';
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ['latin'],
@@ -51,6 +52,8 @@ const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.en
  * <head>의 preconnect는 metadata API가 다루지 않는 영역이라 직접 렌더링한다 - 지점
  * 사진/로고를 나르는 Supabase Storage와 지도 페이지의 네이버 지도 타일 서버를
  * 미리 연결해 초기 이미지/지도 로딩 지연을 줄인다.
+ * Toaster(sonner)는 모든 라우트(공개/파트너/관리자)가 공유하므로 여기 한 곳에만 마운트한다 -
+ * 하위 레이아웃에 각자 또 마운트하면 토스트가 중복 렌더링된다.
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -65,7 +68,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://oapi.map.naver.com" />
         <link rel="preconnect" href="https://nrbe.pstatic.net" crossOrigin="" />
       </head>
-      <body className="min-h-screen bg-surface font-sans text-ink antialiased">{children}</body>
+      <body className="min-h-screen bg-surface font-sans text-ink antialiased">
+        {children}
+        <Toaster position="top-center" />
+      </body>
     </html>
   );
 }

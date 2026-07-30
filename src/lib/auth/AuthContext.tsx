@@ -75,6 +75,7 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
         // 이 Promise가 영원히 resolve되지 않아 "버튼을 눌러도 아무 반응이 없는" 것처럼
         // 보인다 - 반드시 모든 경로에서 resolve되도록 감싼다.
         try {
+          console.log('[signUpWithEmail] 진입, supabase.auth.signUp 호출 직전', { email: input.email, username: input.username });
           const supabase = createClient();
           const { data, error } = await supabase.auth.signUp({
             email: input.email,
@@ -84,6 +85,7 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
               data: { username: input.username, name: input.name, contact: input.contact, gaCompanyId: input.gaCompanyId },
             },
           });
+          console.log('[signUpWithEmail] supabase.auth.signUp 호출 직후', { hasUser: !!data?.user, error });
           if (error) {
             console.error('[signUpWithEmail] auth.signUp 실패:', error);
             resolve({ success: false, error: error.message.includes('already registered') ? '이미 가입된 이메일입니다.' : error.message });
