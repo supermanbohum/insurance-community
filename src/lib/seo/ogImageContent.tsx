@@ -35,7 +35,7 @@ export function DefaultOgImage() {
             color: 'white',
           }}
         >
-          <BrandMark width={48} height={48} strokeWidth={2} />
+          <BrandMark width={48} height={48} />
         </div>
         <span style={{ fontSize: 80, fontWeight: 800, color: 'white', letterSpacing: -2 }}>{SITE_CONFIG.englishName}</span>
       </div>
@@ -75,7 +75,7 @@ export function BranchOgImage({ photoUrl }: { photoUrl: string | null }) {
             color: 'white',
           }}
         >
-          <BrandMark width={24} height={24} strokeWidth={2.2} />
+          <BrandMark width={24} height={24} />
         </div>
         <span style={{ fontSize: 30, fontWeight: 800, color: 'white' }}>{SITE_CONFIG.englishName}</span>
       </div>

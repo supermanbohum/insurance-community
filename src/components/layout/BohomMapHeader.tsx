@@ -107,7 +107,7 @@ export function BohomMapHeader() {
               <div className="mb-5 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white">
-                    <BrandMark className="h-4 w-4" strokeWidth={2.25} />
+                    <BrandMark className="h-4 w-4" />
                   </span>
                   <span className="text-base font-extrabold text-ink">보험맵</span>
                 </span>

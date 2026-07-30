@@ -27,7 +27,7 @@ export default async function Icon() {
           color: 'white',
         }}
       >
-        <BrandMark width={20} height={20} strokeWidth={2.4} />
+        <BrandMark width={20} height={20} />
       </div>
     ),
     { ...size, fonts }

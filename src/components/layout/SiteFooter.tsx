@@ -30,7 +30,7 @@ export function SiteFooter() {
         <div className="flex flex-col gap-4">
           <Link href="/" className="flex items-center gap-1.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white ring-1 ring-white/15">
-              <BrandMark className="h-4 w-4" strokeWidth={2.25} />
+              <BrandMark className="h-4 w-4" />
             </span>
             <span className="text-lg font-extrabold tracking-tight text-white">보험맵</span>
           </Link>
