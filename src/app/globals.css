@@ -44,7 +44,9 @@ body {
   .animate-brand-pin,
   .animate-brand-shield,
   .animate-brand-people,
-  .animate-brand-text {
+  .animate-brand-text,
+  .animate-fade-in,
+  .animate-popup-in {
     animation: none;
   }
 }

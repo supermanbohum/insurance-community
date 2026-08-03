@@ -131,6 +131,10 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateX(-10px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        'popup-in': {
+          '0%': { opacity: '0', transform: 'scale(0.95) translateY(6px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
@@ -142,6 +146,7 @@ const config: Config = {
         'brand-shield': 'brand-shield 0.3s ease-out 0.22s both',
         'brand-people': 'brand-people 0.25s ease-out 0.42s both',
         'brand-text': 'brand-text 0.35s ease-out 0.5s both',
+        'popup-in': 'popup-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both',
       },
     },
   },
