@@ -13,6 +13,38 @@ function isInsideAppWebView(): boolean {
   return typeof window !== 'undefined' && Boolean((window as unknown as { ReactNativeWebView?: unknown }).ReactNativeWebView);
 }
 
+/** Error 인스턴스는 JSON.stringify하면 {}가 되므로 own property를 직접 뽑아 안전하게 직렬화한다. */
+function safeStringify(value: unknown): string {
+  if (value === null || value === undefined) return String(value);
+  try {
+    if (value instanceof Error) {
+      const plain: Record<string, unknown> = { name: value.name, message: value.message, stack: value.stack };
+      for (const key of Object.keys(value)) plain[key] = (value as unknown as Record<string, unknown>)[key];
+      return JSON.stringify(plain);
+    }
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+/** Supabase AuthError/PostgrestError/일반 Error/알 수 없는 값 모두에서 message/code/status/details/hint를 뽑아
+ * 사람이 읽을 수 있는 한 줄로 만든다 - 원인 진단을 위해 절대 이 정보를 숨기거나 뭉뚱그리지 않는다. */
+function describeError(err: unknown): string {
+  if (err && typeof err === 'object') {
+    const e = err as Record<string, unknown>;
+    const parts: string[] = [];
+    if (e.message) parts.push(`message="${String(e.message)}"`);
+    if (e.code !== undefined) parts.push(`code=${String(e.code)}`);
+    if (e.status !== undefined) parts.push(`status=${String(e.status)}`);
+    if (e.details) parts.push(`details="${String(e.details)}"`);
+    if (e.hint) parts.push(`hint="${String(e.hint)}"`);
+    if (e.name) parts.push(`name=${String(e.name)}`);
+    if (parts.length > 0) return `${parts.join(', ')} | raw=${safeStringify(err)}`;
+  }
+  return `raw=${safeStringify(err)}`;
+}
+
 export interface SignUpInput {
   username: string;
   password: string;
@@ -74,6 +106,10 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
         // signUp()/rpc() 호출이 예상치 못하게 throw하면(네트워크 오류 등) try/catch 없이는
         // 이 Promise가 영원히 resolve되지 않아 "버튼을 눌러도 아무 반응이 없는" 것처럼
         // 보인다 - 반드시 모든 경로에서 resolve되도록 감싼다.
+        //
+        // 원인 진단 단계라 친절한 한국어 메시지로 감싸지 않고, message/code/status/details/hint와
+        // 전체 raw 객체를 그대로 error 문자열에 실어 토스트+콘솔에 노출한다 - 원인을 못 찾고
+        // "가입 처리 중 오류가 발생했습니다" 같은 뭉뚱그린 메시지만 반복하지 않기 위함이다.
         try {
           console.log('[signUpWithEmail] 진입, supabase.auth.signUp 호출 직전', { email: input.email, username: input.username });
           const supabase = createClient();
@@ -85,38 +121,48 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
               data: { username: input.username, name: input.name, contact: input.contact, gaCompanyId: input.gaCompanyId },
             },
           });
-          console.log('[signUpWithEmail] supabase.auth.signUp 호출 직후', { hasUser: !!data?.user, error });
+          console.log('[signUpWithEmail] supabase.auth.signUp 호출 직후 - 전체 응답:', {
+            data: safeStringify(data),
+            error: safeStringify(error),
+          });
           if (error) {
-            console.error('[signUpWithEmail] auth.signUp 실패:', error);
-            resolve({ success: false, error: error.message.includes('already registered') ? '이미 가입된 이메일입니다.' : error.message });
+            const detail = describeError(error);
+            console.error('[signUpWithEmail] auth.signUp 실패 - 전체 에러 객체:', error, detail);
+            resolve({ success: false, error: `[auth.signUp] ${detail}` });
             return;
           }
           if (!data.user) {
-            console.error('[signUpWithEmail] signUp 응답에 user가 없음:', data);
-            resolve({ success: false, error: '가입 처리 중 오류가 발생했습니다.' });
+            console.error('[signUpWithEmail] signUp 응답에 user가 없음 - 전체 응답:', data);
+            resolve({ success: false, error: `[auth.signUp] user 없음. 응답: ${safeStringify(data)}` });
             return;
           }
-          const { error: profileError } = await supabase.rpc('signup_email_member', {
+          console.log('[signUpWithEmail] signup_email_member RPC 호출 직전', {
+            p_auth_user_id: data.user.id,
+            p_username: input.username,
+            p_ga_company_id: input.gaCompanyId,
+          });
+          const { data: profileData, error: profileError } = await supabase.rpc('signup_email_member', {
             p_auth_user_id: data.user.id,
             p_username: input.username,
             p_name: input.name,
             p_contact: input.contact,
             p_ga_company_id: input.gaCompanyId,
           });
+          console.log('[signUpWithEmail] signup_email_member RPC 호출 직후 - 전체 응답:', {
+            data: safeStringify(profileData),
+            error: safeStringify(profileError),
+          });
           if (profileError) {
-            console.error('[signUpWithEmail] signup_email_member 실패:', profileError);
-            const message = profileError.message.includes('USERNAME_TAKEN')
-              ? '이미 사용 중인 아이디입니다.'
-              : profileError.message.includes('INVALID_GA_COMPANY')
-                ? '소속 GA를 다시 선택해주세요.'
-                : '가입 처리 중 오류가 발생했습니다.';
-            resolve({ success: false, error: message });
+            const detail = describeError(profileError);
+            console.error('[signUpWithEmail] signup_email_member 실패 - 전체 에러 객체:', profileError, detail);
+            resolve({ success: false, error: `[signup_email_member] ${detail}` });
             return;
           }
           resolve({ success: true });
         } catch (err) {
-          console.error('[signUpWithEmail] 예상치 못한 오류:', err);
-          resolve({ success: false, error: '가입 처리 중 예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' });
+          const detail = describeError(err);
+          console.error('[signUpWithEmail] 예상치 못한 예외 - 전체 객체:', err, detail);
+          resolve({ success: false, error: `[예외] ${detail}` });
         }
       });
     });
