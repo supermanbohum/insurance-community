@@ -36,6 +36,9 @@ export async function GET(request: NextRequest) {
       console.error('[auth/callback] confirm_email_signup 실패:', confirmError);
       return NextResponse.redirect(`${origin}/login?error=confirm_failed`);
     }
+    // 인증 직후 바로 next로 넘기지 않고, "인증 완료" 안내 화면을 한 번 보여준 뒤
+    // 그 화면에서 next로 이동시킨다(사용자가 방금 무슨 일이 일어났는지 알 수 있게).
+    return NextResponse.redirect(`${origin}/auth/verified?next=${encodeURIComponent(next)}`);
   } else {
     // 구글/카카오 OAuth 최초 로그인 - 이미 프로필이 있으면(재로그인) 아무 것도 하지 않는다.
     const { data: existing } = await supabase
