@@ -193,6 +193,32 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['site_settings']['Row']>;
         Relationships: [];
       };
+      event_popups: {
+        Row: {
+          id: string;
+          is_active: boolean;
+          start_at: string | null;
+          end_at: string | null;
+          eyebrow: string;
+          headline: string;
+          offer_label: string;
+          old_price: string;
+          badge: string;
+          highlight: string;
+          highlight_suffix: string;
+          description: string;
+          features: string[];
+          footnote: string;
+          cta_label: string;
+          cta_href: string;
+          updated_by_admin_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['event_popups']['Row']>;
+        Update: Partial<Database['public']['Tables']['event_popups']['Row']>;
+        Relationships: [];
+      };
       post_images: {
         Row: {
           id: string;

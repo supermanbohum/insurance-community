@@ -5,6 +5,7 @@ import { SITE_CONFIG } from '@/lib/config/site';
 import { SITE_URL, DEFAULT_META_DESCRIPTION, getVerificationMeta } from '@/lib/seo/config';
 import { Toaster } from '@/components/ui/sonner';
 import { EventPopup } from '@/components/layout/EventPopup';
+import { getActiveEventPopup } from '@/lib/admin/event-popup';
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ['latin'],
@@ -57,7 +58,9 @@ const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.en
  * 하위 레이아웃에 각자 또 마운트하면 토스트가 중복 렌더링된다.
  * EventPopup도 같은 이유로 여기 한 곳에만 마운트한다(사이트 전체 최초 방문자 대상).
  */
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const eventPopup = await getActiveEventPopup();
+
   return (
     <html lang="ko" className={notoSansKr.variable}>
       <head>
@@ -73,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-surface font-sans text-ink antialiased">
         {children}
         <Toaster position="top-center" />
-        <EventPopup />
+        <EventPopup config={eventPopup} />
       </body>
     </html>
   );
