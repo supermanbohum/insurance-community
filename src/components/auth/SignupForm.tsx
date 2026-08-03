@@ -59,7 +59,6 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
     gaCompanyId;
 
   function handleSubmit(e: React.FormEvent) {
-    console.log('[SignupForm] handleSubmit 호출됨', { canSubmit, gaCompanyId, usernameStatus });
     e.preventDefault();
 
     // 버튼을 disabled로만 막으면 "눌러도 반응이 없다"는 인상을 주므로, 어떤 항목이
@@ -89,10 +88,8 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
       return;
     }
 
-    console.log('[SignupForm] signUpWithEmail 호출 직전');
     signUpWithEmail({ username: username.trim(), password, name: name.trim(), email: email.trim(), contact: contact.trim(), gaCompanyId, next })
       .then((result) => {
-        console.log('[SignupForm] signUpWithEmail 결과:', result);
         if (!result.success) {
           toast.error(result.error ?? '가입에 실패했습니다.');
           return;

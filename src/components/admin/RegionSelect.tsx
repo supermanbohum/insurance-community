@@ -27,7 +27,10 @@ export function RegionSelect({
   }, [regions]);
 
   const sigunguList = useMemo(
-    () => regions.filter((r) => r.sido_code === sidoCode && r.sigungu_code),
+    () =>
+      regions
+        .filter((r) => r.sido_code === sidoCode && r.sigungu_code)
+        .sort((a, b) => a.sigungu_name!.localeCompare(b.sigungu_name!, 'ko')),
     [regions, sidoCode]
   );
 

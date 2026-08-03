@@ -108,13 +108,9 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
       startTransition(async () => {
         // signUp()/rpc() 호출이 예상치 못하게 throw하면(네트워크 오류 등) try/catch 없이는
         // 이 Promise가 영원히 resolve되지 않아 "버튼을 눌러도 아무 반응이 없는" 것처럼
-        // 보인다 - 반드시 모든 경로에서 resolve되도록 감싼다.
-        //
-        // 원인 진단 단계라 친절한 한국어 메시지로 감싸지 않고, message/code/status/details/hint와
-        // 전체 raw 객체를 그대로 error 문자열에 실어 토스트+콘솔에 노출한다 - 원인을 못 찾고
-        // "가입 처리 중 오류가 발생했습니다" 같은 뭉뚱그린 메시지만 반복하지 않기 위함이다.
+        // 보인다 - 반드시 모든 경로에서 resolve되도록 감싼다. 실패 시 message/code/status
+        // 등을 뭉뚱그리지 않고 그대로 노출해 향후 문제 발생 시 원인을 바로 알 수 있게 한다.
         try {
-          console.log('[signUpWithEmail] 진입, supabase.auth.signUp 호출 직전', { email: input.email, username: input.username });
           const supabase = createClient();
           const { data, error } = await supabase.auth.signUp({
             email: input.email,
@@ -123,10 +119,6 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
               emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(input.next ?? '/my')}`,
               data: { username: input.username, name: input.name, contact: input.contact, gaCompanyId: input.gaCompanyId },
             },
-          });
-          console.log('[signUpWithEmail] supabase.auth.signUp 호출 직후 - 전체 응답:', {
-            data: safeStringify(data),
-            error: safeStringify(error),
           });
           if (error) {
             const detail = describeError(error);

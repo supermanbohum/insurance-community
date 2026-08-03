@@ -1,13 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Check, Search } from 'lucide-react';
 import type { GaFilterOption } from '@/lib/public/ga-directory';
 import { cn } from '@/lib/utils';
 
-/** 일반회원 가입/마이페이지의 "소속 GA 선택(검색형)" - 파트너용 GaSelect.tsx(평범한
- * 드롭다운)와 달리 텍스트로 필터링되는 콤보박스다. 회사 수가 늘어도 부담 없도록
- * 이미 로드된 옵션 목록을 클라이언트에서 필터링만 한다(별도 API 호출 없음). */
+/** 소속 GA 선택(검색형) - 회원가입/마이페이지/지점등록 전체가 공유하는 검색+자동완성
+ * 콤보박스다. 회사 수가 늘어도 부담 없도록 이미 로드된 옵션 목록을 클라이언트에서
+ * 필터링만 한다(별도 API 호출 없음). 마우스 클릭은 물론 방향키 이동 + Enter 선택도
+ * 지원해 목록이 길어져도 키보드만으로 빠르게 고를 수 있다. */
 export function GaSearchSelect({
   options,
   value,
@@ -21,6 +22,9 @@ export function GaSearchSelect({
 }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
 
   const selected = useMemo(() => options.find((o) => o.id === value) ?? null, [options, value]);
   const filtered = useMemo(() => {
@@ -28,6 +32,45 @@ export function GaSearchSelect({
     if (!q) return options.slice(0, 30);
     return options.filter((o) => o.name.includes(q)).slice(0, 30);
   }, [options, query]);
+
+  // 검색어가 바뀌어 목록이 달라지면 하이라이트를 항상 첫 항목으로 되돌린다.
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [filtered]);
+
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-index="${highlightedIndex}"]`);
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [highlightedIndex, open]);
+
+  function selectOption(opt: GaFilterOption) {
+    onChange(opt.id);
+    setOpen(false);
+    setQuery('');
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      setOpen(true);
+      return;
+    }
+    if (!open) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.min(i + 1, filtered.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const opt = filtered[highlightedIndex];
+      if (opt) selectOption(opt);
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  }
 
   return (
     <div className="relative">
@@ -44,28 +87,34 @@ export function GaSearchSelect({
             setOpen(true);
           }}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
+          role="combobox"
+          aria-expanded={open}
+          aria-autocomplete="list"
+          aria-controls={listboxId}
           className="flex h-10 w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm"
         />
       </div>
       {open && (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-10 max-h-64 overflow-y-auto rounded-xl border border-line bg-white p-1.5 shadow-card-hover">
+        <div id={listboxId} ref={listRef} role="listbox" className="absolute left-0 right-0 top-[calc(100%+6px)] z-10 max-h-64 overflow-y-auto rounded-xl border border-line bg-white p-1.5 shadow-card-hover">
           {filtered.length === 0 ? (
             <p className="px-3 py-3 text-center text-xs text-ink-faint">일치하는 GA가 없습니다.</p>
           ) : (
-            filtered.map((opt) => (
+            filtered.map((opt, index) => (
               <button
                 key={opt.id}
                 type="button"
+                data-index={index}
+                onMouseEnter={() => setHighlightedIndex(index)}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  onChange(opt.id);
-                  setOpen(false);
-                  setQuery('');
+                  selectOption(opt);
                 }}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-sunken',
+                  'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm',
+                  index === highlightedIndex ? 'bg-surface-sunken' : 'hover:bg-surface-sunken',
                   opt.id === value && 'bg-brand-50 text-brand-700'
                 )}
               >

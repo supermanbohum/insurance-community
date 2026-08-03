@@ -14,7 +14,7 @@ import {
 import type { RegionRow } from '@/lib/admin/branch';
 import type { GaFilterOption } from '@/lib/public/ga-directory';
 import { RegionSelect } from '@/components/admin/RegionSelect';
-import { GaSelect } from '@/components/partner/GaSelect';
+import { GaSearchSelect } from '@/components/auth/GaSearchSelect';
 import { AddressSearchField, type AddressValue } from '@/components/admin/AddressSearchField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,7 +83,8 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
   });
   const [leaseContract, setLeaseContract] = useState<File | null>(null);
   const [businessCard, setBusinessCard] = useState<File | null>(null);
-  const [gaName, setGaName] = useState('');
+  const [gaCompanyId, setGaCompanyId] = useState<string | null>(null);
+  const gaName = gaOptions.find((g) => g.id === gaCompanyId)?.name ?? '';
   const [regionId, setRegionId] = useState<string | null>(null);
   const [addressValue, setAddressValue] = useState<AddressValue>({ address: '', addressDetail: '', zonecode: '', lat: null, lng: null });
   const [tagline, setTagline] = useState('');
@@ -279,7 +280,7 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
           </p>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="onb-ga-select">소속 GA</Label>
-            <GaSelect options={gaOptions} value={gaName} onChange={setGaName} />
+            <GaSearchSelect options={gaOptions} value={gaCompanyId} onChange={setGaCompanyId} placeholder="소속 GA를 검색하세요" />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {REGISTRANT_FIELDS.map((field) => (

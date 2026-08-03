@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
 import { useChatMessages } from '@/lib/chat/useChatMessages';
 import { ChatMessageItem } from './ChatMessageItem';
+import { ChatDateDivider, toKstDateKey } from './ChatDateDivider';
 import { ChatComposer } from './ChatComposer';
 import type { UserSession } from '@/lib/auth/types';
 import { cn } from '@/lib/utils';
@@ -74,7 +75,16 @@ export function ChatPanel({ currentUser, variant }: { currentUser: UserSession |
             {messages.length === 0 ? (
               <p className="py-8 text-center text-xs text-ink-faint">아직 메시지가 없습니다. 첫 메시지를 남겨보세요.</p>
             ) : (
-              messages.map((m) => <ChatMessageItem key={m.id} message={m} isOwn={m.userId === currentUser?.id} />)
+              messages.map((m, i) => {
+                const dateKey = toKstDateKey(m.createdAt);
+                const prevDateKey = i > 0 ? toKstDateKey(messages[i - 1].createdAt) : null;
+                return (
+                  <div key={m.id} className="flex flex-col gap-3">
+                    {dateKey !== prevDateKey && <ChatDateDivider dateKey={dateKey} />}
+                    <ChatMessageItem message={m} isOwn={m.userId === currentUser?.id} />
+                  </div>
+                );
+              })
             )}
           </>
         )}

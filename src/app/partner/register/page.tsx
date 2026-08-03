@@ -6,6 +6,7 @@ import { listRegions } from '@/lib/admin/branch';
 import { listGaFilterOptions } from '@/lib/public/ga-directory';
 import { OnboardingForm } from '@/components/partner/OnboardingForm';
 import { PartnerStepIndicator } from '@/components/partner/PartnerStepIndicator';
+import { BackButton } from '@/components/shared/BackButton';
 
 /**
  * 지점 등록 진입점 - 별도의 파트너 전용 회원가입/로그인을 다시 받지 않고, 홈페이지의
@@ -34,6 +35,7 @@ export default async function PartnerRegisterPage() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 px-4 py-10">
+      <BackButton />
       <PartnerStepIndicator status="onboarding" />
       <div>
         <h1 className="text-xl font-bold">지점 등록 신청</h1>
