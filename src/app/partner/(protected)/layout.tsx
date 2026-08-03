@@ -6,7 +6,7 @@ import { PartnerShell } from '@/components/partner/PartnerShell';
 export default async function PartnerProtectedLayout({ children }: { children: React.ReactNode }) {
   const partner = await requirePartner();
   if (!partner.ga_company_id) {
-    redirect('/partner/onboarding');
+    redirect('/partner/register');
   }
 
   const company = await getGaCompanyById(partner.ga_company_id);

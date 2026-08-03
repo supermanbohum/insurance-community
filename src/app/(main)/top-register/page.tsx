@@ -1,13 +1,20 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth/session';
 import { TopPlannerApplicationForm } from '@/components/planners/TopPlannerApplicationForm';
 
 export const metadata: Metadata = {
   title: 'TOP설계사 등록',
-  description: '고소득 설계사 인증을 신청하세요. 로그인 없이 본인 지점을 검색해 바로 신청할 수 있습니다.',
+  description: '고소득 설계사 인증을 신청하세요. 본인 지점을 검색해 바로 신청할 수 있습니다.',
   alternates: { canonical: '/top-register' },
 };
 
-export default function TopRegisterPage() {
+export default async function TopRegisterPage() {
+  const user = await getCurrentUser();
+  if (!user?.isFullMember) {
+    redirect('/login?next=/top-register');
+  }
+
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <div>

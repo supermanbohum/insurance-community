@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken';
 
-export function SignupForm({ gaOptions }: { gaOptions: GaFilterOption[] }) {
+export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOption[]; next?: string }) {
   const { signUpWithEmail, isPending } = useAuth();
   const [submitted, setSubmitted] = useState(false);
 
@@ -90,7 +90,7 @@ export function SignupForm({ gaOptions }: { gaOptions: GaFilterOption[] }) {
     }
 
     console.log('[SignupForm] signUpWithEmail 호출 직전');
-    signUpWithEmail({ username: username.trim(), password, name: name.trim(), email: email.trim(), contact: contact.trim(), gaCompanyId })
+    signUpWithEmail({ username: username.trim(), password, name: name.trim(), email: email.trim(), contact: contact.trim(), gaCompanyId, next })
       .then((result) => {
         console.log('[SignupForm] signUpWithEmail 결과:', result);
         if (!result.success) {
@@ -116,7 +116,7 @@ export function SignupForm({ gaOptions }: { gaOptions: GaFilterOption[] }) {
         <p className="text-xs text-ink-faint">
           {email}로 인증 메일을 보내드렸습니다. 메일의 인증 링크를 클릭하면 가입이 완료됩니다.
         </p>
-        <Link href="/login" className="text-xs font-semibold text-brand-600 hover:underline">
+        <Link href={`/login?next=${encodeURIComponent(next)}`} className="text-xs font-semibold text-brand-600 hover:underline">
           로그인 화면으로
         </Link>
       </div>
@@ -176,7 +176,7 @@ export function SignupForm({ gaOptions }: { gaOptions: GaFilterOption[] }) {
         {isPending ? '가입 처리 중...' : '회원가입'}
       </Button>
       <p className="text-center text-xs text-ink-faint">
-        이미 계정이 있으신가요? <Link href="/login" className="font-semibold text-brand-600 hover:underline">로그인</Link>
+        이미 계정이 있으신가요? <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-semibold text-brand-600 hover:underline">로그인</Link>
       </p>
     </form>
   );

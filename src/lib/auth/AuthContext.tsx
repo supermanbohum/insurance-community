@@ -52,13 +52,15 @@ export interface SignUpInput {
   email: string;
   contact: string;
   gaCompanyId: string;
+  /** 이메일 인증 완료 후 돌아갈 경로 (예: /partner/register). 기본값은 /my. */
+  next?: string;
 }
 
 interface AuthContextValue {
   user: UserSession | null;
   /** 로그인 요청이 진행 중인지 (버튼 로딩 상태 표시용). */
   isPending: boolean;
-  login: (provider: OAuthProvider) => Promise<{ success: boolean; error?: string }>;
+  login: (provider: OAuthProvider, next?: string) => Promise<{ success: boolean; error?: string }>;
   /** 일반 회원가입 - 이메일 인증 전이라 세션이 없을 수 있다. 성공해도 로그인 상태가
    * 되는 게 아니라 "이메일을 확인해주세요" 안내로 이어진다. */
   signUpWithEmail: (input: SignUpInput) => Promise<{ success: boolean; error?: string }>;
@@ -80,14 +82,15 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
     setUser(initialUser);
   }, [initialUser]);
 
-  const login = useCallback((provider: OAuthProvider) => {
+  const login = useCallback((provider: OAuthProvider, next?: string) => {
     return new Promise<{ success: boolean; error?: string }>((resolve) => {
       startTransition(async () => {
         const supabase = createClient();
         // 앱(APK) WebView 안에서는 https 콜백으로 보내면 구글 로그인이 외부 Chrome에서 끝나고
         // 앱으로 돌아오지 못한다. 커스텀 스킴으로 보내면 네이티브 쪽(App.tsx)이 그 리다이렉트를
         // 가로채 WebBrowser.openAuthSessionAsync로 처리한 뒤 앱 내부로 결과를 되돌려준다.
-        const redirectTo = isInsideAppWebView() ? APP_OAUTH_RETURN_URL : `${window.location.origin}/auth/callback`;
+        const nextParam = next ? `?next=${encodeURIComponent(next)}` : '';
+        const redirectTo = isInsideAppWebView() ? APP_OAUTH_RETURN_URL : `${window.location.origin}/auth/callback${nextParam}`;
         const { error } = await supabase.auth.signInWithOAuth({
           provider,
           options: { redirectTo },
@@ -117,7 +120,7 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
             email: input.email,
             password: input.password,
             options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback?next=/my`,
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(input.next ?? '/my')}`,
               data: { username: input.username, name: input.name, contact: input.contact, gaCompanyId: input.gaCompanyId },
             },
           });

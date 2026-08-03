@@ -30,11 +30,12 @@ export async function getCurrentPartner(): Promise<PartnerSession | null> {
   return data ?? null;
 }
 
-/** /partner/(protected) 진입 가드. 로그인 안 되어 있으면 로그인 화면으로 리다이렉트. */
+/** /partner/(protected) 진입 가드. 파트너 전용 로그인은 더 이상 없으므로 - 로그인
+ * 안 되어 있으면 홈페이지의 일반 회원 로그인으로 보낸다. */
 export async function requirePartner(): Promise<PartnerSession> {
   const partner = await getCurrentPartner();
   if (!partner) {
-    redirect('/partner/login');
+    redirect('/login');
   }
   return partner;
 }

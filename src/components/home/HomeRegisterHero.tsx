@@ -12,7 +12,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { 
   return (
     <div className="flex flex-col gap-3">
       <Link
-        href="/partner/signup"
+        href="/partner/register"
         className="group relative flex animate-breathe items-center justify-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 to-brand-700 py-7 shadow-pop transition-shadow hover:shadow-card-hover active:scale-[0.99]"
       >
         <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-white/10" />

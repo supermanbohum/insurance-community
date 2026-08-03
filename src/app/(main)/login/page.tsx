@@ -3,10 +3,12 @@ import { getCurrentUser } from '@/lib/auth/session';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { BrandMark } from '@/components/brand/BrandMark';
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: { next?: string } }) {
   const user = await getCurrentUser();
+  // next는 "/"로 시작하는 내부 경로만 허용한다 - 외부 URL을 넘기는 오픈 리다이렉트를 막기 위함.
+  const next = searchParams.next && searchParams.next.startsWith('/') ? searchParams.next : '/my';
   if (user) {
-    redirect('/my');
+    redirect(next);
   }
 
   return (
@@ -20,7 +22,7 @@ export default async function LoginPage() {
       </div>
 
       <div className="w-full max-w-sm">
-        <LoginForm />
+        <LoginForm next={next} />
       </div>
     </div>
   );

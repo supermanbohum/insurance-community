@@ -7,7 +7,7 @@ import { PartnerStatusBadge } from '@/components/partner/PartnerStatusBadge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { logoutPartnerAction } from '@/lib/actions/partner-auth';
+import { logoutAction } from '@/lib/actions/user-auth';
 import type { GaApprovalStatus } from '@/types/database';
 
 export function PartnerShell({
@@ -71,7 +71,7 @@ function PartnerAccountFooter({ partnerName }: { partnerName: string }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{partnerName}</p>
       </div>
-      <form action={logoutPartnerAction}>
+      <form action={logoutAction}>
         <Button type="submit" variant="ghost" size="sm">
           로그아웃
         </Button>

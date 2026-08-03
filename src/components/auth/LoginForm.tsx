@@ -9,14 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function LoginForm() {
+export function LoginForm({ next = '/my' }: { next?: string }) {
   const router = useRouter();
   const { login, loginWithEmail, isPending } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   async function handleGoogleLogin() {
-    const result = await login('google');
+    const result = await login('google', next);
     if (!result.success) {
       toast.error(result.error ?? '로그인하지 못했습니다.');
     }
@@ -31,7 +31,7 @@ export function LoginForm() {
       toast.error(result.error ?? '로그인하지 못했습니다.');
       return;
     }
-    router.push('/my');
+    router.push(next);
     router.refresh();
   }
 
@@ -53,7 +53,7 @@ export function LoginForm() {
 
       <p className="text-center text-xs text-ink-faint">
         아직 계정이 없으신가요?{' '}
-        <Link href="/signup" className="font-semibold text-brand-600 hover:underline">
+        <Link href={`/signup?next=${encodeURIComponent(next)}`} className="font-semibold text-brand-600 hover:underline">
           일반 회원가입
         </Link>
       </p>

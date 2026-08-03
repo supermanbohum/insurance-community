@@ -4,10 +4,12 @@ import { listGaFilterOptions } from '@/lib/public/ga-directory';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { BrandMark } from '@/components/brand/BrandMark';
 
-export default async function SignupPage() {
+export default async function SignupPage({ searchParams }: { searchParams: { next?: string } }) {
   const user = await getCurrentUser();
+  // next는 "/"로 시작하는 내부 경로만 허용한다 - 외부 URL을 넘기는 오픈 리다이렉트를 막기 위함.
+  const next = searchParams.next && searchParams.next.startsWith('/') ? searchParams.next : '/my';
   if (user) {
-    redirect('/my');
+    redirect(next);
   }
 
   const gaOptions = await listGaFilterOptions();
@@ -23,7 +25,7 @@ export default async function SignupPage() {
       </div>
 
       <div className="w-full max-w-sm">
-        <SignupForm gaOptions={gaOptions} />
+        <SignupForm gaOptions={gaOptions} next={next} />
       </div>
     </div>
   );
