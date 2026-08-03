@@ -136,28 +136,12 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
             resolve({ success: false, error: `[auth.signUp] user 없음. 응답: ${safeStringify(data)}` });
             return;
           }
-          console.log('[signUpWithEmail] signup_email_member RPC 호출 직전', {
-            p_auth_user_id: data.user.id,
-            p_username: input.username,
-            p_ga_company_id: input.gaCompanyId,
-          });
-          const { data: profileData, error: profileError } = await supabase.rpc('signup_email_member', {
-            p_auth_user_id: data.user.id,
-            p_username: input.username,
-            p_name: input.name,
-            p_contact: input.contact,
-            p_ga_company_id: input.gaCompanyId,
-          });
-          console.log('[signUpWithEmail] signup_email_member RPC 호출 직후 - 전체 응답:', {
-            data: safeStringify(profileData),
-            error: safeStringify(profileError),
-          });
-          if (profileError) {
-            const detail = describeError(profileError);
-            console.error('[signUpWithEmail] signup_email_member 실패 - 전체 에러 객체:', profileError, detail);
-            resolve({ success: false, error: `[signup_email_member] ${detail}` });
-            return;
-          }
+          // 프로필(public.users) 생성은 여기서 하지 않는다 - 세션이 없는 상태라 auth.uid()를
+          // 쓸 수 없어 클라이언트가 넘긴 auth_user_id를 신뢰해야 했고, 그 구조 자체가
+          // INVALID_AUTH_USER 오류의 원인이었다. username/name/contact/gaCompanyId는 이미
+          // options.data로 auth.users.raw_user_meta_data에 저장됐으므로, 이메일 인증 완료로
+          // 실제 세션이 생기는 시점(/auth/callback → confirm_email_signup)에 그때의
+          // auth.uid()로 프로필을 만든다 - 그 시점엔 auth.users 존재가 항상 보장된다.
           resolve({ success: true });
         } catch (err) {
           const detail = describeError(err);

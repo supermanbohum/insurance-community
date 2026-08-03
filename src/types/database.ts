@@ -1332,19 +1332,9 @@ export interface Database {
         Args: { p_username: string };
         Returns: string;
       };
-      signup_email_member: {
-        Args: {
-          p_auth_user_id: string;
-          p_username: string;
-          p_name: string;
-          p_contact: string;
-          p_ga_company_id: string;
-        };
-        Returns: Database['public']['Tables']['users']['Row'];
-      };
       confirm_email_signup: {
         Args: Record<string, never>;
-        Returns: void;
+        Returns: Database['public']['Tables']['users']['Row'];
       };
       update_my_contact: {
         Args: { p_contact: string };

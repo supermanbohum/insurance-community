@@ -27,30 +27,36 @@ export async function GET(request: NextRequest) {
   const provider: AuthProviderType =
     authUser.app_metadata?.provider === 'google' ? 'google' : authUser.app_metadata?.provider === 'kakao' ? 'kakao' : 'email';
 
-  const { data: existing } = await supabase
-    .from('users')
-    .select('id, provider, approval_status')
-    .eq('auth_user_id', authUser.id)
-    .maybeSingle();
+  if (provider === 'email') {
+    // 일반회원(이메일) 가입 - 프로필(public.users) 생성 자체를 이 시점(실제 세션이 있어
+    // auth.uid()가 유효함이 보장되는 시점)으로 미뤘다. 최초 인증 링크 클릭이면 프로필을
+    // 새로 만들고, 이미 만들어진 뒤 링크를 두 번 클릭한 거면 멱등하게 기존 행을 반환한다.
+    const { error: confirmError } = await supabase.rpc('confirm_email_signup');
+    if (confirmError) {
+      console.error('[auth/callback] confirm_email_signup 실패:', confirmError);
+      return NextResponse.redirect(`${origin}/login?error=confirm_failed`);
+    }
+  } else {
+    // 구글/카카오 OAuth 최초 로그인 - 이미 프로필이 있으면(재로그인) 아무 것도 하지 않는다.
+    const { data: existing } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_user_id', authUser.id)
+      .maybeSingle();
 
-  if (!existing) {
-    // 구글/카카오 OAuth 최초 로그인 - 일반회원(이메일) 가입은 signup_email_member RPC가
-    // signUp() 직후(이 콜백이 오기 전) 이미 행을 만들어두므로 여기로 오지 않는다.
-    const meta = authUser.user_metadata ?? {};
-    const nickname: string = meta.full_name || meta.name || meta.nickname || (authUser.email ? authUser.email.split('@')[0] : '보험맵 회원');
-    const profileImage: string | null = meta.avatar_url || meta.picture || null;
+    if (!existing) {
+      const meta = authUser.user_metadata ?? {};
+      const nickname: string = meta.full_name || meta.name || meta.nickname || (authUser.email ? authUser.email.split('@')[0] : '보험맵 회원');
+      const profileImage: string | null = meta.avatar_url || meta.picture || null;
 
-    await supabase.from('users').insert({
-      auth_user_id: authUser.id,
-      email: authUser.email ?? null,
-      nickname,
-      profile_image: profileImage,
-      provider,
-    });
-  } else if (existing.provider === 'email' && existing.approval_status === 'pending') {
-    // 일반회원 이메일 인증 완료 처리 - 링크를 두 번 클릭해도(이미 approved) RPC가
-    // 멱등하게 아무 일도 하지 않는다.
-    await supabase.rpc('confirm_email_signup');
+      await supabase.from('users').insert({
+        auth_user_id: authUser.id,
+        email: authUser.email ?? null,
+        nickname,
+        profile_image: profileImage,
+        provider,
+      });
+    }
   }
 
   return NextResponse.redirect(`${origin}${next}`);
