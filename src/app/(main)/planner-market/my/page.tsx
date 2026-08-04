@@ -34,16 +34,15 @@ export default async function PlannerMarketMyPage() {
     );
   }
 
-  const [{ data: badgeRows }, { data: statsRows }, unreadNotificationCount] = await Promise.all([
+  const [{ data: badgeRows }, { data: allBadgeTypes }, { data: statsRows }, unreadNotificationCount] = await Promise.all([
     supabase.from('planner_badges').select('*').eq('planner_profile_id', profile.id),
+    supabase.from('planner_badge_types').select('code, label, icon, description, requires_document, self_applicable, sort_order').order('sort_order'),
     supabase.rpc('get_my_planner_market_profile_stats'),
     countMyUnreadPlannerContactNotifications(),
   ]);
 
-  const badgeCodes = (badgeRows ?? []).map((b) => b.badge_type_code);
-  const { data: badgeTypes } =
-    badgeCodes.length > 0 ? await supabase.from('planner_badge_types').select('code, label, icon, sort_order').in('code', badgeCodes) : { data: [] };
-  const typeByCode = new Map((badgeTypes ?? []).map((t) => [t.code, t]));
+  const typeByCode = new Map((allBadgeTypes ?? []).map((t) => [t.code, t]));
+  const badgeRowByCode = new Map((badgeRows ?? []).map((b) => [b.badge_type_code, b]));
 
   const approvedBadges: PlannerBadgeSummary[] = (badgeRows ?? [])
     .filter((b) => b.status === 'approved')
@@ -52,8 +51,17 @@ export default async function PlannerMarketMyPage() {
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((t) => ({ code: t.code, label: t.label, icon: t.icon }));
 
-  const incomeBadge = (badgeRows ?? []).find((b) => b.badge_type_code === 'income_verified');
-  const showIncomeBadgeForm = profile.status === 'approved' && incomeBadge?.status !== 'pending_review' && incomeBadge?.status !== 'approved';
+  // 서류 첨부가 필요한 자가신청 배지(연봉인증/MDRT/COT/TOT 등) - 새 배지 종류가
+  // planner_badge_types에 추가돼도 이 화면은 코드 변경 없이 그대로 대응한다.
+  const selfApplicableDocBadges = (allBadgeTypes ?? []).filter((t) => t.requires_document && t.self_applicable);
+  const pendingDocBadges = selfApplicableDocBadges.filter((t) => badgeRowByCode.get(t.code)?.status === 'pending_review');
+  const applicableDocBadges =
+    profile.status === 'approved'
+      ? selfApplicableDocBadges.filter((t) => {
+          const status = badgeRowByCode.get(t.code)?.status;
+          return status !== 'pending_review' && status !== 'approved';
+        })
+      : [];
   const stats = statsRows?.[0];
 
   return (
@@ -94,11 +102,22 @@ export default async function PlannerMarketMyPage() {
         }}
       />
 
-      {incomeBadge?.status === 'pending_review' && (
-        <p className="rounded-2xl border border-line bg-amber-50 p-4 text-sm text-amber-700">🏅 연봉 인증 배지 심사 중입니다.</p>
-      )}
+      {pendingDocBadges.map((t) => (
+        <p key={t.code} className="rounded-2xl border border-line bg-amber-50 p-4 text-sm text-amber-700">
+          {t.icon} {t.label} 배지 심사 중입니다.
+        </p>
+      ))}
 
-      {showIncomeBadgeForm && <PlannerIncomeBadgeUploadForm plannerProfileId={profile.id} />}
+      {applicableDocBadges.map((t) => (
+        <PlannerIncomeBadgeUploadForm
+          key={t.code}
+          plannerProfileId={profile.id}
+          badgeTypeCode={t.code}
+          icon={t.icon}
+          label={t.label}
+          description={t.description ?? ''}
+        />
+      ))}
     </div>
   );
 }
