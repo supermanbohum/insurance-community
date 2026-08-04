@@ -5,13 +5,14 @@ const ACTIONS = [
   { href: '/map', emoji: '🗺️', label: '지도에서 찾기', tile: 'bg-cyan-50' },
   { href: '/region', emoji: '📍', label: '지역별 찾기', tile: 'bg-emerald-50' },
   { href: '/search', emoji: '🏢', label: '회사별 찾기', tile: 'bg-indigo-50' },
+  { href: '/planner-market/search', emoji: '🧑‍💼', label: '설계사 찾기', tile: 'bg-violet-50' },
 ];
 
-/** 홈 화면 진입점을 이 4개로 단순화한다 - 지도 미리보기/지역별·회사별 바로가기
- * 섹션은 없애고, 그 진입 기능을 전부 여기로 모았다. */
+/** 홈 화면 진입점을 이 5개로 단순화한다 - 지도 미리보기/지역별·회사별/설계사
+ * 바로가기 섹션은 없애고, 그 진입 기능을 전부 여기로 모았다. */
 export function QuickMenuGrid() {
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
       {ACTIONS.map((action) => (
         <Link
           key={action.label}

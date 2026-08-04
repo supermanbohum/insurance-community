@@ -1,0 +1,273 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { requireUser } from '@/lib/auth/session';
+
+export type ActionResult = { success: true } | { success: false; error: string };
+export type UploadResult = { success: true; path: string } | { success: false; error: string };
+
+export interface PlannerMarketProfileInput {
+  name: string;
+  phone: string;
+  email: string;
+  kakaoId?: string;
+  profilePhotoPath?: string | null;
+  activeRegionId: string;
+  careerYears: number;
+  specialties: string[];
+  insurerIds: string[];
+  currentlyEmployed: boolean;
+  openToMove: boolean;
+  selfIntroduction?: string;
+  desiredRegionId?: string | null;
+  desiredGaCompanyId?: string | null;
+  desiredConditions?: string;
+}
+
+function validateProfileInput(input: PlannerMarketProfileInput): string | null {
+  if (!input.name.trim() || !input.phone.trim() || !input.email.trim()) {
+    return '이름, 연락처, 이메일을 입력해주세요.';
+  }
+  if (!input.activeRegionId) {
+    return '활동지역을 선택해주세요.';
+  }
+  return null;
+}
+
+const IMAGE_MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+/** 프로필 사진 업로드 - 공개 버킷(planner-market-profile-photos). 등록/수정 폼에서
+ * 먼저 호출해 경로를 받아온 뒤, submit/update 액션에 profilePhotoPath로 전달한다. */
+export async function uploadPlannerMarketPhotoAction(formData: FormData): Promise<UploadResult> {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: '사진 파일을 선택해주세요.' };
+  }
+  const extension = IMAGE_MIME_EXTENSIONS[file.type];
+  if (!extension) {
+    return { success: false, error: 'jpg, png, webp 형식만 업로드할 수 있습니다.' };
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return { success: false, error: '이미지는 최대 5MB까지 업로드할 수 있습니다.' };
+  }
+
+  const user = await requireUser();
+  const supabase = createServerSupabaseClient();
+  const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage
+    .from('planner-market-profile-photos')
+    .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
+  if (error) {
+    return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  return { success: true, path };
+}
+
+/** 설계사 등록 - 일반회원(이메일 인증 완료)만 가능. 동의 5종은 항상 모두 true로만
+ * 제출할 수 있다(체크박스 UI가 강제, RPC도 다시 검증). */
+export async function submitPlannerMarketProfileAction(
+  input: PlannerMarketProfileInput,
+  consents: {
+    contactPaidView: boolean;
+    recruitContact: boolean;
+    privacyPolicy: boolean;
+    thirdPartyShare: boolean;
+    withdrawalNotice: boolean;
+  }
+): Promise<ActionResult> {
+  const validationError = validateProfileInput(input);
+  if (validationError) {
+    return { success: false, error: validationError };
+  }
+  if (
+    !consents.contactPaidView ||
+    !consents.recruitContact ||
+    !consents.privacyPolicy ||
+    !consents.thirdPartyShare ||
+    !consents.withdrawalNotice
+  ) {
+    return { success: false, error: '모든 필수 동의 항목에 체크해주세요.' };
+  }
+
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('submit_planner_market_profile', {
+    p_name: input.name.trim(),
+    p_phone: input.phone.trim(),
+    p_email: input.email.trim(),
+    p_active_region_id: input.activeRegionId,
+    p_career_years: input.careerYears,
+    p_specialties: input.specialties,
+    p_insurer_ids: input.insurerIds,
+    p_currently_employed: input.currentlyEmployed,
+    p_open_to_move: input.openToMove,
+    p_consent_contact_paid_view: consents.contactPaidView,
+    p_consent_recruit_contact: consents.recruitContact,
+    p_consent_privacy_policy: consents.privacyPolicy,
+    p_consent_third_party_share: consents.thirdPartyShare,
+    p_consent_withdrawal_notice: consents.withdrawalNotice,
+    p_kakao_id: input.kakaoId?.trim() || null,
+    p_profile_photo_path: input.profilePhotoPath ?? null,
+    p_self_introduction: input.selfIntroduction?.trim() || null,
+    p_desired_region_id: input.desiredRegionId ?? null,
+    p_desired_ga_company_id: input.desiredGaCompanyId ?? null,
+    p_desired_conditions: input.desiredConditions?.trim() || null,
+  });
+
+  if (error) {
+    const message = error.message.includes('PROFILE_ALREADY_EXISTS')
+      ? '이미 등록된 설계사 정보가 있습니다.'
+      : error.message.includes('CONSENT_REQUIRED')
+        ? '모든 필수 동의 항목에 체크해주세요.'
+        : '등록에 실패했습니다. 잠시 후 다시 시도해주세요.';
+    return { success: false, error: message };
+  }
+
+  revalidatePath('/planner-market');
+  revalidatePath('/planner-market/my');
+  revalidatePath('/admin/planner-market');
+  return { success: true };
+}
+
+/** 설계사 정보 수정 - 소유자만 가능. 저장 즉시 재심사 대기 상태로 돌아간다. */
+export async function updatePlannerMarketProfileAction(
+  plannerProfileId: string,
+  input: PlannerMarketProfileInput
+): Promise<ActionResult> {
+  const validationError = validateProfileInput(input);
+  if (validationError) {
+    return { success: false, error: validationError };
+  }
+
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('update_planner_market_profile', {
+    p_planner_profile_id: plannerProfileId,
+    p_name: input.name.trim(),
+    p_phone: input.phone.trim(),
+    p_email: input.email.trim(),
+    p_active_region_id: input.activeRegionId,
+    p_career_years: input.careerYears,
+    p_specialties: input.specialties,
+    p_insurer_ids: input.insurerIds,
+    p_currently_employed: input.currentlyEmployed,
+    p_open_to_move: input.openToMove,
+    p_kakao_id: input.kakaoId?.trim() || null,
+    p_profile_photo_path: input.profilePhotoPath ?? null,
+    p_self_introduction: input.selfIntroduction?.trim() || null,
+    p_desired_region_id: input.desiredRegionId ?? null,
+    p_desired_ga_company_id: input.desiredGaCompanyId ?? null,
+    p_desired_conditions: input.desiredConditions?.trim() || null,
+  });
+
+  if (error) {
+    return { success: false, error: '저장하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  revalidatePath('/planner-market');
+  revalidatePath('/planner-market/my');
+  revalidatePath('/admin/planner-market');
+  return { success: true };
+}
+
+/** 프로필 비공개/재공개 토글 - "설계사 찾기" 목록/상세에서 즉시 반영된다. */
+export async function setPlannerProfileHiddenAction(plannerProfileId: string, hidden: boolean): Promise<ActionResult> {
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('set_planner_profile_hidden', {
+    p_planner_profile_id: plannerProfileId,
+    p_hidden: hidden,
+  });
+  if (error) {
+    return { success: false, error: '처리하지 못했습니다.' };
+  }
+  revalidatePath('/planner-market/my');
+  revalidatePath('/planner-market');
+  return { success: true };
+}
+
+/** 등록 해지 - 되돌릴 수 없는 것처럼 보이지만, 이후 재등록은 가능하다(행 자체는
+ * 감사기록으로 남고 withdrawn_at만 채워짐). */
+export async function withdrawPlannerProfileAction(plannerProfileId: string): Promise<ActionResult> {
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('withdraw_planner_profile', { p_planner_profile_id: plannerProfileId });
+  if (error) {
+    return { success: false, error: '처리하지 못했습니다.' };
+  }
+  revalidatePath('/planner-market/my');
+  revalidatePath('/planner-market');
+  return { success: true };
+}
+
+/** 개인정보 제공 철회 - 등록 해지와 별개로, 앞으로 어떤 GA도 연락처를 새로 볼 수 없게
+ * 막는다(이미 열람한 GA도 다음 조회부터 CONTACT_SHARING_REVOKED로 막힘). */
+export async function revokePlannerContactSharingAction(plannerProfileId: string): Promise<ActionResult> {
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('revoke_planner_contact_sharing', { p_planner_profile_id: plannerProfileId });
+  if (error) {
+    return { success: false, error: '처리하지 못했습니다.' };
+  }
+  revalidatePath('/planner-market/my');
+  return { success: true };
+}
+
+const DOC_MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'application/pdf': 'pdf',
+};
+
+/** 인증 설계사 배지 신청 - 소득증빙 서류 업로드 + RPC 호출을 한 번에 처리한다.
+ * TOP설계사의 submitPlannerCertificationAction과 모양만 같고 완전히 별개 경로다. */
+export async function submitPlannerMarketCertificationAction(
+  plannerProfileId: string,
+  formData: FormData
+): Promise<ActionResult> {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: '소득증빙 서류를 선택해주세요.' };
+  }
+  const extension = DOC_MIME_EXTENSIONS[file.type];
+  if (!extension) {
+    return { success: false, error: 'jpg, png, webp, pdf 형식만 업로드할 수 있습니다.' };
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    return { success: false, error: '파일은 최대 10MB까지 업로드할 수 있습니다.' };
+  }
+
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const path = `${plannerProfileId}/${crypto.randomUUID()}.${extension}`;
+  const { error: uploadError } = await supabase.storage
+    .from('planner-market-income-docs')
+    .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
+  if (uploadError) {
+    return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  const { error } = await supabase.rpc('submit_planner_market_certification', {
+    p_planner_profile_id: plannerProfileId,
+    p_income_doc_path: path,
+  });
+  if (error) {
+    await createAdminClient().storage.from('planner-market-income-docs').remove([path]);
+    const message = error.message.includes('CERTIFICATION_ALREADY_PENDING')
+      ? '이미 심사 대기 중인 신청이 있습니다.'
+      : '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';
+    return { success: false, error: message };
+  }
+
+  revalidatePath('/planner-market/my');
+  revalidatePath('/admin/planner-market/certifications');
+  return { success: true };
+}

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import type { PaymentProvider, ChargeRequest, ChargeResult, RegisterPaymentMethodInput } from './types';
+import type { PaymentProvider, ChargeRequest, ChargeResult, OneTimeChargeRequest, RegisterPaymentMethodInput } from './types';
 
 /**
  * PG 계약 전까지 쓰는 기본 프로바이더 - 항상 성공 처리한다. subscriptions/
@@ -11,6 +11,13 @@ export class StubPaymentProvider implements PaymentProvider {
   readonly name = 'stub';
 
   async chargeRecurring(req: ChargeRequest): Promise<ChargeResult> {
+    return {
+      succeeded: true,
+      providerTransactionRef: `stub_${randomUUID()}`,
+    };
+  }
+
+  async chargeOnce(req: OneTimeChargeRequest): Promise<ChargeResult> {
     return {
       succeeded: true,
       providerTransactionRef: `stub_${randomUUID()}`,

@@ -1,0 +1,76 @@
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import { BadgeCheck, User } from 'lucide-react';
+import { getPublicPlannerProfile } from '@/lib/public/planner-market.supabase';
+import { PlannerContactUnlockButton } from '@/components/planner-market/PlannerContactUnlockButton';
+import { BackButton } from '@/components/shared/BackButton';
+import { avatarGradient } from '@/lib/utils';
+
+/** 설계사 상세(공개정보) - 누구나 열람 가능. 연락처는 PlannerContactUnlockButton을 통해서만. */
+export default async function PlannerMarketDetailPage({ params }: { params: { plannerId: string } }) {
+  const planner = await getPublicPlannerProfile(params.plannerId);
+  if (!planner) notFound();
+
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
+      <BackButton />
+
+      <div className="flex items-start gap-4">
+        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-surface-sunken">
+          {planner.profilePhotoUrl ? (
+            <Image src={planner.profilePhotoUrl} alt="프로필 사진" fill sizes="96px" className="object-cover" />
+          ) : (
+            <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br text-white/85 ${avatarGradient(planner.id)}`}>
+              <User className="h-9 w-9" strokeWidth={1.5} />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          {planner.badgeTier && (
+            <span className="flex w-fit items-center gap-1 rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white">
+              <BadgeCheck className="h-3 w-3" />
+              인증 설계사
+            </span>
+          )}
+          <h1 className="text-lg font-bold">{planner.activeRegionLabel || '지역 미상'} · 경력 {planner.careerYears}년</h1>
+          {planner.specialties.length > 0 && <p className="text-sm text-ink-soft">{planner.specialties.join(', ')}</p>}
+        </div>
+      </div>
+
+      <PlannerContactUnlockButton plannerProfileId={planner.id} />
+
+      {planner.selfIntroduction && (
+        <section className="rounded-2xl border border-line p-4">
+          <h2 className="mb-2 text-sm font-bold">자기소개</h2>
+          <p className="whitespace-pre-line text-sm text-ink-soft">{planner.selfIntroduction}</p>
+        </section>
+      )}
+
+      <section className="rounded-2xl border border-line p-4">
+        <h2 className="mb-3 text-sm font-bold">프로필 정보</h2>
+        <dl className="grid grid-cols-2 gap-3 text-sm">
+          <InfoItem label="현재 근무 여부" value={planner.currentlyEmployed ? '재직중' : '미재직'} />
+          <InfoItem label="이직 가능 여부" value={planner.openToMove ? '가능' : '불가'} />
+          <InfoItem label="취급 보험사" value={planner.insurerNames.length > 0 ? planner.insurerNames.join(', ') : '-'} />
+          <InfoItem label="희망 근무지역" value={planner.desiredRegionLabel ?? '-'} />
+          <InfoItem label="희망 GA" value={planner.desiredGaCompanyName ?? '-'} />
+        </dl>
+        {planner.desiredConditions && (
+          <div className="mt-3 border-t pt-3">
+            <p className="mb-1 text-xs text-muted-foreground">희망 조건</p>
+            <p className="whitespace-pre-line text-sm">{planner.desiredConditions}</p>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function InfoItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="font-medium">{value}</dd>
+    </div>
+  );
+}

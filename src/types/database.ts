@@ -42,12 +42,31 @@ export type PlannerIncomeTier = 'tier_1' | 'tier_2' | 'tier_3';
 export type PlannerCertificationStatus = 'pending_review' | 'approved' | 'rejected' | 'pending_renewal';
 export type PlannerCertificationHistoryEventType = 'initial_approval' | 'renewal_approval' | 'rejection';
 export type PlannerApplicationSource = 'partner' | 'public';
-export type VerificationDocumentOwnerType = 'planner_certification';
-export type VerificationDocumentType = 'withholding_tax_certificate';
+export type VerificationDocumentOwnerType = 'planner_certification' | 'planner_market_certification';
+export type VerificationDocumentType = 'withholding_tax_certificate' | 'income_proof';
 export type SubscriptionSubjectType = 'branch_listing' | 'planner_addon';
 export type SubscriptionPlanCode = 'branch_standard' | 'branch_early_bird' | 'planner_addon';
 export type SubscriptionStatus = 'active' | 'past_due' | 'grace_period' | 'suspended' | 'canceled';
 export type PaymentTransactionStatus = 'succeeded' | 'failed' | 'refunded';
+
+/** 설계사 마켓(0034~0036) - TOP설계사(planner_certifications)와는 완전히 별개인 시스템. */
+export type PlannerProfileStatus = 'pending_review' | 'approved' | 'rejected';
+export type PlannerMarketCertificationTier = 'verified';
+export type PlannerMarketCertificationStatus = 'pending_review' | 'approved' | 'rejected';
+export type CreditPurchaseTierCode = 'credits_1' | 'credits_10' | 'credits_30' | 'credits_50' | 'credits_100';
+export type CreditPurchaseStatus = 'paid' | 'refunded' | 'failed';
+
+/** 지점 광고 상품(0037) - 설계사 마켓과 완전히 독립된 두 번째 수익 스트림. */
+export type AdProductType =
+  | 'featured_branch'
+  | 'main_banner'
+  | 'region_top_pin'
+  | 'search_top'
+  | 'new_open_badge'
+  | 'top_exposure'
+  | 'event_banner';
+export type BranchAdProductStatus = 'pending_review' | 'approved' | 'rejected' | 'expired' | 'canceled';
+export type AdPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export interface Database {
   public: {
@@ -833,6 +852,166 @@ export interface Database {
           },
         ];
       };
+      planner_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          profile_photo_path: string | null;
+          active_region_id: string;
+          career_years: number;
+          specialties: string[];
+          self_introduction: string | null;
+          currently_employed: boolean;
+          open_to_move: boolean;
+          desired_region_id: string | null;
+          desired_ga_company_id: string | null;
+          desired_conditions: string | null;
+          name: string;
+          phone: string;
+          email: string;
+          kakao_id: string | null;
+          status: PlannerProfileStatus;
+          reviewed_by_admin_id: string | null;
+          reviewed_at: string | null;
+          review_reason: string | null;
+          is_hidden: boolean;
+          withdrawn_at: string | null;
+          contact_sharing_revoked_at: string | null;
+          consent_contact_paid_view: boolean;
+          consent_recruit_contact: boolean;
+          consent_privacy_policy: boolean;
+          consent_third_party_share: boolean;
+          consent_withdrawal_notice: boolean;
+          consent_agreed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_profiles']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_profiles']['Row']>;
+        Relationships: [];
+      };
+      planner_profile_insurers: {
+        Row: {
+          planner_profile_id: string;
+          insurer_id: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_profile_insurers']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_profile_insurers']['Row']>;
+        Relationships: [];
+      };
+      planner_market_certifications: {
+        Row: {
+          id: string;
+          planner_profile_id: string;
+          tier: PlannerMarketCertificationTier;
+          status: PlannerMarketCertificationStatus;
+          approved_by_admin_id: string | null;
+          approved_at: string | null;
+          review_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_market_certifications']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_market_certifications']['Row']>;
+        Relationships: [];
+      };
+      planner_market_credit_purchases: {
+        Row: {
+          id: string;
+          ga_company_id: string;
+          purchased_by_ga_admin_id: string;
+          tier_code: CreditPurchaseTierCode;
+          credit_count: number;
+          unit_price_krw: number;
+          amount_krw: number;
+          status: CreditPurchaseStatus;
+          payment_method: string | null;
+          provider_transaction_ref: string | null;
+          refunded_by_admin_id: string | null;
+          refunded_at: string | null;
+          refund_reason: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_market_credit_purchases']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_market_credit_purchases']['Row']>;
+        Relationships: [];
+      };
+      planner_market_credit_balances: {
+        Row: {
+          ga_company_id: string;
+          balance: number;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_market_credit_balances']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_market_credit_balances']['Row']>;
+        Relationships: [];
+      };
+      planner_market_credit_unlocks: {
+        Row: {
+          id: string;
+          ga_company_id: string;
+          planner_profile_id: string;
+          unlocked_by_ga_admin_id: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_market_credit_unlocks']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_market_credit_unlocks']['Row']>;
+        Relationships: [];
+      };
+      planner_market_credit_adjustments: {
+        Row: {
+          id: string;
+          ga_company_id: string;
+          delta: number;
+          reason: string;
+          adjusted_by_admin_id: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_market_credit_adjustments']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_market_credit_adjustments']['Row']>;
+        Relationships: [];
+      };
+      ad_payments: {
+        Row: {
+          id: string;
+          buyer_id: string;
+          product_type: AdProductType;
+          amount: number;
+          vat: number;
+          total_amount: number;
+          payment_method: string | null;
+          pg_tid: string | null;
+          status: AdPaymentStatus;
+          paid_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['ad_payments']['Row']>;
+        Update: Partial<Database['public']['Tables']['ad_payments']['Row']>;
+        Relationships: [];
+      };
+      branch_ad_products: {
+        Row: {
+          id: string;
+          branch_id: string;
+          product_type: AdProductType;
+          start_at: string;
+          end_at: string;
+          status: BranchAdProductStatus;
+          payment_id: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['branch_ad_products']['Row']>;
+        Update: Partial<Database['public']['Tables']['branch_ad_products']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'branch_ad_products_branch_id_fkey';
+            columns: ['branch_id'];
+            isOneToOne: false;
+            referencedRelation: 'ga_branch';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       public_banners: {
@@ -843,6 +1022,25 @@ export interface Database {
           link_url: string;
           slot: string;
           priority: number;
+        };
+        Relationships: [];
+      };
+      public_planner_profiles: {
+        Row: {
+          id: string;
+          profile_photo_path: string | null;
+          active_region_id: string;
+          career_years: number;
+          specialties: string[];
+          self_introduction: string | null;
+          currently_employed: boolean;
+          open_to_move: boolean;
+          desired_region_id: string | null;
+          desired_ga_company_id: string | null;
+          desired_conditions: string | null;
+          created_at: string;
+          insurer_ids: string[] | null;
+          badge_tier: PlannerMarketCertificationTier | null;
         };
         Relationships: [];
       };
@@ -1394,6 +1592,131 @@ export interface Database {
         Args: { p_user_ids: string[] };
         Returns: { user_id: string; nickname: string; ga_company_name: string | null }[];
       };
+      is_owner_of_planner_profile: {
+        Args: { p_planner_profile_id: string };
+        Returns: boolean;
+      };
+      submit_planner_market_profile: {
+        Args: {
+          p_name: string;
+          p_phone: string;
+          p_email: string;
+          p_active_region_id: string;
+          p_career_years: number;
+          p_specialties: string[];
+          p_insurer_ids: string[];
+          p_currently_employed: boolean;
+          p_open_to_move: boolean;
+          p_consent_contact_paid_view: boolean;
+          p_consent_recruit_contact: boolean;
+          p_consent_privacy_policy: boolean;
+          p_consent_third_party_share: boolean;
+          p_consent_withdrawal_notice: boolean;
+          p_kakao_id?: string | null;
+          p_profile_photo_path?: string | null;
+          p_self_introduction?: string | null;
+          p_desired_region_id?: string | null;
+          p_desired_ga_company_id?: string | null;
+          p_desired_conditions?: string | null;
+        };
+        Returns: string;
+      };
+      update_planner_market_profile: {
+        Args: {
+          p_planner_profile_id: string;
+          p_name: string;
+          p_phone: string;
+          p_email: string;
+          p_active_region_id: string;
+          p_career_years: number;
+          p_specialties: string[];
+          p_insurer_ids: string[];
+          p_currently_employed: boolean;
+          p_open_to_move: boolean;
+          p_kakao_id?: string | null;
+          p_profile_photo_path?: string | null;
+          p_self_introduction?: string | null;
+          p_desired_region_id?: string | null;
+          p_desired_ga_company_id?: string | null;
+          p_desired_conditions?: string | null;
+        };
+        Returns: void;
+      };
+      set_planner_profile_hidden: {
+        Args: { p_planner_profile_id: string; p_hidden: boolean };
+        Returns: void;
+      };
+      withdraw_planner_profile: {
+        Args: { p_planner_profile_id: string };
+        Returns: void;
+      };
+      revoke_planner_contact_sharing: {
+        Args: { p_planner_profile_id: string };
+        Returns: void;
+      };
+      get_my_planner_market_profile: {
+        Args: Record<string, never>;
+        Returns: Database['public']['Tables']['planner_profiles']['Row'][];
+      };
+      admin_review_planner_market_profile: {
+        Args: { p_planner_profile_id: string; p_decision: string; p_reason?: string | null };
+        Returns: void;
+      };
+      submit_planner_market_certification: {
+        Args: { p_planner_profile_id: string; p_income_doc_path: string };
+        Returns: string;
+      };
+      admin_review_planner_market_certification: {
+        Args: { p_certification_id: string; p_decision: string; p_reason?: string | null };
+        Returns: void;
+      };
+      purchase_planner_market_credits: {
+        Args: { p_tier_code: string; p_payment_method: string; p_provider_transaction_ref: string };
+        Returns: string;
+      };
+      get_planner_contact: {
+        Args: { p_planner_profile_id: string };
+        Returns: { name: string; phone: string; email: string; kakao_id: string | null }[];
+      };
+      get_my_planner_market_credit_balance: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      list_my_planner_market_credit_purchases: {
+        Args: Record<string, never>;
+        Returns: Database['public']['Tables']['planner_market_credit_purchases']['Row'][];
+      };
+      admin_adjust_planner_market_credits: {
+        Args: { p_ga_company_id: string; p_delta: number; p_reason: string };
+        Returns: void;
+      };
+      admin_refund_planner_market_credit_purchase: {
+        Args: { p_purchase_id: string; p_reason: string };
+        Returns: void;
+      };
+      purchase_branch_ad_product: {
+        Args: {
+          p_branch_id: string;
+          p_product_type: string;
+          p_start_at: string;
+          p_end_at: string;
+          p_payment_method?: string | null;
+          p_pg_tid?: string | null;
+        };
+        Returns: string;
+      };
+      admin_review_branch_ad_product: {
+        Args: { p_ad_product_id: string; p_decision: string; p_reason?: string | null };
+        Returns: void;
+      };
+      admin_extend_branch_ad_product: {
+        Args: { p_ad_product_id: string; p_new_end_at: string };
+        Returns: void;
+      };
+      sync_branch_ad_exposure: {
+        Args: Record<string, never>;
+        Returns: void;
+      };
     };
   };
 }
@@ -1448,4 +1771,26 @@ export interface PublicBranchSummary {
   plannerBadgeTotal: number;
   /** 보유한 등급 중 가장 높은 등급(3>2>1) - 카드에 대표로 보여줄 배지 하나를 고를 때 사용. */
   plannerTopTier: PlannerIncomeTier | null;
+}
+
+/** "설계사 찾기" 목록/상세에 노출되는 공개 표시값 - public_planner_profiles 뷰 그대로,
+ * 이름/전화/이메일/카카오톡 등 비공개 필드는 이 타입에 절대 포함하지 않는다. */
+export interface PublicPlannerProfileSummary {
+  id: string;
+  profilePhotoUrl: string | null;
+  activeRegionId: string;
+  activeRegionLabel: string;
+  careerYears: number;
+  specialties: string[];
+  selfIntroduction: string | null;
+  currentlyEmployed: boolean;
+  openToMove: boolean;
+  desiredRegionId: string | null;
+  desiredRegionLabel: string | null;
+  desiredGaCompanyId: string | null;
+  desiredGaCompanyName: string | null;
+  desiredConditions: string | null;
+  insurerNames: string[];
+  badgeTier: PlannerMarketCertificationTier | null;
+  createdAt: string;
 }

@@ -3,7 +3,24 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { Menu, X, MapPin, Building2, Briefcase, Flame, Sparkles, CalendarDays, Users, Megaphone, Award, ExternalLink, MessageCircle } from 'lucide-react';
+import {
+  Menu,
+  X,
+  MapPin,
+  Building2,
+  Briefcase,
+  Flame,
+  Sparkles,
+  CalendarDays,
+  Users,
+  Megaphone,
+  Award,
+  ExternalLink,
+  MessageCircle,
+  Search,
+  UserPlus,
+  Ticket,
+} from 'lucide-react';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { AnimatedHeaderBrandMark } from '@/components/brand/AnimatedHeaderBrandMark';
@@ -18,7 +35,6 @@ const MENU_GROUPS = [
       { href: '/ga', label: 'GA별', icon: Building2, tile: 'bg-indigo-50 text-indigo-600' },
       { href: '/ga', label: '인기 GA', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
       { href: '/ga', label: '신규 GA', icon: Sparkles, tile: 'bg-amber-50 text-amber-600' },
-      { href: '/search?highIncome=1', label: '우리동네TOP설계사', icon: Award, tile: 'bg-amber-50 text-amber-600' },
       // PC(lg 이상)에서는 우측에 채팅 패널이 항상 떠 있어 이 메뉴 항목이 중복이라 숨긴다.
       { href: '/chat', label: '실시간 채팅', icon: MessageCircle, tile: 'bg-brand-50 text-brand-600', hideOnDesktop: true },
     ],
@@ -29,6 +45,23 @@ const MENU_GROUPS = [
       { href: '/jobs', label: '우리회사자랑', icon: Briefcase, tile: 'bg-emerald-50 text-emerald-600' },
       { href: '/events', label: '이벤트', icon: CalendarDays, tile: 'bg-violet-50 text-violet-600' },
     ],
+  },
+  {
+    // 설계사 마켓(열람권)/지점 광고 - TOP설계사(아래 "인증" 그룹)와는 완전히 별개 시스템이다.
+    label: '리크루팅',
+    items: [
+      { href: '/planner-market/search', label: '설계사 찾기', icon: Search, tile: 'bg-emerald-50 text-emerald-600' },
+      { href: '/planner-market/register', label: '설계사 등록', icon: UserPlus, tile: 'bg-indigo-50 text-indigo-600' },
+      { href: '/partner/register', label: '지점 등록', icon: MapPin, tile: 'bg-blue-50 text-blue-600' },
+      { href: '/partner/ad-products', label: '광고상품', icon: Megaphone, tile: 'bg-rose-50 text-rose-600' },
+      { href: '/planner-market/purchase', label: '구매센터', icon: Ticket, tile: 'bg-amber-50 text-amber-600' },
+    ],
+  },
+  {
+    // 기존 TOP설계사(우수설계사 인증) 기능 - DB/API/관리자 모두 그대로이며, 위 "리크루팅"
+    // 그룹(설계사 마켓/열람권)과는 절대 혼용하지 않는다. 노출 위치만 메인 화면에서 여기로 옮겼다.
+    label: '인증',
+    items: [{ href: '/search?highIncome=1', label: '우리동네 TOP설계사', icon: Award, tile: 'bg-amber-50 text-amber-600' }],
   },
   {
     label: '커뮤니티',
