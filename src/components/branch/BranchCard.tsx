@@ -68,11 +68,16 @@ export function BranchCard({
           </span>
         )}
 
-        {branch.isRecommended && (
-          <span className="absolute right-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-bold text-brand-600 shadow-sm backdrop-blur">
-            추천
-          </span>
-        )}
+        <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
+          {branch.isRecommended && (
+            <span className="rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-bold text-brand-600 shadow-sm backdrop-blur">
+              추천
+            </span>
+          )}
+          {branch.hasNewOpenBadge && (
+            <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">🆕 신규 오픈</span>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3.5">

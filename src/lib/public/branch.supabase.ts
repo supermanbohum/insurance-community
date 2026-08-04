@@ -7,7 +7,7 @@ const TIER_RANK: Record<PlannerIncomeTier, number> = { tier_1: 1, tier_2: 2, tie
 
 const SUMMARY_SELECT = `
   id, slug, name, address, lat, lng, organic_view_count, imported_view_count, correction_view_count,
-  is_recommended, created_at, updated_at, operation_type, is_headquarters,
+  is_recommended, has_new_open_badge, created_at, updated_at, operation_type, is_headquarters,
   ga_company:ga_company_id ( id, name, logo_path, is_verified, ga_branch(id) ),
   region:region_id ( sido_name, sigungu_name ),
   branch_media ( value, media_type, source ),
@@ -26,6 +26,7 @@ interface BranchSummaryRow {
   imported_view_count: number;
   correction_view_count: number;
   is_recommended: boolean;
+  has_new_open_badge: boolean;
   created_at: string;
   updated_at: string;
   operation_type: GaOperationType;
@@ -72,6 +73,7 @@ function toSummary(
     mainImageUrl: mainImage ? (mainImage.source === 'external' ? mainImage.value : `${imageBaseUrl}/${mainImage.value}`) : null,
     viewCount: row.organic_view_count + row.imported_view_count + row.correction_view_count,
     isRecommended: row.is_recommended,
+    hasNewOpenBadge: row.has_new_open_badge,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     gaBranchCount: Array.isArray(row.ga_company?.ga_branch) ? row.ga_company!.ga_branch.length : 0,
@@ -359,6 +361,7 @@ export interface BranchDetail {
   updatedAt: string;
   viewCount: number;
   isRecommended: boolean;
+  hasNewOpenBadge: boolean;
   gaCompany: {
     id: string;
     name: string;
@@ -390,7 +393,7 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
       `id, slug, name, manager_name, address, address_detail, lat, lng, intro_text, education_info, welfare_info,
        db_support_info, settlement_support_info, atmosphere_info, planner_count, parking_available, visit_consult_available,
        business_hours, operation_type, is_headquarters, updated_at, organic_view_count, imported_view_count,
-       correction_view_count, is_recommended,
+       correction_view_count, is_recommended, has_new_open_badge,
        ga_company:ga_company_id ( id, name, logo_path, is_verified, ceo_name, description ),
        region:region_id ( sido_code, sido_name, sigungu_name )`
     )
@@ -510,6 +513,7 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
     updatedAt: branch.updated_at,
     viewCount: branch.organic_view_count + branch.imported_view_count + branch.correction_view_count,
     isRecommended: branch.is_recommended,
+    hasNewOpenBadge: branch.has_new_open_badge,
     gaCompany: {
       id: gaCompany?.id ?? '',
       name: gaCompany?.name ?? '',

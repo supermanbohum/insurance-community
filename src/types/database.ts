@@ -392,6 +392,7 @@ export interface Database {
           correction_view_count: number;
           is_recommended: boolean;
           recommended_rank: number | null;
+          has_new_open_badge: boolean;
           status: GaStatus;
           registration_status: GaBranchRegistrationStatus;
           status_reason: GaBranchStatusReason | null;
@@ -1965,6 +1966,8 @@ export interface PublicBranchSummary {
   mainImageUrl: string | null;
   viewCount: number;
   isRecommended: boolean;
+  /** 광고상품 "신규오픈배지" 구매+승인+기간내 여부 (0037/0048). */
+  hasNewOpenBadge: boolean;
   createdAt: string;
   updatedAt: string;
   gaBranchCount: number;
