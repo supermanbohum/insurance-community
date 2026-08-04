@@ -4,7 +4,9 @@ import { SITE_CONFIG } from '@/lib/config/site';
 export const SITE_URL = SITE_CONFIG.url.replace(/\/$/, '');
 
 export const DEFAULT_META_DESCRIPTION =
-  '전국 보험대리점 정보를 한곳에서 확인하세요. 지역별, 보험사별, 채용정보까지 보험맵에서 확인할 수 있습니다.';
+  '전국 보험대리점(GA)과 보험회사별 정보를 한곳에서 확인하세요. 지역별 채용정보부터 보험설계사 리크루팅까지 보험맵에서 확인할 수 있습니다.';
+
+export const DEFAULT_KEYWORDS = ['보험맵', '보험대리점', 'GA', '보험설계사', '보험회사', '보험 리크루팅'];
 
 /**
  * 검색엔진 사이트 소유 확인(Search Console/네이버 서치어드바이저) 메타 태그.

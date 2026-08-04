@@ -12,11 +12,12 @@ import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { websiteJsonLd, organizationJsonLd } from '@/lib/seo/jsonld';
-import { DEFAULT_META_DESCRIPTION } from '@/lib/seo/config';
+import { DEFAULT_META_DESCRIPTION, DEFAULT_KEYWORDS } from '@/lib/seo/config';
 
 export const metadata: Metadata = {
-  title: { absolute: '보험맵 | 전국 보험대리점 정보 플랫폼' },
+  title: { absolute: '보험맵 | 전국 GA·보험대리점 정보와 보험설계사 리크루팅' },
   description: DEFAULT_META_DESCRIPTION,
+  keywords: DEFAULT_KEYWORDS,
   alternates: { canonical: '/' },
 };
 
@@ -104,6 +105,9 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col px-4 pb-6 pt-4">
+      {/* 화면에는 카드/CTA 위주 디자인이라 보이는 제목이 없다 - 검색엔진이 페이지
+          주제를 정확히 파악하도록 시각적으로만 숨긴 h1을 둔다. */}
+      <h1 className="sr-only">보험맵 - 전국 GA·보험대리점 정보와 보험설계사 리크루팅 플랫폼</h1>
       <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
       {HOME_SECTIONS.map((def) => (
         <ResponsiveSection

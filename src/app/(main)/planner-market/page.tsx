@@ -5,8 +5,8 @@ import { listPublicPlannerProfiles } from '@/lib/public/planner-market.supabase'
 import { PlannerCard } from '@/components/planner-market/PlannerCard';
 
 export const metadata: Metadata = {
-  title: '설계사 마켓 - 보험 리크루팅',
-  description: '좋은 설계사를 찾는 GA, 좋은 GA를 찾는 설계사가 만나는 보험 리크루팅 플랫폼. 무료로 구직 프로필을 등록하고, 열람권으로 설계사 연락처를 확인하세요.',
+  title: '설계사 마켓 - 보험설계사 리크루팅',
+  description: '좋은 보험설계사를 찾는 GA, 좋은 GA를 찾는 보험설계사가 만나는 보험 리크루팅 플랫폼. 무료로 구직 프로필을 등록하고, 열람권으로 연락처를 확인하세요.',
   alternates: { canonical: '/planner-market' },
 };
 

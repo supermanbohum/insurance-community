@@ -21,6 +21,8 @@ export function organizationJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: SITE_CONFIG.name,
+    alternateName: SITE_CONFIG.englishName,
+    description: SITE_CONFIG.description,
     url: SITE_URL,
     // /icon은 src/app/icon.tsx가 만드는 동적 PNG 파비콘 라우트다 - 정적 /icon.svg 파일은
     // 실제로 존재하지 않아 그 경로를 쓰면 이 URL이 항상 404난다.

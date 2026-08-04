@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Noto_Sans_KR } from 'next/font/google';
 import './globals.css';
 import { SITE_CONFIG } from '@/lib/config/site';
-import { SITE_URL, DEFAULT_META_DESCRIPTION, getVerificationMeta } from '@/lib/seo/config';
+import { SITE_URL, DEFAULT_META_DESCRIPTION, DEFAULT_KEYWORDS, getVerificationMeta } from '@/lib/seo/config';
 import { Toaster } from '@/components/ui/sonner';
 import { EventPopup } from '@/components/layout/EventPopup';
 import { getActiveEventPopup } from '@/lib/admin/event-popup';
@@ -23,6 +23,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_CONFIG.name}`,
   },
   description: DEFAULT_META_DESCRIPTION,
+  keywords: DEFAULT_KEYWORDS,
   metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: '/',
@@ -73,6 +74,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
         <link rel="preconnect" href="https://oapi.map.naver.com" />
         <link rel="preconnect" href="https://nrbe.pstatic.net" crossOrigin="" />
+        {/* metadata API의 alternates는 하위 페이지가 자기 alternates를 지정하면(대부분의
+            페이지가 canonical을 지정함) 통째로 덮어써진다 - RSS는 사이트 전체에 항상
+            걸려있어야 해서 metadata 객체가 아니라 직접 <head>에 렌더링한다. */}
+        <link rel="alternate" type="application/rss+xml" title={`${SITE_CONFIG.name} RSS`} href={`${SITE_URL}/rss.xml`} />
       </head>
       <body className="min-h-screen bg-surface font-sans text-ink antialiased">
         {children}

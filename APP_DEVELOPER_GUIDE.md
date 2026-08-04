@@ -226,6 +226,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 - **Push 알림 발송 로직은 아직 없습니다.** `push_tokens` 테이블(토큰 저장)과 `window.__boheom` 브릿지 클라이언트(ready/push-token/deeplink 수신)는 완성됐지만, "이벤트 발생 시 Expo Push API를 실제로 호출하는" 발송 로직은 아직 구현되지 않았습니다. 열람 알림(`planner_contact_view_notifications`)은 현재 인앱 목록 + 읽지않음 배지만 제공하며, 이 테이블을 소스로 Push를 발송하는 서버 로직(Edge Function 등)이 추가되어야 실제 Push가 나갑니다.
 - App/Universal Links 검증 파일(`/.well-known/assetlinks.json`, `apple-app-site-association`)은 아직 호스팅되지 않았습니다 — 앱팀의 실제 Android 서명 인증서 SHA256 지문과 Apple Team ID가 필요합니다.
 - **Google Search Console / Naver Search Advisor 소유권 인증이 아직 안 됐습니다.** `src/lib/seo/config.ts`의 `getVerificationMeta()`가 `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`/`NEXT_PUBLIC_NAVER_SITE_VERIFICATION` 환경변수를 읽어 메타태그로 렌더링하도록 코드는 준비돼 있지만, 두 값 모두 Vercel 프로덕션 환경변수에 아직 등록되어 있지 않습니다(2026-08-04 기준). 각 서비스에서 발급받은 인증 코드를 이 두 환경변수에 추가하고 재배포하면 즉시 소유권 인증이 완료됩니다.
+- **RSS(`/rss.xml`)는 커뮤니티 게시글만 담습니다.** 지점/설계사마켓처럼 구조화 데이터로 이미 표현되는 콘텐츠가 아니라, RSS 성격에 맞는 게시글만 최신 50개 담았습니다(`listRecentPostsForRss`, sitemap과 동일하게 `status='visible' and is_seo_indexable=true` 기준). 다른 콘텐츠 타입(지점 신규등록 등)도 RSS로 노출하고 싶다면 이 함수 옆에 별도 쿼리를 추가하고 `route.ts`에서 합치면 됩니다.
 
 ---
 

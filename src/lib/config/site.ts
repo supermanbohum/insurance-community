@@ -10,7 +10,7 @@ export const SITE_CONFIG = {
   name: process.env.NEXT_PUBLIC_SITE_NAME ?? '보험맵',
   shortName: '보험맵',
   englishName: 'BohumMap',
-  description: '전국 GA와 보험대리점 정보를 한눈에 찾는 보험설계사 지도 플랫폼',
+  description: '전국 GA·보험대리점과 보험설계사를 잇는 보험 리크루팅 지도 플랫폼',
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
   logoPath: '/logo.svg',
   themeColor: '#152d70',

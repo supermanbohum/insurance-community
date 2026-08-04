@@ -128,3 +128,34 @@ export async function listPostIdsForSitemap(): Promise<{ id: string; updatedAt: 
   if (error) throw error;
   return (data ?? []).map((row) => ({ id: row.id, updatedAt: row.updated_at }));
 }
+
+export interface RssPostItem {
+  id: string;
+  title: string;
+  content: string;
+  authorDisplayName: string;
+  createdAt: string;
+  categoryName: string;
+}
+
+/** rss.xml 전용(네이버 RSS 제출용) - sitemap과 동일한 색인 기준(visible + is_seo_indexable)으로
+ * 최신 글 N개만 가볍게 조회한다. cookies()를 쓰지 않는 공개 클라이언트를 쓴다. */
+export async function listRecentPostsForRss(limit = 50): Promise<RssPostItem[]> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await supabase
+    .from('posts')
+    .select('id, title, content, author_display_name, created_at, categories ( name )')
+    .eq('status', 'visible')
+    .eq('is_seo_indexable', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return ((data ?? []) as unknown as (PostListRow & { categories: { name: string } | null })[]).map((row) => ({
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    authorDisplayName: row.author_display_name,
+    createdAt: row.created_at,
+    categoryName: row.categories?.name ?? '',
+  }));
+}
