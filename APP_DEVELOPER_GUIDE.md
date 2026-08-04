@@ -109,7 +109,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
   - **즉시 반영**: 연락처/카카오톡/홈페이지(`upsert_branch_contact`), 취급보험사(`set_branch_insurers`), 채용공고(`create_branch_recruit`/`update_branch_recruit`/`close_branch_recruit`), SNS링크(`upsert_branch_link`)
   - **관리자 재승인 필요**("신뢰도 항목"): 지점명/주소/지역/소개글/설계사수/편의시설/사진/운영시간 등 → `submit_branch_update` RPC로 `branch_registrations` 큐(`request_type='update'`)에 적재
 - **임시저장 + 대기중 수정(0043, 최신)**: `branch_registrations`는 지점당 열려있는(`status IN ('draft','pending')`) 수정요청이 **최대 1개**로 강제됩니다(유니크 인덱스). `save_branch_update_draft`로 임시저장, `submit_branch_update`로 제출 — 이미 대기중이어도 자유롭게 다시 수정해 재제출 가능하며 관리자는 항상 최신 내용만 봅니다. `before_snapshot` 컬럼에 제출 시점의 실제 이전 값을 스냅샷으로 저장해, 승인 후 시점이 지나도 "변경 전/후" 이력이 정확하게 유지됩니다(과거엔 승인 후 라이브 데이터를 재조회해서 diff가 사라지는 버그가 있었음 — 이제 해결됨).
-- 지점 노출/추천(`is_recommended`, `recommended_rank`)은 광고 상품 구매·승인 결과로만 결정되며, 어디서도 직접 쓰지 않고 `sync_branch_ad_exposure()`가 계산합니다(15분마다 pg_cron).
+- 지점 노출/추천(`is_recommended`, `recommended_rank`, `has_new_open_badge`)은 광고 상품 구매·승인 결과로만 결정되며, 어디서도 직접 쓰지 않고 `sync_branch_ad_exposure()`가 계산합니다(15분마다 pg_cron).
 
 ---
 
@@ -159,7 +159,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 ## 11. 지점 광고 상품 (2번째 독립 수익 스트림)
 
-- `branch_ad_products` + `ad_payments`. 구매(`purchase_branch_ad_product`) → 관리자 승인(`admin_review_branch_ad_product`) → `sync_branch_ad_exposure()`가 `ga_branch.is_recommended`/`recommended_rank`를 계산해 반영(15분 주기 pg_cron).
+- `branch_ad_products` + `ad_payments`. 구매(`purchase_branch_ad_product`) → 관리자 승인(`admin_review_branch_ad_product`) → `sync_branch_ad_exposure()`가 `ga_branch.is_recommended`/`recommended_rank`/`has_new_open_badge`를 계산해 반영(15분 주기 pg_cron).
 - product_type 7종 중 현재 "추천지점(featured_branch)"만 실제 노출 로직이 연결되어 있고 나머지 6종은 결제/승인 인프라만 존재(추후 확장 예정).
 
 ---
@@ -220,17 +220,17 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 ## 15. 알려진 제한사항 / 아직 안 된 것
 
 - **설계사 신규 등록(최초 제출) 폼에는 임시저장 기능이 없습니다** — 등록 수정(update) 흐름에만 draft가 구현되어 있습니다. 지점 신규 등록은 `ga_admin_registration_drafts` 테이블(0047)로 임시저장이 가능하지만, **텍스트 필드만** 보관되고 파일(임대차계약서/명함/사진/영상)은 제출 시 다시 첨부해야 합니다 — 파일 업로드는 실제 `ga_branch` 행이 생성된 뒤에만 가능한 구조이기 때문입니다.
-- 지점 광고 상품 7종 중 "추천지점" 1종만 실제 노출과 연결되어 있고 나머지 6종은 결제 인프라만 존재합니다.
+- 지점 광고 상품 7종 중 "추천지점"/"신규오픈배지" 2종만 실제 노출과 연결되어 있고(`ga_branch.is_recommended`/`has_new_open_badge`) 나머지 5종은 결제 인프라만 존재합니다.
 - 결제는 스텁 상태 — 실 PG 연동 필요.
 - **Push 알림 발송 로직은 아직 없습니다.** `push_tokens` 테이블(토큰 저장)과 `window.__boheom` 브릿지 클라이언트(ready/push-token/deeplink 수신)는 완성됐지만, "이벤트 발생 시 Expo Push API를 실제로 호출하는" 발송 로직은 아직 구현되지 않았습니다. 열람 알림(`planner_contact_view_notifications`)은 현재 인앱 목록 + 읽지않음 배지만 제공하며, 이 테이블을 소스로 Push를 발송하는 서버 로직(Edge Function 등)이 추가되어야 실제 Push가 나갑니다.
 - App/Universal Links 검증 파일(`/.well-known/assetlinks.json`, `apple-app-site-association`)은 아직 호스팅되지 않았습니다 — 앱팀의 실제 Android 서명 인증서 SHA256 지문과 Apple Team ID가 필요합니다.
 
 ---
 
-## 16. 마이그레이션 이력 요약 (0001~0047)
+## 16. 마이그레이션 이력 요약 (0001~0048)
 
 <details>
-<summary>펼치기 — 전체 47개 마이그레이션 한 줄 요약</summary>
+<summary>펼치기 — 전체 48개 마이그레이션 한 줄 요약</summary>
 
 | # | 파일 | 한줄 요약 |
 |---|---|---|
@@ -281,5 +281,6 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | 0045 | planner_contact_view_notifications | 설계사 열람 알림 |
 | 0046 | push_tokens | 앱 푸시 토큰 저장소 + register/unregister RPC |
 | 0047 | branch_registration_draft | 지점 신규등록 폼 임시저장 |
+| 0048 | branch_ad_new_open_badge | 지점 광고상품 "신규오픈배지" 노출 로직 |
 
 </details>
