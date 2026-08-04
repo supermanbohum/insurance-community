@@ -751,6 +751,16 @@ export interface Database {
           },
         ];
       };
+      ga_admin_registration_drafts: {
+        Row: {
+          ga_admin_id: string;
+          payload: Record<string, unknown>;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['ga_admin_registration_drafts']['Row']>;
+        Update: Partial<Database['public']['Tables']['ga_admin_registration_drafts']['Row']>;
+        Relationships: [];
+      };
       planner_certifications: {
         Row: {
           id: string;
@@ -1583,6 +1593,18 @@ export interface Database {
       get_open_branch_update: {
         Args: { p_branch_id: string };
         Returns: Database['public']['Tables']['branch_registrations']['Row'][];
+      };
+      save_branch_registration_draft: {
+        Args: { p_payload: Record<string, unknown> };
+        Returns: void;
+      };
+      get_my_branch_registration_draft: {
+        Args: Record<string, never>;
+        Returns: Record<string, unknown> | null;
+      };
+      clear_branch_registration_draft: {
+        Args: Record<string, never>;
+        Returns: void;
       };
       is_blocked_planner_title: {
         Args: { p_job_title: string };

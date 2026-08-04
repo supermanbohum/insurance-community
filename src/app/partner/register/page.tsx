@@ -4,7 +4,8 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requirePartner } from '@/lib/partner/session';
 import { listRegions } from '@/lib/admin/branch';
 import { listGaFilterOptions } from '@/lib/public/ga-directory';
-import { OnboardingForm } from '@/components/partner/OnboardingForm';
+import { getMyBranchRegistrationDraftAction } from '@/lib/actions/partner';
+import { OnboardingForm, type RegistrationDraftPayload } from '@/components/partner/OnboardingForm';
 import { PartnerStepIndicator } from '@/components/partner/PartnerStepIndicator';
 import { BackButton } from '@/components/shared/BackButton';
 
@@ -31,7 +32,7 @@ export default async function PartnerRegisterPage() {
     redirect('/partner');
   }
 
-  const [regions, gaOptions] = await Promise.all([listRegions(), listGaFilterOptions()]);
+  const [regions, gaOptions, draft] = await Promise.all([listRegions(), listGaFilterOptions(), getMyBranchRegistrationDraftAction()]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 px-4 py-10">
@@ -43,7 +44,7 @@ export default async function PartnerRegisterPage() {
           입력한 정보는 보험맵 관리자 검토 후 승인되면 공개됩니다.
         </p>
       </div>
-      <OnboardingForm regions={regions} gaOptions={gaOptions} />
+      <OnboardingForm regions={regions} gaOptions={gaOptions} initialDraft={draft as RegistrationDraftPayload | null} />
     </div>
   );
 }

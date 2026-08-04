@@ -96,9 +96,28 @@ export async function submitBranchRegistrationAction(input: {
     return { success: false, error: '지점 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
   }
 
+  await supabase.rpc('clear_branch_registration_draft');
+
   revalidatePath('/partner');
   revalidatePath('/admin/change-requests');
   return { success: true, branchId: data.branch_id, registrationId: data.registration_id };
+}
+
+/** 신규 지점 등록 폼 임시저장 - ga_company/ga_branch를 전혀 만들지 않고 입력값만
+ * jsonb로 보관한다(파일 제외). 폼이 마운트될 때 이 값을 불러와 "이어서 작성"한다. */
+export async function saveBranchRegistrationDraftAction(payload: Record<string, unknown>): Promise<ActionResult> {
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('save_branch_registration_draft', { p_payload: payload });
+  if (error) {
+    return { success: false, error: '임시저장하지 못했습니다.' };
+  }
+  return { success: true };
+}
+
+export async function getMyBranchRegistrationDraftAction(): Promise<Record<string, unknown> | null> {
+  const supabase = createServerSupabaseClient();
+  const { data } = await supabase.rpc('get_my_branch_registration_draft');
+  return (data as Record<string, unknown> | null) ?? null;
 }
 
 const DOC_MIME_EXTENSIONS: Record<string, string> = {

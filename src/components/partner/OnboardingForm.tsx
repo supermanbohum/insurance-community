@@ -10,6 +10,7 @@ import {
   savePartnerBranchLinksAction,
   uploadPartnerBranchPhotoAction,
   uploadPartnerBranchVideoAction,
+  saveBranchRegistrationDraftAction,
 } from '@/lib/actions/partner';
 import type { RegionRow } from '@/lib/admin/branch';
 import type { GaFilterOption } from '@/lib/public/ga-directory';
@@ -71,44 +72,94 @@ const AMENITIES: AmenityOption[] = [
   { key: 'settlementSupport', label: '정착지원금' },
 ];
 
-export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; gaOptions: GaFilterOption[] }) {
+export interface RegistrationDraftPayload {
+  registrant?: Partial<Record<(typeof REGISTRANT_FIELDS)[number]['key'], string>>;
+  gaCompanyId?: string | null;
+  regionId?: string | null;
+  addressValue?: Partial<AddressValue>;
+  tagline?: string;
+  introText?: string;
+  plannerCount?: number | '';
+  amenities?: Partial<Record<AmenityOption['key'], boolean>>;
+  links?: Partial<Record<(typeof LINK_FIELDS)[number]['key'], string>>;
+}
+
+export function OnboardingForm({
+  regions,
+  gaOptions,
+  initialDraft,
+}: {
+  regions: RegionRow[];
+  gaOptions: GaFilterOption[];
+  initialDraft?: RegistrationDraftPayload | null;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isSavingDraft, startDraftTransition] = useTransition();
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
 
   const [registrant, setRegistrant] = useState<Record<(typeof REGISTRANT_FIELDS)[number]['key'], string>>({
-    name: '',
-    title: '',
-    phone: '',
-    branchLabel: '',
+    name: initialDraft?.registrant?.name ?? '',
+    title: initialDraft?.registrant?.title ?? '',
+    phone: initialDraft?.registrant?.phone ?? '',
+    branchLabel: initialDraft?.registrant?.branchLabel ?? '',
   });
   const [leaseContract, setLeaseContract] = useState<File | null>(null);
   const [businessCard, setBusinessCard] = useState<File | null>(null);
-  const [gaCompanyId, setGaCompanyId] = useState<string | null>(null);
+  const [gaCompanyId, setGaCompanyId] = useState<string | null>(initialDraft?.gaCompanyId ?? null);
   const gaName = gaOptions.find((g) => g.id === gaCompanyId)?.name ?? '';
-  const [regionId, setRegionId] = useState<string | null>(null);
-  const [addressValue, setAddressValue] = useState<AddressValue>({ address: '', addressDetail: '', zonecode: '', lat: null, lng: null });
-  const [tagline, setTagline] = useState('');
-  const [introText, setIntroText] = useState('');
-  const [plannerCount, setPlannerCount] = useState<number | ''>('');
+  const [regionId, setRegionId] = useState<string | null>(initialDraft?.regionId ?? null);
+  const [addressValue, setAddressValue] = useState<AddressValue>({
+    address: initialDraft?.addressValue?.address ?? '',
+    addressDetail: initialDraft?.addressValue?.addressDetail ?? '',
+    zonecode: initialDraft?.addressValue?.zonecode ?? '',
+    lat: initialDraft?.addressValue?.lat ?? null,
+    lng: initialDraft?.addressValue?.lng ?? null,
+  });
+  const [tagline, setTagline] = useState(initialDraft?.tagline ?? '');
+  const [introText, setIntroText] = useState(initialDraft?.introText ?? '');
+  const [plannerCount, setPlannerCount] = useState<number | ''>(initialDraft?.plannerCount ?? '');
   const [amenities, setAmenities] = useState<Record<AmenityOption['key'], boolean>>({
-    parkingAvailable: false,
-    visitConsultAvailable: false,
-    newRecruitTraining: false,
-    experiencedHire: false,
-    dbSupport: false,
-    settlementSupport: false,
+    parkingAvailable: initialDraft?.amenities?.parkingAvailable ?? false,
+    visitConsultAvailable: initialDraft?.amenities?.visitConsultAvailable ?? false,
+    newRecruitTraining: initialDraft?.amenities?.newRecruitTraining ?? false,
+    experiencedHire: initialDraft?.amenities?.experiencedHire ?? false,
+    dbSupport: initialDraft?.amenities?.dbSupport ?? false,
+    settlementSupport: initialDraft?.amenities?.settlementSupport ?? false,
   });
   const [mainPhoto, setMainPhoto] = useState<File | null>(null);
   const [officePhotos, setOfficePhotos] = useState<File[]>([]);
   const [video, setVideo] = useState<File | null>(null);
   const [links, setLinks] = useState<Record<(typeof LINK_FIELDS)[number]['key'], string>>({
-    instagram: '',
-    blog: '',
-    youtube: '',
-    website: '',
-    etc: '',
+    instagram: initialDraft?.links?.instagram ?? '',
+    blog: initialDraft?.links?.blog ?? '',
+    youtube: initialDraft?.links?.youtube ?? '',
+    website: initialDraft?.links?.website ?? '',
+    etc: initialDraft?.links?.etc ?? '',
   });
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+
+  function handleSaveDraft() {
+    startDraftTransition(async () => {
+      const result = await saveBranchRegistrationDraftAction({
+        registrant,
+        gaCompanyId,
+        regionId,
+        addressValue,
+        tagline,
+        introText,
+        plannerCount,
+        amenities,
+        links,
+      });
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      setDraftSavedAt(new Date());
+      toast.success('임시저장되었습니다.');
+    });
+  }
 
   const introRemaining = MIN_INTRO_LENGTH - introText.trim().length;
   const registrantComplete = REGISTRANT_FIELDS.every((f) => registrant[f.key].trim());
@@ -580,13 +631,22 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
         </CardContent>
       </Card>
 
-      <Button type="submit" disabled={isPending || !canSubmit} size="lg">
-        {isPending
-          ? uploadProgress && uploadProgress.total > 0
-            ? `업로드 중... (${uploadProgress.done}/${uploadProgress.total})`
-            : '제출 중...'
-          : '④ 등록 신청'}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={isSavingDraft || isPending}>
+          {isSavingDraft ? '저장 중...' : '임시저장'}
+        </Button>
+        <Button type="submit" disabled={isPending || !canSubmit} size="lg" className="flex-1 sm:flex-none">
+          {isPending
+            ? uploadProgress && uploadProgress.total > 0
+              ? `업로드 중... (${uploadProgress.done}/${uploadProgress.total})`
+              : '제출 중...'
+            : '④ 등록 신청'}
+        </Button>
+        {draftSavedAt && <span className="text-xs text-muted-foreground">{draftSavedAt.toLocaleTimeString('ko-KR')}에 임시저장됨</span>}
+      </div>
+      <p className="text-center text-xs text-muted-foreground">
+        임시저장은 텍스트 입력값만 보관됩니다(서류/사진/영상 파일은 제출 시 다시 첨부해주세요).
+      </p>
       {!canSubmit && !isPending && (
         <p className="text-center text-xs text-muted-foreground">
           등록자 정보(소속 GA 포함)/주소/한줄소개/필수 서류 2종/대표사진 1장/사무실사진 {MIN_OFFICE_PHOTOS}장 이상/소개글 {MIN_INTRO_LENGTH}자 이상을 모두
