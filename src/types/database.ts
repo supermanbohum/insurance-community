@@ -965,6 +965,20 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['planner_contact_view_notifications']['Row']>;
         Relationships: [];
       };
+      push_tokens: {
+        Row: {
+          id: string;
+          auth_user_id: string;
+          token: string;
+          platform: 'ios' | 'android';
+          created_at: string;
+          updated_at: string;
+          last_seen_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['push_tokens']['Row']>;
+        Update: Partial<Database['public']['Tables']['push_tokens']['Row']>;
+        Relationships: [];
+      };
       planner_market_credit_purchases: {
         Row: {
           id: string;
@@ -1807,6 +1821,14 @@ export interface Database {
       };
       mark_my_planner_contact_notifications_read: {
         Args: Record<string, never>;
+        Returns: void;
+      };
+      register_push_token: {
+        Args: { p_token: string; p_platform: string };
+        Returns: void;
+      };
+      unregister_push_token: {
+        Args: { p_token: string };
         Returns: void;
       };
       get_my_planner_market_credit_balance: {

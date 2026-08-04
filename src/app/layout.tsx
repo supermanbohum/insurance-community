@@ -6,6 +6,7 @@ import { SITE_URL, DEFAULT_META_DESCRIPTION, getVerificationMeta } from '@/lib/s
 import { Toaster } from '@/components/ui/sonner';
 import { EventPopup } from '@/components/layout/EventPopup';
 import { getActiveEventPopup } from '@/lib/admin/event-popup';
+import { BoheomBridge } from '@/components/bridge/BoheomBridge';
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ['latin'],
@@ -77,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {children}
         <Toaster position="top-center" />
         <EventPopup config={eventPopup} />
+        <BoheomBridge />
       </body>
     </html>
   );
