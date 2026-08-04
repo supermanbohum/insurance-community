@@ -120,6 +120,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 - **테이블**: `planner_profiles`(핵심, 1인당 1행) + `planner_profile_insurers` + `planner_market_certifications`(구 버전, 현재는 배지시스템으로 대체) + `planner_badge_types`/`planner_badges`(확장형 배지) + `planner_market_credit_*`(열람권 크레딧) + `planner_contact_view_notifications`(열람 알림)
 - **공개/비공개 분리**: 활동지역/경력/전문분야/자기소개/사진/희망조건 등은 공개(`public_planner_profiles` 뷰로만 노출), **이름/연락처/이메일/카카오톡은 GA가 열람권을 써야만** `get_planner_contact` RPC로 확인 가능
 - **열람권 크레딧**: GA가 회사 단위로 구매(`purchase_planner_market_credits`), `get_planner_contact`가 동시성 안전하게 잔액을 차감합니다 — `unique(ga_company_id, planner_profile_id)` 제약 + `insert ... on conflict do nothing`으로 같은 설계사를 두 번 열람해도 두 번 과금되지 않습니다.
+- **구매 단가(0050, 최신)**: 운영 정책상 최소 구매 수량은 **10건**입니다. 1건 단위 구매(`credits_1`)는 폐지되어 `purchase_planner_market_credits` RPC가 `INVALID_TIER`로 거부합니다 — 현재 유효 티어는 `credits_10`(330,000원)/`credits_30`(990,000원)/`credits_50`(1,650,000원)/`credits_100`(3,000,000원, 10%할인) 4종뿐입니다. `credits_1`은 과거 구매이력(`planner_market_credit_purchases`) 표시를 위해 `CreditPurchaseTierCode` 타입과 `tier_code` CHECK 제약에만 남아있고, 신규 구매 경로 어디에서도 생성될 수 없습니다.
 - **필드별 즉시반영/재승인 분리(0044, 최신)**: 예전엔 프로필의 아무 필드나 수정하면 전체가 `pending_review`로 돌아가 검색결과에서 사라지는 문제가 있었습니다. 지금은:
   - **즉시 반영**(`update_planner_market_profile_instant`): 이름/연락처/이메일/카카오톡/사진/전문분야/현재근무여부/구직상태/희망입사시기/연락가능시간/자기소개/희망지역/희망조건
   - **재승인 대상**(`submit_planner_trust_update`, `planner_profiles`의 `pending_*` 컬럼 사용): 활동지역/경력/희망GA — 연봉인증은 별도 배지 승인 큐(`planner_badges`)로 이미 분리되어 있어 여기 포함 안 됨
@@ -227,7 +228,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 ---
 
-## 16. 마이그레이션 이력 요약 (0001~0049)
+## 16. 마이그레이션 이력 요약 (0001~0050)
 
 <details>
 <summary>펼치기 — 전체 49개 마이그레이션 한 줄 요약</summary>
@@ -283,5 +284,6 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | 0047 | branch_registration_draft | 지점 신규등록 폼 임시저장 |
 | 0048 | branch_ad_new_open_badge | 지점 광고상품 "신규오픈배지" 노출 로직 |
 | 0049 | planner_badge_types_expansion | 설계사 배지 확장(MDRT/COT/TOT/우수후기) |
+| 0050 | remove_credits_1_tier | 열람권 최소구매 10건 정책 변경 (1건 상품 폐지) |
 
 </details>

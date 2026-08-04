@@ -6,7 +6,6 @@ import { CreditPurchaseHistoryTable } from '@/components/planner-market/CreditPu
 import { BackButton } from '@/components/shared/BackButton';
 
 const TIERS: CreditTier[] = [
-  { tierCode: 'credits_1', creditCount: 1, amountKrw: 33000, unitPriceKrw: 33000 },
   { tierCode: 'credits_10', creditCount: 10, amountKrw: 330000, unitPriceKrw: 33000 },
   { tierCode: 'credits_30', creditCount: 30, amountKrw: 990000, unitPriceKrw: 33000 },
   { tierCode: 'credits_50', creditCount: 50, amountKrw: 1650000, unitPriceKrw: 33000 },
@@ -45,7 +44,7 @@ export default async function PlannerMarketPurchasePage() {
         <p className="text-3xl font-extrabold text-brand-800">[ {(balance ?? 0).toLocaleString()}건 ]</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {TIERS.map((tier) => (
           <CreditTierCard key={tier.tierCode} tier={tier} />
         ))}
@@ -68,6 +67,7 @@ export default async function PlannerMarketPurchasePage() {
       <div className="rounded-2xl border border-line bg-surface-sunken p-4 text-xs text-muted-foreground">
         <p className="mb-1 font-bold text-ink-soft">안내</p>
         <ul className="list-disc space-y-0.5 pl-4">
+          <li>최소 구매 수량은 10건입니다.</li>
           <li>열람권은 연락처 조회 시 1건 차감됩니다.</li>
           <li>구매 후 환불은 불가능합니다.</li>
           <li>열람권에는 유효기간이 없습니다.</li>
