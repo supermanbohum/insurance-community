@@ -124,7 +124,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
   - **즉시 반영**(`update_planner_market_profile_instant`): 이름/연락처/이메일/카카오톡/사진/전문분야/현재근무여부/구직상태/희망입사시기/연락가능시간/자기소개/희망지역/희망조건
   - **재승인 대상**(`submit_planner_trust_update`, `planner_profiles`의 `pending_*` 컬럼 사용): 활동지역/경력/희망GA — 연봉인증은 별도 배지 승인 큐(`planner_badges`)로 이미 분리되어 있어 여기 포함 안 됨
   - 브랜치처럼 `save_planner_trust_update_draft`로 임시저장 가능, `trust_before_snapshot`으로 정확한 이력 유지
-- **확장형 배지 시스템**(0038): `planner_badge_types`(코드/라벨/아이콘/서류필요여부/자가신청여부) + `planner_badges`(부여 기록). 연봉인증(`income_verified`, 서류 업로드+관리자 승인), 본인인증(`verified_identity`, 등록 즉시 자동 승인) 등이 이미 있고, 새 배지 종류를 추가해도 이 테이블/RPC 패턴만 재사용하면 됩니다(DB/UI 변경 최소화가 설계 목표).
+- **확장형 배지 시스템**(0038, 0049): `planner_badge_types`(코드/라벨/아이콘/서류필요여부/자가신청여부) + `planner_badges`(부여 기록). 현재 7종: 연봉인증(`income_verified`)/MDRT/COT/TOT(서류 업로드+관리자 승인, `self_applicable=true`), 본인인증(`verified_identity`, 등록 즉시 자동 승인), TOP설계사(`top_planner`)/우수후기(`excellent_review`, 관리자가 서류 없이 수동 부여, `self_applicable=false`). 새 배지 종류는 `planner_badge_types`에 행 하나만 추가하면 되고 **애플리케이션 코드 변경이 필요 없습니다** — 마이페이지의 자가신청 업로드 폼도 `self_applicable=true`인 모든 타입을 동적으로 순회하도록 일반화되어 있습니다.
 - **기본 정렬**: `public_planner_profiles`가 ①연봉인증 → ②TOP설계사 → ③최신등록 순으로 정렬 가능한 플래그(`has_income_verified`, `has_top_planner`)를 함께 반환합니다.
 - **열람 알림(0045, 최신)**: GA가 특정 설계사의 연락처를 **최초로** 열람하면(재열람은 무시) `planner_contact_view_notifications`에 알림이 쌓입니다. 열람한 GA 관리자가 특정 지점 소속이면 지점명 노출 + 클릭 시 지점 상세로 이동, 아니면 "리쿠르터"로만 익명 표시됩니다. 조회: `list_my_planner_contact_notifications`, `count_my_unread_planner_contact_notifications`, `mark_my_planner_contact_notifications_read`.
 
@@ -227,10 +227,10 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 ---
 
-## 16. 마이그레이션 이력 요약 (0001~0048)
+## 16. 마이그레이션 이력 요약 (0001~0049)
 
 <details>
-<summary>펼치기 — 전체 48개 마이그레이션 한 줄 요약</summary>
+<summary>펼치기 — 전체 49개 마이그레이션 한 줄 요약</summary>
 
 | # | 파일 | 한줄 요약 |
 |---|---|---|
@@ -282,5 +282,6 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | 0046 | push_tokens | 앱 푸시 토큰 저장소 + register/unregister RPC |
 | 0047 | branch_registration_draft | 지점 신규등록 폼 임시저장 |
 | 0048 | branch_ad_new_open_badge | 지점 광고상품 "신규오픈배지" 노출 로직 |
+| 0049 | planner_badge_types_expansion | 설계사 배지 확장(MDRT/COT/TOT/우수후기) |
 
 </details>
