@@ -1,9 +1,16 @@
+import type { Metadata } from 'next';
 import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
 import { listGaFilterOptions, splitRegisteredGaIds } from '@/lib/public/ga-directory';
 import { listSidoGroups } from '@/lib/public/region';
 import { MapPageClient } from '@/components/map/MapPageClient';
 import type { MapBranch } from '@/components/map/types';
 import type { PlannerIncomeTier } from '@/types/database';
+
+export const metadata: Metadata = {
+  title: '지도로 보험대리점 찾기',
+  description: '지도에서 내 주변 보험대리점 위치를 한눈에 확인하고, 지역/GA/조건별로 필터링해 찾아보세요.',
+  alternates: { canonical: '/map' },
+};
 
 export const dynamic = 'force-dynamic';
 

@@ -124,6 +124,15 @@ export async function listPublicPlannerProfiles(options: {
   return toSummaries(supabase, (data ?? []) as unknown as PublicPlannerProfileRow[]);
 }
 
+/** sitemap.xml 전용 - public_planner_profiles 뷰(승인+비공개아님+미철회만 노출)에서
+ * id/등록일만 가볍게 조회한다. */
+export async function listPlannerProfileIdsForSitemap(): Promise<{ id: string; createdAt: string }[]> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await supabase.from('public_planner_profiles').select('id, created_at');
+  if (error) throw error;
+  return (data ?? []).map((row) => ({ id: row.id as string, createdAt: row.created_at as string }));
+}
+
 export async function getPublicPlannerProfile(id: string): Promise<PublicPlannerProfileSummary | null> {
   const supabase = createPublicSupabaseClient();
   const { data, error } = await supabase.from('public_planner_profiles').select('*').eq('id', id).maybeSingle();

@@ -1,7 +1,14 @@
+import type { Metadata } from 'next';
 import { listPublicPlannerProfiles } from '@/lib/public/planner-market.supabase';
 import { listRegions } from '@/lib/admin/branch';
 import { PlannerMarketSearchFilters } from '@/components/planner-market/PlannerMarketSearchFilters';
 import { PlannerCard } from '@/components/planner-market/PlannerCard';
+
+export const metadata: Metadata = {
+  title: '설계사 찾기',
+  description: '활동지역/경력/전문분야로 구직중인 보험설계사를 검색하세요. 연락처는 열람권으로 확인할 수 있습니다.',
+  alternates: { canonical: '/planner-market/search' },
+};
 
 /** 설계사 찾기 - 누구나 열람 가능(공개 필드만). 연락처는 상세페이지에서 GA 파트너가
  * 열람권으로 잠금해제해야 볼 수 있다. */

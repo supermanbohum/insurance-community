@@ -40,6 +40,7 @@
 - **실시간 채팅**: 플랫폼 전체 단일 공용방 UI(`/chat` 단독 페이지 + 사이드 패널) 완성
 - **앱 연동 기반**: `push_tokens` 저장 인프라 + `window.__boheom` postMessage 브릿지 클라이언트(ready/push-token/deeplink 처리) — 앱 Phase 1(푸시)의 선행 조건 완료
 - **관리자**: GA/지점/변경요청/TOP설계사/설계사마켓/배지/열람권/광고상품/광고배너/구독/문의/이벤트팝업/페이지레이아웃 전체 관리 화면
+- **SEO 인프라 전면 점검**: sitemap.xml에 게시글/설계사마켓 상세 동적 URL 추가(전에는 지점/지역/게시판만 있었음), robots.txt에 설계사마켓 비공개 경로 disallow 추가, 게시글/설계사마켓/인기지점/지도 페이지에 title·description·canonical·OG 신규 추가, `best`/`jobs`/`events`(준비중 placeholder)는 noindex 처리, Organization JSON-LD의 깨진 로고 URL 수정, 게시글(DiscussionForumPosting)·설계사프로필(ProfilePage, PII 제외) 구조화 데이터 신규 추가, PWA manifest.webmanifest + apple-touch-icon 추가. **Google Search Console/Naver Search Advisor 등록 시 소유권 인증 메타태그(`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`/`NEXT_PUBLIC_NAVER_SITE_VERIFICATION`)는 아직 Vercel 프로덕션 환경변수에 없음 — 등록 진행 시 반드시 추가 필요**
 - **결제/구독**: 인터페이스는 완성, 실제 PG는 스텁(항상 성공)
 
 ---

@@ -22,7 +22,9 @@ export function organizationJsonLd() {
     '@type': 'Organization',
     name: SITE_CONFIG.name,
     url: SITE_URL,
-    logo: `${SITE_URL}/icon.svg`,
+    // /icon은 src/app/icon.tsx가 만드는 동적 PNG 파비콘 라우트다 - 정적 /icon.svg 파일은
+    // 실제로 존재하지 않아 그 경로를 쓰면 이 URL이 항상 404난다.
+    logo: `${SITE_URL}/icon`,
   };
 }
 
@@ -85,6 +87,51 @@ export function localBusinessJsonLd(branch: {
       '@type': 'Organization',
       name: branch.gaCompanyName,
       ...(branch.gaCompanyLogoUrl ? { logo: branch.gaCompanyLogoUrl } : {}),
+    },
+  };
+}
+
+/** 커뮤니티 게시글 상세 페이지용 - 익명 게시판 특성상 DiscussionForumPosting이 Article보다 정확하다. */
+export function discussionPostJsonLd(post: {
+  id: string;
+  title: string;
+  content: string;
+  authorDisplayName: string;
+  createdAt: string;
+  updatedAt: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'DiscussionForumPosting',
+    headline: post.title,
+    text: post.content,
+    url: `${SITE_URL}/post/${post.id}`,
+    datePublished: post.createdAt,
+    dateModified: post.updatedAt,
+    author: { '@type': 'Person', name: post.authorDisplayName },
+  };
+}
+
+/**
+ * 설계사 마켓 상세 페이지용 - 이름/연락처는 GA가 열람권을 써야만 보이는 비공개
+ * 정보라 여기 절대 포함하지 않는다. 페이지에 이미 공개돼 있는 필드(활동지역/경력/
+ * 전문분야)만 그대로 구조화 데이터로 옮긴다.
+ */
+export function plannerProfileJsonLd(planner: {
+  id: string;
+  activeRegionLabel: string | null;
+  careerYears: number;
+  specialties: string[];
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    url: `${SITE_URL}/planner-market/${planner.id}`,
+    about: {
+      '@type': 'Person',
+      jobTitle: '보험설계사',
+      ...(planner.activeRegionLabel ? { homeLocation: { '@type': 'Place', name: planner.activeRegionLabel } } : {}),
+      ...(planner.specialties.length > 0 ? { knowsAbout: planner.specialties } : {}),
     },
   };
 }

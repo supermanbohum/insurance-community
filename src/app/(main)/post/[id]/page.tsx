@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -6,8 +7,34 @@ import { getPostDetail } from '@/lib/posts/query';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { DeletePostButton } from '@/components/post/DeletePostButton';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { Breadcrumb } from '@/components/seo/Breadcrumb';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { discussionPostJsonLd } from '@/lib/seo/jsonld';
 
 export const dynamic = 'force-dynamic';
+
+function truncate(text: string, max: number): string {
+  const trimmed = text.trim().replace(/\s+/g, ' ');
+  return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
+}
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const result = await getPostDetail(params.id);
+  if (!result) return {};
+
+  const { post } = result;
+  const title = post.title;
+  const description = truncate(post.content, 120);
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/post/${post.id}` },
+    openGraph: { title, description },
+    // 관리자가 색인 제외 처리한 글(is_seo_indexable=false)은 검색결과에 노출하지 않는다.
+    ...(post.is_seo_indexable ? {} : { robots: { index: false, follow: true } }),
+  };
+}
 
 export default async function PostDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient();
@@ -35,6 +62,23 @@ export default async function PostDetailPage({ params }: { params: { id: string 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 lg:flex-row lg:gap-6 lg:px-6 lg:py-6">
       <div className="min-w-0 flex-1 rounded-2xl border border-line bg-white p-4 shadow-card lg:p-6">
+        <JsonLd
+          data={discussionPostJsonLd({
+            id: post.id,
+            title: post.title,
+            content: post.content,
+            authorDisplayName: post.author_display_name,
+            createdAt: post.created_at,
+            updatedAt: post.updated_at,
+          })}
+        />
+        <Breadcrumb
+          items={[
+            { label: '홈', href: '/' },
+            ...(post.categories ? [{ label: post.categories.name, href: `/board/${post.categories.slug}` }] : []),
+            { label: post.title },
+          ]}
+        />
         <div className="text-xs font-bold text-brand-600">{post.categories?.name}</div>
         <h1 className="mt-1 break-words text-lg font-extrabold leading-snug text-ink">{post.title}</h1>
 

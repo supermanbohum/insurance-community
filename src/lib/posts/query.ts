@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import { toPublicPostSummary, type PostListRow } from '@/lib/posts/format';
 import type { PublicPostSummary } from '@/types/database';
 
@@ -112,4 +113,18 @@ export async function getPostDetail(postId: string): Promise<PostDetailResult | 
     images: images ?? [],
     isOwner: !!currentProfileId && currentProfileId === postRow.author_id,
   };
+}
+
+/** sitemap.xml 전용 - is_seo_indexable=false(관리자가 색인 제외 처리한 글)는 제외하고
+ * 공개(visible) 글의 id/updated_at만 가볍게 조회한다. cookies()를 쓰지 않는 공개
+ * 클라이언트라 sitemap.ts(별도 revalidate)에서 안전하게 호출할 수 있다. */
+export async function listPostIdsForSitemap(): Promise<{ id: string; updatedAt: string }[]> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await supabase
+    .from('posts')
+    .select('id, updated_at')
+    .eq('status', 'visible')
+    .eq('is_seo_indexable', true);
+  if (error) throw error;
+  return (data ?? []).map((row) => ({ id: row.id, updatedAt: row.updated_at }));
 }

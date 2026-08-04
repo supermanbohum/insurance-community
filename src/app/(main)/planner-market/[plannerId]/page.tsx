@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { User } from 'lucide-react';
@@ -8,6 +9,27 @@ import { PlannerBadgeList } from '@/components/planner-market/PlannerBadgeList';
 import { BackButton } from '@/components/shared/BackButton';
 import { avatarGradient } from '@/lib/utils';
 import { JOB_SEARCH_STATUS_LABEL, DESIRED_START_TIMING_LABEL, CONTACTABLE_TIME_LABEL } from '@/lib/planner-market/labels';
+import { Breadcrumb } from '@/components/seo/Breadcrumb';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { plannerProfileJsonLd } from '@/lib/seo/jsonld';
+
+export async function generateMetadata({ params }: { params: { plannerId: string } }): Promise<Metadata> {
+  const planner = await getPublicPlannerProfile(params.plannerId);
+  if (!planner) return {};
+
+  const region = planner.activeRegionLabel || '지역 미상';
+  const title = `${region} · 경력 ${planner.careerYears}년 설계사`;
+  const description =
+    planner.selfIntroduction?.slice(0, 100) ??
+    `${region}에서 활동 중인 경력 ${planner.careerYears}년차 보험설계사입니다. 연락처는 열람권으로 확인하세요.`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/planner-market/${planner.id}` },
+    openGraph: { title, description },
+  };
+}
 
 /** 설계사 상세(공개정보) - 누구나 열람 가능. 연락처는 PlannerContactUnlockButton을 통해서만. */
 export default async function PlannerMarketDetailPage({ params }: { params: { plannerId: string } }) {
@@ -18,6 +40,22 @@ export default async function PlannerMarketDetailPage({ params }: { params: { pl
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
+      <JsonLd
+        data={plannerProfileJsonLd({
+          id: planner.id,
+          activeRegionLabel: planner.activeRegionLabel,
+          careerYears: planner.careerYears,
+          specialties: planner.specialties,
+        })}
+      />
+      <Breadcrumb
+        items={[
+          { label: '홈', href: '/' },
+          { label: '설계사 마켓', href: '/planner-market' },
+          { label: '설계사 찾기', href: '/planner-market/search' },
+          { label: `${planner.activeRegionLabel || '지역 미상'} 설계사` },
+        ]}
+      />
       <BackButton />
 
       <div className="flex items-start gap-4">

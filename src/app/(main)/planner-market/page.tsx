@@ -1,7 +1,14 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Search, UserPlus, Ticket } from 'lucide-react';
 import { listPublicPlannerProfiles } from '@/lib/public/planner-market.supabase';
 import { PlannerCard } from '@/components/planner-market/PlannerCard';
+
+export const metadata: Metadata = {
+  title: '설계사 마켓 - 보험 리크루팅',
+  description: '좋은 설계사를 찾는 GA, 좋은 GA를 찾는 설계사가 만나는 보험 리크루팅 플랫폼. 무료로 구직 프로필을 등록하고, 열람권으로 설계사 연락처를 확인하세요.',
+  alternates: { canonical: '/planner-market' },
+};
 
 /** 설계사 마켓 메인 - 누구나 열람 가능. GA↔설계사 양방향 리쿠르팅의 진입점. */
 export default async function PlannerMarketHomePage() {

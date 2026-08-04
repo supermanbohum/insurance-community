@@ -1,5 +1,12 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Briefcase } from 'lucide-react';
+
+// best/events와 동일한 이유(준비 중 placeholder) - 실제 기능이 나오기 전까지 색인 제외.
+export const metadata: Metadata = {
+  title: '채용정보',
+  robots: { index: false, follow: true },
+};
 
 export default function JobsPage() {
   return (

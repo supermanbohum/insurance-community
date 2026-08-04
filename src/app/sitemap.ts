@@ -3,6 +3,8 @@ import { SITE_URL } from '@/lib/seo/config';
 import { listBranchSlugsForSitemap } from '@/lib/public/branch';
 import { listAllRegionsForSitemap } from '@/lib/public/region';
 import { listActiveCategorySlugs } from '@/lib/public/categories';
+import { listPostIdsForSitemap } from '@/lib/posts/query';
+import { listPlannerProfileIdsForSitemap } from '@/lib/public/planner-market.supabase';
 
 // app/sitemap.ts는 (main) 레이아웃 밖의 독립 라우트라 (main)이 매 요청 cookies()를 읽어
 // 강제하는 force-dynamic의 영향을 받지 않는다 - 1시간 단위로 재생성해 DB 부하 없이도
@@ -10,20 +12,41 @@ import { listActiveCategorySlugs } from '@/lib/public/categories';
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [branches, regions, categories] = await Promise.all([
+  const [branches, regions, categories, posts, planners] = await Promise.all([
     listBranchSlugsForSitemap(),
     listAllRegionsForSitemap(),
     listActiveCategorySlugs(),
+    listPostIdsForSitemap(),
+    listPlannerProfileIdsForSitemap(),
   ]);
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: SITE_URL, changeFrequency: 'daily', priority: 1 },
     { url: `${SITE_URL}/search`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${SITE_URL}/map`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/region`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/community`, changeFrequency: 'daily', priority: 0.7 },
+    { url: `${SITE_URL}/popular`, changeFrequency: 'daily', priority: 0.6 },
+    { url: `${SITE_URL}/top-register`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE_URL}/planner-market`, changeFrequency: 'daily', priority: 0.7 },
+    { url: `${SITE_URL}/planner-market/search`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
   ];
+
+  const postEntries: MetadataRoute.Sitemap = posts.map((p) => ({
+    url: `${SITE_URL}/post/${p.id}`,
+    lastModified: new Date(p.updatedAt),
+    changeFrequency: 'weekly',
+    priority: 0.5,
+  }));
+
+  const plannerEntries: MetadataRoute.Sitemap = planners.map((p) => ({
+    url: `${SITE_URL}/planner-market/${p.id}`,
+    lastModified: new Date(p.createdAt),
+    changeFrequency: 'weekly',
+    priority: 0.5,
+  }));
 
   const branchEntries: MetadataRoute.Sitemap = branches.map((b) => ({
     url: `${SITE_URL}/branch/${b.slug}`,
@@ -53,5 +76,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticEntries, ...branchEntries, ...sidoEntries, ...sigunguEntries, ...boardEntries];
+  return [...staticEntries, ...branchEntries, ...sidoEntries, ...sigunguEntries, ...boardEntries, ...postEntries, ...plannerEntries];
 }

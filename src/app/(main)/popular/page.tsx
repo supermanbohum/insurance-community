@@ -1,7 +1,14 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Flame } from 'lucide-react';
 import { listMonthlyTopBranches } from '@/lib/public/branch';
 import { BranchCard } from '@/components/branch/BranchCard';
+
+export const metadata: Metadata = {
+  title: '이달의 인기지점 TOP 30',
+  description: '이번 달 가장 많이 조회된 보험대리점 순위를 확인하세요.',
+  alternates: { canonical: '/popular' },
+};
 
 export const dynamic = 'force-dynamic';
 
