@@ -219,7 +219,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 ## 15. 알려진 제한사항 / 아직 안 된 것
 
-- 지점/설계사 **신규 등록(최초 제출) 폼에는 임시저장 기능이 없습니다** — 등록 수정(update) 흐름에만 draft가 구현되어 있습니다. 최초 등록 폼은 한 번에 끝까지 작성해야 합니다.
+- **설계사 신규 등록(최초 제출) 폼에는 임시저장 기능이 없습니다** — 등록 수정(update) 흐름에만 draft가 구현되어 있습니다. 지점 신규 등록은 `ga_admin_registration_drafts` 테이블(0047)로 임시저장이 가능하지만, **텍스트 필드만** 보관되고 파일(임대차계약서/명함/사진/영상)은 제출 시 다시 첨부해야 합니다 — 파일 업로드는 실제 `ga_branch` 행이 생성된 뒤에만 가능한 구조이기 때문입니다.
 - 지점 광고 상품 7종 중 "추천지점" 1종만 실제 노출과 연결되어 있고 나머지 6종은 결제 인프라만 존재합니다.
 - 결제는 스텁 상태 — 실 PG 연동 필요.
 - **Push 알림 발송 로직은 아직 없습니다.** `push_tokens` 테이블(토큰 저장)과 `window.__boheom` 브릿지 클라이언트(ready/push-token/deeplink 수신)는 완성됐지만, "이벤트 발생 시 Expo Push API를 실제로 호출하는" 발송 로직은 아직 구현되지 않았습니다. 열람 알림(`planner_contact_view_notifications`)은 현재 인앱 목록 + 읽지않음 배지만 제공하며, 이 테이블을 소스로 Push를 발송하는 서버 로직(Edge Function 등)이 추가되어야 실제 Push가 나갑니다.
@@ -227,10 +227,10 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 ---
 
-## 16. 마이그레이션 이력 요약 (0001~0046)
+## 16. 마이그레이션 이력 요약 (0001~0047)
 
 <details>
-<summary>펼치기 — 전체 46개 마이그레이션 한 줄 요약</summary>
+<summary>펼치기 — 전체 47개 마이그레이션 한 줄 요약</summary>
 
 | # | 파일 | 한줄 요약 |
 |---|---|---|
@@ -280,5 +280,6 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | 0044 | planner_trust_update_queue | 설계사 즉시반영/재승인 분리 |
 | 0045 | planner_contact_view_notifications | 설계사 열람 알림 |
 | 0046 | push_tokens | 앱 푸시 토큰 저장소 + register/unregister RPC |
+| 0047 | branch_registration_draft | 지점 신규등록 폼 임시저장 |
 
 </details>
