@@ -212,6 +212,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 7. **서비스롤 키(`SUPABASE_SERVICE_ROLE_KEY`)는 절대 앱 클라이언트에 포함하면 안 됩니다.** RLS를 완전히 우회하는 키입니다. 관리자 전용 기능이 앱에도 필요하다면, 앱이 이 키를 갖는 게 아니라 서버(웹의 API 또는 별도 백엔드)를 경유해야 합니다.
 8. **필드별 즉시반영/재승인 구분에 주의하세요.** 지점 수정, 설계사 프로필 수정 둘 다 "이 필드는 저장 즉시 반영되는지, 관리자 승인이 필요한지"가 필드마다 다릅니다(6절, 7절 표 참고). 앱에서 수정 폼을 만들 때 이 구분을 그대로 반영하지 않으면 사용자가 "저장했는데 왜 안 바뀌지"라고 혼란스러워할 수 있습니다.
 9. **마이그레이션 번호 = 진실의 소스.** 이 문서는 스냅샷입니다. 실제 최신 스키마/RPC 시그니처가 궁금하면 항상 `supabase/migrations/` 폴더에서 해당 테이블/함수가 마지막으로 언급된 가장 큰 번호의 파일을 확인하세요.
+11. **postMessage 브릿지가 이미 웹에 붙어 있습니다.** `src/lib/bridge/protocol.ts`(타입 정의)와 `src/components/bridge/BoheomBridge.tsx`(런타임)가 루트 레이아웃에 마운트되어 있어, 앱이 `ready`를 주입하면 웹이 즉시 앱 모드로 전환하고 `push-token`을 받으면 자동으로 `push_tokens` 테이블에 저장합니다. 앱 쪽 `BRIDGE_PROTOCOL.md` 타입과 반드시 동일하게 유지해야 하는 계약 파일이니, 브릿지 메시지 타입을 바꿀 때는 양쪽을 함께 갱신하세요.
 10. **웹 레포 경로에 주의**: 이 세션의 기본 작업 디렉터리가 `C:\Dev\insurance-community-mobile`(모바일 앱 레포)로 표시되더라도, 실제 웹 프로젝트는 `C:\Dev\Recovery\insurance-community-backup`에 있습니다. 최신 스키마를 확인할 때 착각하지 마세요.
 
 ---
@@ -219,17 +220,17 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 ## 15. 알려진 제한사항 / 아직 안 된 것
 
 - 지점/설계사 **신규 등록(최초 제출) 폼에는 임시저장 기능이 없습니다** — 등록 수정(update) 흐름에만 draft가 구현되어 있습니다. 최초 등록 폼은 한 번에 끝까지 작성해야 합니다.
-- 광고 배너 관리(`banner-images` 버킷, `banners`/`public_banners` 테이블)는 스토리지 버킷만 만들어져 있고 관리자 업로드 화면/공개 노출 로직은 아직 미구현입니다(0040 적용됨, 앱단 미완성).
 - 지점 광고 상품 7종 중 "추천지점" 1종만 실제 노출과 연결되어 있고 나머지 6종은 결제 인프라만 존재합니다.
 - 결제는 스텁 상태 — 실 PG 연동 필요.
-- Push 알림은 아직 없음(열람 알림은 현재 인앱 목록 + 읽지않음 배지만). `planner_contact_view_notifications` 테이블 구조 자체는 앱 출시 후 실시간 Push로 확장 가능하도록 설계되어 있습니다.
+- **Push 알림 발송 로직은 아직 없습니다.** `push_tokens` 테이블(토큰 저장)과 `window.__boheom` 브릿지 클라이언트(ready/push-token/deeplink 수신)는 완성됐지만, "이벤트 발생 시 Expo Push API를 실제로 호출하는" 발송 로직은 아직 구현되지 않았습니다. 열람 알림(`planner_contact_view_notifications`)은 현재 인앱 목록 + 읽지않음 배지만 제공하며, 이 테이블을 소스로 Push를 발송하는 서버 로직(Edge Function 등)이 추가되어야 실제 Push가 나갑니다.
+- App/Universal Links 검증 파일(`/.well-known/assetlinks.json`, `apple-app-site-association`)은 아직 호스팅되지 않았습니다 — 앱팀의 실제 Android 서명 인증서 SHA256 지문과 Apple Team ID가 필요합니다.
 
 ---
 
-## 16. 마이그레이션 이력 요약 (0001~0045)
+## 16. 마이그레이션 이력 요약 (0001~0046)
 
 <details>
-<summary>펼치기 — 전체 45개 마이그레이션 한 줄 요약</summary>
+<summary>펼치기 — 전체 46개 마이그레이션 한 줄 요약</summary>
 
 | # | 파일 | 한줄 요약 |
 |---|---|---|
@@ -278,5 +279,6 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | 0043 | branch_registration_drafts | 지점 임시저장+대기중수정+정확한이력 |
 | 0044 | planner_trust_update_queue | 설계사 즉시반영/재승인 분리 |
 | 0045 | planner_contact_view_notifications | 설계사 열람 알림 |
+| 0046 | push_tokens | 앱 푸시 토큰 저장소 + register/unregister RPC |
 
 </details>
