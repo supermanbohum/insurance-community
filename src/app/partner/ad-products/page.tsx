@@ -3,10 +3,11 @@ import { getBranchesByGaCompanyId } from '@/lib/admin/ga';
 import { AdProductCatalog } from '@/components/partner/AdProductCatalog';
 
 /** 광고 상품 - 지점 노출을 위한 광고 카탈로그. 설계사 마켓(열람권)과 완전히 별개의
- * 두 번째 수익 스트림이다. */
+ * 두 번째 수익 스트림이다. 지점이 아직 없는 GA 관리자도 카탈로그는 볼 수 있다
+ * (구매만 승인된 지점이 있어야 가능 - AdProductCatalog 내부에서 안내). */
 export default async function PartnerAdProductsPage() {
   const partner = await requirePartner();
-  const branches = await getBranchesByGaCompanyId(partner.ga_company_id!);
+  const branches = partner.ga_company_id ? await getBranchesByGaCompanyId(partner.ga_company_id) : [];
   const approvedBranches = branches.filter((b) => b.registration_status === 'approved');
 
   return (

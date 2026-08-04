@@ -261,9 +261,8 @@ export function OnboardingForm({ regions, gaOptions }: { regions: RegionRow[]; g
         await savePartnerBranchLinksAction(result.branchId, linkEntries);
       }
 
-      toast.success('등록 신청이 접수되었습니다. 관리자 승인 후 지도에 노출됩니다.');
       triggerHaptic('success');
-      router.push('/partner');
+      router.push(`/partner/register/complete?branchId=${result.branchId}`);
       router.refresh();
     });
   }

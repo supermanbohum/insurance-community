@@ -870,7 +870,9 @@ export interface Database {
           specialties: string[];
           self_introduction: string | null;
           currently_employed: boolean;
-          open_to_move: boolean;
+          job_search_status: 'actively_looking' | 'open_to_offers' | 'not_looking';
+          desired_start_timing: 'immediate' | 'within_1_month' | 'within_3_months' | 'negotiable' | null;
+          contactable_times: string[];
           desired_region_id: string | null;
           desired_ga_company_id: string | null;
           desired_conditions: string | null;
@@ -1059,7 +1061,9 @@ export interface Database {
           specialties: string[];
           self_introduction: string | null;
           currently_employed: boolean;
-          open_to_move: boolean;
+          job_search_status: 'actively_looking' | 'open_to_offers' | 'not_looking';
+          desired_start_timing: 'immediate' | 'within_1_month' | 'within_3_months' | 'negotiable' | null;
+          contactable_times: string[];
           desired_region_id: string | null;
           desired_ga_company_id: string | null;
           desired_conditions: string | null;
@@ -1631,7 +1635,9 @@ export interface Database {
           p_career_years: number;
           p_specialties: string[];
           p_currently_employed: boolean;
-          p_open_to_move: boolean;
+          p_job_search_status: string;
+          p_desired_start_timing?: string | null;
+          p_contactable_times: string[];
           p_consent_contact_paid_view: boolean;
           p_consent_recruit_contact: boolean;
           p_consent_privacy_policy: boolean;
@@ -1656,7 +1662,9 @@ export interface Database {
           p_career_years: number;
           p_specialties: string[];
           p_currently_employed: boolean;
-          p_open_to_move: boolean;
+          p_job_search_status: string;
+          p_desired_start_timing?: string | null;
+          p_contactable_times: string[];
           p_kakao_id?: string | null;
           p_profile_photo_path?: string | null;
           p_self_introduction?: string | null;
@@ -1828,7 +1836,9 @@ export interface PublicPlannerProfileSummary {
   specialties: string[];
   selfIntroduction: string | null;
   currentlyEmployed: boolean;
-  openToMove: boolean;
+  jobSearchStatus: 'actively_looking' | 'open_to_offers' | 'not_looking';
+  desiredStartTiming: 'immediate' | 'within_1_month' | 'within_3_months' | 'negotiable' | null;
+  contactableTimes: string[];
   desiredRegionId: string | null;
   desiredRegionLabel: string | null;
   desiredGaCompanyId: string | null;

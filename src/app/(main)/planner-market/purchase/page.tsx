@@ -10,7 +10,15 @@ const TIERS: CreditTier[] = [
   { tierCode: 'credits_10', creditCount: 10, amountKrw: 330000, unitPriceKrw: 33000 },
   { tierCode: 'credits_30', creditCount: 30, amountKrw: 990000, unitPriceKrw: 33000 },
   { tierCode: 'credits_50', creditCount: 50, amountKrw: 1650000, unitPriceKrw: 33000 },
-  { tierCode: 'credits_100', creditCount: 100, amountKrw: 3000000, unitPriceKrw: 30000, isBest: true },
+  {
+    tierCode: 'credits_100',
+    creditCount: 100,
+    amountKrw: 3000000,
+    unitPriceKrw: 30000,
+    originalAmountKrw: 3300000,
+    discountLabel: '10% 할인',
+    isBest: true,
+  },
 ];
 
 /** 열람권 구매 - GA 파트너 전용. requirePartner()는 next= 파라미터 없이 /login으로

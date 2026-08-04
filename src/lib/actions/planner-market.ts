@@ -18,7 +18,9 @@ export interface PlannerMarketProfileInput {
   careerYears: number;
   specialties: string[];
   currentlyEmployed: boolean;
-  openToMove: boolean;
+  jobSearchStatus: 'actively_looking' | 'open_to_offers' | 'not_looking';
+  desiredStartTiming?: 'immediate' | 'within_1_month' | 'within_3_months' | 'negotiable' | null;
+  contactableTimes: Array<'morning' | 'afternoon' | 'evening' | 'weekend' | 'anytime'>;
   selfIntroduction?: string;
   desiredRegionId?: string | null;
   desiredGaCompanyId?: string | null;
@@ -105,7 +107,9 @@ export async function submitPlannerMarketProfileAction(
     p_career_years: input.careerYears,
     p_specialties: input.specialties,
     p_currently_employed: input.currentlyEmployed,
-    p_open_to_move: input.openToMove,
+    p_job_search_status: input.jobSearchStatus,
+    p_desired_start_timing: input.desiredStartTiming ?? null,
+    p_contactable_times: input.contactableTimes,
     p_consent_contact_paid_view: consents.contactPaidView,
     p_consent_recruit_contact: consents.recruitContact,
     p_consent_privacy_policy: consents.privacyPolicy,
@@ -155,7 +159,9 @@ export async function updatePlannerMarketProfileAction(
     p_career_years: input.careerYears,
     p_specialties: input.specialties,
     p_currently_employed: input.currentlyEmployed,
-    p_open_to_move: input.openToMove,
+    p_job_search_status: input.jobSearchStatus,
+    p_desired_start_timing: input.desiredStartTiming ?? null,
+    p_contactable_times: input.contactableTimes,
     p_kakao_id: input.kakaoId?.trim() || null,
     p_profile_photo_path: input.profilePhotoPath ?? null,
     p_self_introduction: input.selfIntroduction?.trim() || null,

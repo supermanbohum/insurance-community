@@ -57,7 +57,7 @@ export function PlannerMarketSearchFilters({
           )}
         >
           <Checkbox checked={incomeVerifiedOnly} onCheckedChange={(v) => setIncomeVerifiedOnly(v === true)} />
-          <span>🏆 직전연봉 인증 설계사만 보기</span>
+          <span>🏅 직전연봉 인증 설계사만 보기</span>
         </label>
         <Button type="button" onClick={apply} className="ml-auto">
           검색 적용

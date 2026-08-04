@@ -11,9 +11,9 @@ import { GaChangeRequestForm } from '@/components/mypage/GaChangeRequestForm';
 import { avatarGradient, cn } from '@/lib/utils';
 
 const PROVIDER_LABEL: Record<string, string> = {
-  kakao: '카카오',
-  google: 'Google',
-  email: '이메일',
+  kakao: '카카오 간편 로그인',
+  google: 'Google 간편 로그인',
+  email: '이메일 로그인',
 };
 
 export default async function MyPage() {
@@ -49,7 +49,7 @@ export default async function MyPage() {
           <p className="truncate text-base font-extrabold text-ink">{user.nickname}</p>
           {user.email && <p className="truncate text-xs text-ink-faint">{user.email}</p>}
           <span className="w-fit rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-600">
-            {PROVIDER_LABEL[user.provider] ?? user.provider} 로그인
+            {PROVIDER_LABEL[user.provider] ?? '간편 로그인'}
           </span>
         </div>
         <form action={logoutAction}>

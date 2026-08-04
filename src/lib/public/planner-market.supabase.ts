@@ -14,7 +14,9 @@ interface PublicPlannerProfileRow {
   specialties: string[];
   self_introduction: string | null;
   currently_employed: boolean;
-  open_to_move: boolean;
+  job_search_status: 'actively_looking' | 'open_to_offers' | 'not_looking';
+  desired_start_timing: 'immediate' | 'within_1_month' | 'within_3_months' | 'negotiable' | null;
+  contactable_times: string[];
   desired_region_id: string | null;
   desired_ga_company_id: string | null;
   desired_conditions: string | null;
@@ -66,7 +68,9 @@ async function toSummaries(
     specialties: row.specialties,
     selfIntroduction: row.self_introduction,
     currentlyEmployed: row.currently_employed,
-    openToMove: row.open_to_move,
+    jobSearchStatus: row.job_search_status,
+    desiredStartTiming: row.desired_start_timing,
+    contactableTimes: row.contactable_times,
     desiredRegionId: row.desired_region_id,
     desiredRegionLabel: row.desired_region_id ? regionLabel(regionMap.get(row.desired_region_id)) : null,
     desiredGaCompanyId: row.desired_ga_company_id,

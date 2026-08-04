@@ -77,7 +77,7 @@ export default async function PlannerMarketMyPage() {
       />
 
       {incomeBadge?.status === 'pending_review' && (
-        <p className="rounded-2xl border border-line bg-amber-50 p-4 text-sm text-amber-700">🏆 연봉 인증 배지 심사 중입니다.</p>
+        <p className="rounded-2xl border border-line bg-amber-50 p-4 text-sm text-amber-700">🏅 연봉 인증 배지 심사 중입니다.</p>
       )}
 
       {showIncomeBadgeForm && <PlannerIncomeBadgeUploadForm plannerProfileId={profile.id} />}

@@ -36,7 +36,7 @@ export default async function AdminPlannerMarketPage({ searchParams }: { searchP
         </div>
         <div className="flex gap-2">
           <Link href="/admin/planner-market/badges" className="text-sm font-medium text-brand-600 hover:underline">
-            🏆 배지 심사 →
+            🏅 배지 심사 →
           </Link>
           <Link href="/admin/planner-market/credits" className="text-sm font-medium text-brand-600 hover:underline">
             열람권 관리 →

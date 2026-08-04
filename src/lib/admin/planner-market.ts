@@ -83,7 +83,9 @@ export interface PlannerMarketProfileDetail extends PlannerMarketProfileListItem
   specialties: string[];
   selfIntroduction: string | null;
   currentlyEmployed: boolean;
-  openToMove: boolean;
+  jobSearchStatus: 'actively_looking' | 'open_to_offers' | 'not_looking';
+  desiredStartTiming: 'immediate' | 'within_1_month' | 'within_3_months' | 'negotiable' | null;
+  contactableTimes: string[];
   desiredRegionLabel: string | null;
   desiredGaCompanyName: string | null;
   desiredConditions: string | null;
@@ -132,7 +134,9 @@ export async function getPlannerMarketProfileDetail(id: string): Promise<Planner
     specialties: row.specialties,
     selfIntroduction: row.self_introduction,
     currentlyEmployed: row.currently_employed,
-    openToMove: row.open_to_move,
+    jobSearchStatus: row.job_search_status,
+    desiredStartTiming: row.desired_start_timing,
+    contactableTimes: row.contactable_times ?? [],
     desiredRegionLabel: desiredRegion ? regionLabel(desiredRegion) : null,
     desiredGaCompanyName: desiredGa?.name ?? null,
     desiredConditions: row.desired_conditions,

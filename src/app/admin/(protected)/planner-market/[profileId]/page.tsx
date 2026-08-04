@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPlannerMarketProfileDetail } from '@/lib/admin/planner-market';
+import { JOB_SEARCH_STATUS_LABEL, DESIRED_START_TIMING_LABEL, CONTACTABLE_TIME_LABEL } from '@/lib/planner-market/labels';
 import { listPlannerBadgeTypes } from '@/lib/admin/planner-badges';
 import { PlannerMarketProfileReviewActions } from '@/components/admin/PlannerMarketProfileReviewActions';
 import { PlannerBadgeManagementCard } from '@/components/admin/PlannerBadgeManagementCard';
@@ -67,7 +68,16 @@ export default async function AdminPlannerMarketProfileDetailPage({ params }: { 
           <InfoRow label="경력" value={`${detail.careerYears}년`} />
           <InfoRow label="전문분야" value={detail.specialties.length > 0 ? detail.specialties.join(', ') : '-'} />
           <InfoRow label="현재 근무 여부" value={detail.currentlyEmployed ? '재직중' : '미재직'} />
-          <InfoRow label="이직 가능 여부" value={detail.openToMove ? '가능' : '불가'} />
+          <InfoRow label="현재 상태" value={JOB_SEARCH_STATUS_LABEL[detail.jobSearchStatus]} />
+          <InfoRow label="희망 입사 시기" value={detail.desiredStartTiming ? DESIRED_START_TIMING_LABEL[detail.desiredStartTiming] : '-'} />
+          <InfoRow
+            label="연락 가능 시간"
+            value={
+              detail.contactableTimes.length > 0
+                ? detail.contactableTimes.map((t) => CONTACTABLE_TIME_LABEL[t as keyof typeof CONTACTABLE_TIME_LABEL] ?? t).join(', ')
+                : '-'
+            }
+          />
           <InfoRow label="희망 근무지역" value={detail.desiredRegionLabel ?? '-'} />
           <InfoRow label="희망 GA" value={detail.desiredGaCompanyName ?? '-'} />
           <InfoRow label="희망 조건" value={detail.desiredConditions ?? '-'} />

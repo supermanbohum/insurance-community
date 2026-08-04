@@ -19,9 +19,51 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { JOB_SEARCH_STATUS_LABEL, DESIRED_START_TIMING_LABEL, CONTACTABLE_TIME_LABEL } from '@/lib/planner-market/labels';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+type JobSearchStatus = keyof typeof JOB_SEARCH_STATUS_LABEL;
+type DesiredStartTiming = keyof typeof DESIRED_START_TIMING_LABEL;
+type ContactableTime = keyof typeof CONTACTABLE_TIME_LABEL;
+
+const JOB_SEARCH_STATUS_OPTIONS = Object.keys(JOB_SEARCH_STATUS_LABEL) as JobSearchStatus[];
+const DESIRED_START_TIMING_OPTIONS = Object.keys(DESIRED_START_TIMING_LABEL) as DesiredStartTiming[];
+const CONTACTABLE_TIME_OPTIONS = Object.keys(CONTACTABLE_TIME_LABEL) as ContactableTime[];
+
+/** 단일선택 필드(현재 상태/희망 입사 시기)가 공유하는 pill 버튼 그룹. */
+function PillSingleSelect<T extends string>({
+  options,
+  labels,
+  value,
+  onChange,
+}: {
+  options: readonly T[];
+  labels: Record<T, string>;
+  value: T | null;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => onChange(opt)}
+          className={cn(
+            'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
+            value === opt ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-ink-soft hover:border-brand-200'
+          )}
+        >
+          {labels[opt]}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export interface PlannerMarketEditableProfile {
   id: string;
@@ -35,7 +77,9 @@ export interface PlannerMarketEditableProfile {
   careerYears: number;
   specialties: string[];
   currentlyEmployed: boolean;
-  openToMove: boolean;
+  jobSearchStatus: 'actively_looking' | 'open_to_offers' | 'not_looking';
+  desiredStartTiming: 'immediate' | 'within_1_month' | 'within_3_months' | 'negotiable' | null;
+  contactableTimes: string[];
   selfIntroduction: string | null;
   desiredRegionId: string | null;
   desiredGaCompanyId: string | null;
@@ -67,7 +111,15 @@ export function PlannerMarketRegisterForm({
   const [careerYears, setCareerYears] = useState<number | ''>(initialProfile?.careerYears ?? '');
   const [specialtiesText, setSpecialtiesText] = useState(initialProfile?.specialties.join(', ') ?? '');
   const [currentlyEmployed, setCurrentlyEmployed] = useState(initialProfile?.currentlyEmployed ?? false);
-  const [openToMove, setOpenToMove] = useState(initialProfile?.openToMove ?? true);
+  const [jobSearchStatus, setJobSearchStatus] = useState<JobSearchStatus | null>(
+    (initialProfile?.jobSearchStatus as JobSearchStatus | undefined) ?? null
+  );
+  const [desiredStartTiming, setDesiredStartTiming] = useState<DesiredStartTiming | null>(
+    (initialProfile?.desiredStartTiming as DesiredStartTiming | null | undefined) ?? null
+  );
+  const [contactableTimes, setContactableTimes] = useState<ContactableTime[]>(
+    (initialProfile?.contactableTimes as ContactableTime[] | undefined) ?? []
+  );
   const [selfIntroduction, setSelfIntroduction] = useState(initialProfile?.selfIntroduction ?? '');
   const [desiredRegionId, setDesiredRegionId] = useState<string | null>(initialProfile?.desiredRegionId ?? null);
   const [desiredGaCompanyId, setDesiredGaCompanyId] = useState<string | null>(initialProfile?.desiredGaCompanyId ?? null);
@@ -76,7 +128,11 @@ export function PlannerMarketRegisterForm({
 
   const allConsented = isEditMode || Object.values(consents).every(Boolean);
   const canSubmit =
-    name.trim() && phone.trim() && email.trim() && activeRegionId && careerYears !== '' && allConsented;
+    name.trim() && phone.trim() && email.trim() && activeRegionId && careerYears !== '' && jobSearchStatus && allConsented;
+
+  function toggleContactableTime(time: ContactableTime) {
+    setContactableTimes((prev) => (prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]));
+  }
 
   function pickPhoto(files: FileList | null) {
     const file = files?.[0];
@@ -90,7 +146,7 @@ export function PlannerMarketRegisterForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || !activeRegionId) return;
+    if (!canSubmit || !activeRegionId || !jobSearchStatus) return;
 
     startTransition(async () => {
       let profilePhotoPath: string | null = existingPhotoUrl ? (initialProfile?.profilePhotoPath ?? null) : null;
@@ -118,7 +174,9 @@ export function PlannerMarketRegisterForm({
           .map((s) => s.trim())
           .filter(Boolean),
         currentlyEmployed,
-        openToMove,
+        jobSearchStatus,
+        desiredStartTiming,
+        contactableTimes,
         selfIntroduction,
         desiredRegionId,
         desiredGaCompanyId,
@@ -230,11 +288,29 @@ export function PlannerMarketRegisterForm({
             </Label>
             <Switch id="pm-employed" checked={currentlyEmployed} onCheckedChange={setCurrentlyEmployed} />
           </div>
-          <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
-            <Label htmlFor="pm-open" className="cursor-pointer font-normal">
-              이직 가능 여부
-            </Label>
-            <Switch id="pm-open" checked={openToMove} onCheckedChange={setOpenToMove} />
+          <div className="flex flex-col gap-1.5">
+            <Label>현재 상태</Label>
+            <PillSingleSelect options={JOB_SEARCH_STATUS_OPTIONS} labels={JOB_SEARCH_STATUS_LABEL} value={jobSearchStatus} onChange={setJobSearchStatus} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>희망 입사 시기</Label>
+            <PillSingleSelect
+              options={DESIRED_START_TIMING_OPTIONS}
+              labels={DESIRED_START_TIMING_LABEL}
+              value={desiredStartTiming}
+              onChange={setDesiredStartTiming}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>연락 가능 시간</Label>
+            <div className="flex flex-wrap gap-3">
+              {CONTACTABLE_TIME_OPTIONS.map((time) => (
+                <label key={time} className="flex cursor-pointer items-center gap-1.5 text-sm text-ink-soft">
+                  <Checkbox checked={contactableTimes.includes(time)} onCheckedChange={() => toggleContactableTime(time)} />
+                  {CONTACTABLE_TIME_LABEL[time]}
+                </label>
+              ))}
+            </div>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pm-intro">자기소개</Label>
@@ -279,7 +355,7 @@ export function PlannerMarketRegisterForm({
       </Button>
       {!canSubmit && !isPending && (
         <p className="text-center text-xs text-muted-foreground">
-          이름/연락처/이메일/활동지역/경력{isEditMode ? '' : '과 모든 필수 동의 항목'}을 입력해주세요.
+          이름/연락처/이메일/활동지역/경력/현재 상태{isEditMode ? '' : '와 모든 필수 동의 항목'}을 입력해주세요.
         </p>
       )}
     </form>

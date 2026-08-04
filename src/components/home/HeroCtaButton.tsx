@@ -13,9 +13,11 @@ interface Ripple {
 
 /**
  * 홈 화면 메인 CTA 전용 공용 버튼 - "지점 등록하기"/"설계사 등록하기"가 동일한
- * 컴포넌트를 재사용해 애니메이션(hover scale/gradient pan/glow pulse/클릭
- * ripple/모바일 touch scale)이 항상 통일되게 한다. 색상만 gradientClassName/
- * glowColor로 갈아끼운다 - 새 CTA가 추가돼도 이 컴포넌트만 재사용하면 된다.
+ * 컴포넌트를 재사용해 통일된 절제된 프리미엄 톤을 유지한다. 배경 그라디언트와
+ * 글로우는 무한 반복 없이 정적이고, "샤인" 스윕만 페이지 진입 시 1회 +
+ * hover할 때마다 1회 재생된다(shine 스팬의 key를 바꿔 리마운트시켜 CSS
+ * 애니메이션을 매번 처음부터 재생시키는 방식 - 별도 JS 애니메이션 로직 불필요).
+ * 색상은 gradientClassName/glowColor로만 갈아끼운다.
  */
 export function HeroCtaButton({
   href,
@@ -29,10 +31,11 @@ export function HeroCtaButton({
   icon: ReactNode;
   /** 예: 'from-brand-500 via-brand-600 to-brand-800' */
   gradientClassName: string;
-  /** glow-pulse 키프레임이 읽는 CSS 변수 값. 예: 'rgba(37,99,235,0.45)' */
+  /** 정적 엘리베이션 글로우 색상. 예: 'rgba(37,99,235,0.45)' */
   glowColor: string;
 }) {
   const [ripples, setRipples] = useState<Ripple[]>([]);
+  const [shineKey, setShineKey] = useState(0);
 
   function handlePointerDown(e: PointerEvent<HTMLAnchorElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -51,13 +54,19 @@ export function HeroCtaButton({
     <Link
       href={href}
       onPointerDown={handlePointerDown}
-      style={{ '--glow-color': glowColor } as React.CSSProperties}
+      onMouseEnter={() => setShineKey((k) => k + 1)}
+      style={{ boxShadow: `0 10px 24px -8px ${glowColor}` }}
       className={cn(
-        'group relative flex touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br bg-[length:200%_200%] py-7 shadow-pop transition-transform duration-200 ease-out animate-cta-glow hover:scale-[1.02] active:scale-[0.96]',
+        'group relative flex touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br py-7 transition-transform duration-200 ease-out hover:scale-[1.02] active:scale-[0.96]',
         gradientClassName
       )}
     >
       <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-white/10" />
+      {/* 진입 시 1회 + hover마다 1회 재생되는 샤인 스윕 - key가 바뀌면 리마운트되어 애니메이션이 처음부터 다시 실행된다. */}
+      <span
+        key={shineKey}
+        className="pointer-events-none absolute inset-y-0 left-0 w-1/4 -skew-x-12 animate-shine bg-gradient-to-r from-transparent via-white/45 to-transparent"
+      />
       {ripples.map((r) => (
         <span
           key={r.id}

@@ -147,6 +147,11 @@ const config: Config = {
           '0%': { transform: 'scale(0)', opacity: '0.45' },
           '100%': { transform: 'scale(2.8)', opacity: '0' },
         },
+        shine: {
+          '0%': { transform: 'translateX(-120%) skewX(-12deg)', opacity: '0' },
+          '15%': { opacity: '1' },
+          '100%': { transform: 'translateX(420%) skewX(-12deg)', opacity: '0' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
@@ -166,6 +171,7 @@ const config: Config = {
         // 두 키프레임을 콤마로 묶은 조합 유틸을 하나 더 둔다(HeroCtaButton 전용).
         'cta-glow': 'gradient-pan 6s ease-in-out infinite, glow-pulse 2.4s ease-in-out infinite',
         ripple: 'ripple 0.6s ease-out forwards',
+        shine: 'shine 1.1s ease-out',
       },
     },
   },

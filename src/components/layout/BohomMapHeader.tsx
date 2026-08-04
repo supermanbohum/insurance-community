@@ -20,6 +20,7 @@ import {
   Search,
   UserPlus,
   Ticket,
+  Edit3,
 } from 'lucide-react';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { BrandMark } from '@/components/brand/BrandMark';
@@ -52,7 +53,10 @@ const MENU_GROUPS = [
     items: [
       { href: '/planner-market/search', label: '설계사 찾기', icon: Search, tile: 'bg-emerald-50 text-emerald-600' },
       { href: '/planner-market/register', label: '설계사 등록', icon: UserPlus, tile: 'bg-indigo-50 text-indigo-600' },
+      // 본인이 등록한 정보만 수정 가능 - 각 진입점 자체가 소유자 확인 후 없으면 등록 화면으로 보낸다.
+      { href: '/planner-market/edit', label: '설계사 수정', icon: Edit3, tile: 'bg-indigo-50 text-indigo-600' },
       { href: '/partner/register', label: '지점 등록', icon: MapPin, tile: 'bg-blue-50 text-blue-600' },
+      { href: '/partner/branches', label: '지점 수정', icon: Edit3, tile: 'bg-blue-50 text-blue-600' },
       { href: '/partner/ad-products', label: '광고상품', icon: Megaphone, tile: 'bg-rose-50 text-rose-600' },
       { href: '/planner-market/purchase', label: '구매센터', icon: Ticket, tile: 'bg-amber-50 text-amber-600' },
     ],

@@ -4,6 +4,7 @@ import { User } from 'lucide-react';
 import type { PublicPlannerProfileSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
 import { PlannerBadgeList } from '@/components/planner-market/PlannerBadgeList';
+import { JOB_SEARCH_STATUS_LABEL } from '@/lib/planner-market/labels';
 
 export function PlannerCard({ planner, className }: { planner: PublicPlannerProfileSummary; className?: string }) {
   return (
@@ -40,8 +41,10 @@ export function PlannerCard({ planner, className }: { planner: PublicPlannerProf
         )}
         {planner.selfIntroduction && <p className="line-clamp-2 text-xs text-ink-faint">{planner.selfIntroduction}</p>}
         <div className="mt-auto flex flex-wrap gap-1 pt-1">
-          {planner.openToMove && (
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">이직 가능</span>
+          {planner.jobSearchStatus !== 'not_looking' && (
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+              {JOB_SEARCH_STATUS_LABEL[planner.jobSearchStatus]}
+            </span>
           )}
           {planner.desiredRegionLabel && (
             <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-soft">희망 {planner.desiredRegionLabel}</span>

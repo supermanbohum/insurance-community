@@ -51,7 +51,7 @@ export function PlannerIncomeBadgeUploadForm({ plannerProfileId }: { plannerProf
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-5">
       <div>
-        <h2 className="text-sm font-bold">🏆 연봉 인증 배지 신청</h2>
+        <h2 className="text-sm font-bold">🏅 연봉 인증 배지 신청</h2>
         <p className="mt-1 text-xs text-muted-foreground">
           원천징수영수증 또는 소득금액증명원을 제출하면 관리자 검토 후 배지가 표시됩니다. 실제 연봉 금액은 절대 공개되지 않습니다.
         </p>
