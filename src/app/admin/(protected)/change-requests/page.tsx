@@ -16,9 +16,22 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   rejected: 'destructive',
 };
 
-export default async function AdminChangeRequestsPage({ searchParams }: { searchParams: { status?: string } }) {
+const REQUEST_TYPE_LABEL: Record<string, string> = {
+  create: '신규 신청',
+  update: '수정 신청',
+};
+
+export default async function AdminChangeRequestsPage({
+  searchParams,
+}: {
+  searchParams: { status?: string; type?: string };
+}) {
   const status = searchParams.status ?? 'pending';
-  const items = await listChangeRequests(status === 'all' ? {} : { status: status as 'pending' });
+  const type = searchParams.type ?? 'all';
+  const items = await listChangeRequests({
+    ...(status === 'all' ? {} : { status: status as 'pending' }),
+    ...(type === 'all' ? {} : { requestType: type as 'create' }),
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -27,22 +40,42 @@ export default async function AdminChangeRequestsPage({ searchParams }: { search
         <p className="text-sm text-muted-foreground">파트너가 신청한 GA/지점 정보 수정 요청을 검토합니다.</p>
       </div>
 
-      <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1">
-        {[
-          { value: 'pending', label: '검토 대기' },
-          { value: 'all', label: '전체' },
-        ].map((tab) => (
-          <Link
-            key={tab.value}
-            href={`/admin/change-requests?status=${tab.value}`}
-            className={cn(
-              'rounded-md px-3 py-1 text-sm font-medium transition-all',
-              status === tab.value ? 'bg-background text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {tab.label}
-          </Link>
-        ))}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1">
+          {[
+            { value: 'pending', label: '검토 대기' },
+            { value: 'all', label: '전체' },
+          ].map((tab) => (
+            <Link
+              key={tab.value}
+              href={`/admin/change-requests?status=${tab.value}&type=${type}`}
+              className={cn(
+                'rounded-md px-3 py-1 text-sm font-medium transition-all',
+                status === tab.value ? 'bg-background text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+        <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1">
+          {[
+            { value: 'all', label: '신규+수정' },
+            { value: 'create', label: '신규 신청' },
+            { value: 'update', label: '수정 신청' },
+          ].map((tab) => (
+            <Link
+              key={tab.value}
+              href={`/admin/change-requests?status=${status}&type=${tab.value}`}
+              className={cn(
+                'rounded-md px-3 py-1 text-sm font-medium transition-all',
+                type === tab.value ? 'bg-background text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       <Card>
@@ -68,7 +101,10 @@ export default async function AdminChangeRequestsPage({ searchParams }: { search
                     {item.submittedByName} · 필드 {item.fieldChanges.length}건 · {new Date(item.createdAt).toLocaleDateString('ko-KR')}
                   </p>
                 </div>
-                <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="outline">{REQUEST_TYPE_LABEL[item.requestType]}</Badge>
+                  <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+                </div>
               </Link>
             ))
           )}

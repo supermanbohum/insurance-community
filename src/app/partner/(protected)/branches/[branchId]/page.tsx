@@ -22,7 +22,7 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
   }
 
   const supabase = createServerSupabaseClient();
-  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media, pendingUpdates] = await Promise.all([
+  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media, { data: openRegistrationRows }] = await Promise.all([
     getGaCompanyById(branch.ga_company_id),
     listRegions(),
     listInsurers(),
@@ -30,16 +30,11 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
     getBranchContacts(branch.id),
     getBranchRecruits(branch.id),
     getBranchMedia(branch.id),
-    supabase
-      .from('branch_registrations')
-      .select('id', { count: 'exact', head: true })
-      .eq('branch_id', branch.id)
-      .eq('request_type', 'update')
-      .eq('status', 'pending'),
+    supabase.rpc('get_open_branch_update', { p_branch_id: branch.id }),
   ]);
 
   const activeRecruit = recruits.find((r) => r.is_active) ?? null;
-  const hasPendingUpdate = (pendingUpdates.count ?? 0) > 0;
+  const openRegistration = openRegistrationRows?.[0] ?? null;
   const imageBaseUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/branch-images`;
 
   return (
@@ -57,7 +52,8 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
 
       <Card className="border-amber-300 bg-amber-50">
         <CardContent className="pt-4 text-sm text-amber-900">
-          이름/주소/지역/소개글/설계사수/편의시설/사진 수정은 관리자 승인 후에 반영됩니다. 연락처/취급보험사/채용정보는 저장 즉시 반영됩니다.
+          이름/주소/지역/소개글/설계사수/편의시설/사진 수정은 관리자 승인 후에 반영됩니다. 승인 대기 중에도 언제든 다시 수정해 제출할 수 있으며, 관리자는 항상 최신 내용만 검토합니다.
+          연락처/취급보험사/채용정보는 저장 즉시 반영됩니다.
         </CardContent>
       </Card>
 
@@ -70,7 +66,21 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
         activeRecruit={activeRecruit}
         media={media}
         imageBaseUrl={imageBaseUrl}
-        hasPendingUpdate={hasPendingUpdate}
+        openRegistration={
+          openRegistration
+            ? {
+                status: openRegistration.status as 'draft' | 'pending',
+                registrant: {
+                  name: openRegistration.registrant_name,
+                  title: openRegistration.registrant_title,
+                  phone: openRegistration.registrant_phone,
+                  company: openRegistration.registrant_company,
+                  branchLabel: openRegistration.registrant_branch_label,
+                },
+                payload: openRegistration.payload as Record<string, unknown>,
+              }
+            : null
+        }
       />
     </div>
   );

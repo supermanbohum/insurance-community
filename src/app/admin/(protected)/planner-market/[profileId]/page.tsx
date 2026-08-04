@@ -4,6 +4,8 @@ import { getPlannerMarketProfileDetail } from '@/lib/admin/planner-market';
 import { JOB_SEARCH_STATUS_LABEL, DESIRED_START_TIMING_LABEL, CONTACTABLE_TIME_LABEL } from '@/lib/planner-market/labels';
 import { listPlannerBadgeTypes } from '@/lib/admin/planner-badges';
 import { PlannerMarketProfileReviewActions } from '@/components/admin/PlannerMarketProfileReviewActions';
+import { PlannerTrustUpdateReviewActions } from '@/components/admin/PlannerTrustUpdateReviewActions';
+import { ArrowRight } from 'lucide-react';
 import { PlannerBadgeManagementCard } from '@/components/admin/PlannerBadgeManagementCard';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,6 +105,22 @@ export default async function AdminPlannerMarketProfileDetailPage({ params }: { 
         </CardContent>
       </Card>
 
+      {detail.trustUpdate && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="text-base">활동지역/경력/희망GA 변경 요청 (재승인 대기)</CardTitle>
+              <PlannerTrustUpdateReviewActions profileId={detail.id} plannerName={detail.name} />
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2 text-sm">
+            <TrustDiffRow label="활동지역" before={detail.trustUpdate.current.activeRegionLabel || '-'} after={detail.trustUpdate.proposed.activeRegionLabel || '-'} />
+            <TrustDiffRow label="경력" before={`${detail.trustUpdate.current.careerYears}년`} after={`${detail.trustUpdate.proposed.careerYears}년`} />
+            <TrustDiffRow label="희망 GA" before={detail.trustUpdate.current.desiredGaCompanyName ?? '-'} after={detail.trustUpdate.proposed.desiredGaCompanyName ?? '-'} />
+          </CardContent>
+        </Card>
+      )}
+
       <PlannerBadgeManagementCard plannerProfileId={detail.id} badges={detail.allBadges} badgeTypes={badgeTypes} />
 
       {detail.reviewReason && (
@@ -133,6 +151,17 @@ function ConsentRow({ label, checked }: { label: string; checked: boolean }) {
     <div className="flex items-center gap-2">
       <span>{checked ? '✅' : '❌'}</span>
       <span className="text-sm">{label}</span>
+    </div>
+  );
+}
+
+function TrustDiffRow({ label, before, after }: { label: string; before: string; after: string }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="w-20 shrink-0 text-xs text-muted-foreground">{label}</span>
+      <span className="rounded bg-destructive/10 px-2 py-1 text-destructive line-through">{before}</span>
+      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className="rounded bg-emerald-100 px-2 py-1 font-medium text-emerald-800">{after}</span>
     </div>
   );
 }

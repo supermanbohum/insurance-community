@@ -272,6 +272,67 @@ export async function submitBranchChangeAction(
 
 export type SubmitTrustUpdateResult = { success: true; registrationId: string } | { success: false; error: string };
 
+export interface BranchTrustPayload {
+  name: string;
+  regionId?: string | null;
+  address: string;
+  addressDetail?: string;
+  introText?: string;
+  educationInfo?: string;
+  welfareInfo?: string;
+  dbSupportInfo?: string;
+  settlementSupportInfo?: string;
+  plannerCount?: number | null;
+  parkingAvailable?: boolean;
+  visitConsultAvailable?: boolean;
+  businessHours?: string;
+}
+
+/** 임시저장 - 작성중 내용을 draft로 보관한다(필수값 검증 없음). 이미 대기중인 요청이
+ * 있으면 그 요청의 내용만 갱신되고 상태는 대기중 그대로 유지된다. */
+export async function saveBranchUpdateDraftAction(
+  branchId: string,
+  registrant: { name: string; title: string; phone: string; company: string; branchLabel: string },
+  payload: Partial<BranchTrustPayload>
+): Promise<ActionResult> {
+  const partner = await requirePartner();
+  const supabase = createServerSupabaseClient();
+  const { data: branch } = await supabase.from('ga_branch').select('id, ga_company_id').eq('id', branchId).maybeSingle();
+  if (!branch || branch.ga_company_id !== partner.ga_company_id) {
+    return { success: false, error: '접근 권한이 없습니다.' };
+  }
+
+  const { error } = await supabase.rpc('save_branch_update_draft', {
+    p_branch_id: branchId,
+    p_registrant_name: registrant.name.trim() || null,
+    p_registrant_title: registrant.title.trim() || null,
+    p_registrant_phone: registrant.phone.trim() || null,
+    p_registrant_company: registrant.company.trim() || null,
+    p_registrant_branch_label: registrant.branchLabel.trim() || null,
+    p_payload: {
+      name: payload.name?.trim() ?? undefined,
+      regionId: payload.regionId ?? undefined,
+      address: payload.address?.trim() ?? undefined,
+      addressDetail: payload.addressDetail?.trim() ?? undefined,
+      introText: payload.introText?.trim() ?? undefined,
+      educationInfo: payload.educationInfo?.trim() ?? undefined,
+      welfareInfo: payload.welfareInfo?.trim() ?? undefined,
+      dbSupportInfo: payload.dbSupportInfo?.trim() ?? undefined,
+      settlementSupportInfo: payload.settlementSupportInfo?.trim() ?? undefined,
+      plannerCount: payload.plannerCount ?? undefined,
+      parkingAvailable: payload.parkingAvailable ?? undefined,
+      visitConsultAvailable: payload.visitConsultAvailable ?? undefined,
+      businessHours: payload.businessHours?.trim() ?? undefined,
+    },
+  });
+  if (error) {
+    return { success: false, error: '임시저장하지 못했습니다.' };
+  }
+
+  revalidatePath(`/partner/branches/${branchId}`);
+  return { success: true };
+}
+
 /** 지점 신뢰도 항목(이름/주소/지역/소개글류/설계사수/편의시설) 수정 - 즉시 반영되지 않고
  * branch_registrations 큐에 적재되어 관리자 승인 후에만 실제 지점 데이터에 반영된다. */
 export async function submitBranchTrustUpdateAction(

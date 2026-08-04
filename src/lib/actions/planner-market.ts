@@ -138,7 +138,9 @@ export async function submitPlannerMarketProfileAction(
   return { success: true };
 }
 
-/** 설계사 정보 수정 - 소유자만 가능. 저장 즉시 재심사 대기 상태로 돌아간다. */
+/** 설계사 정보 수정 - 소유자만 가능. 즉시반영 항목(연락처/사진/자기소개/구직상태 등)은
+ * 저장 즉시 반영되고, 재승인 대상(활동지역/경력/희망GA)은 별도로 관리자 승인을 거친다
+ * (item 12) - 연락처 하나만 고쳐도 검색결과에서 재검수 대기로 사라지던 문제를 없앤다. */
 export async function updatePlannerMarketProfileAction(
   plannerProfileId: string,
   input: PlannerMarketProfileInput
@@ -150,13 +152,12 @@ export async function updatePlannerMarketProfileAction(
 
   await requireUser();
   const supabase = createServerSupabaseClient();
-  const { error } = await supabase.rpc('update_planner_market_profile', {
+
+  const { error: instantError } = await supabase.rpc('update_planner_market_profile_instant', {
     p_planner_profile_id: plannerProfileId,
     p_name: input.name.trim(),
     p_phone: input.phone.trim(),
     p_email: input.email.trim(),
-    p_active_region_id: input.activeRegionId,
-    p_career_years: input.careerYears,
     p_specialties: input.specialties,
     p_currently_employed: input.currentlyEmployed,
     p_job_search_status: input.jobSearchStatus,
@@ -166,8 +167,17 @@ export async function updatePlannerMarketProfileAction(
     p_profile_photo_path: input.profilePhotoPath ?? null,
     p_self_introduction: input.selfIntroduction?.trim() || null,
     p_desired_region_id: input.desiredRegionId ?? null,
-    p_desired_ga_company_id: input.desiredGaCompanyId ?? null,
     p_desired_conditions: input.desiredConditions?.trim() || null,
+  });
+  if (instantError) {
+    return { success: false, error: '저장하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  const { error } = await supabase.rpc('submit_planner_trust_update', {
+    p_planner_profile_id: plannerProfileId,
+    p_active_region_id: input.activeRegionId,
+    p_career_years: input.careerYears,
+    p_desired_ga_company_id: input.desiredGaCompanyId ?? null,
   });
 
   if (error) {
@@ -177,6 +187,26 @@ export async function updatePlannerMarketProfileAction(
   revalidatePath('/planner-market');
   revalidatePath('/planner-market/my');
   revalidatePath('/admin/planner-market');
+  return { success: true };
+}
+
+/** 재승인 대상(활동지역/경력/희망GA) 임시저장 - 필수값 검증 없이 작성중 내용만 보관한다. */
+export async function savePlannerTrustUpdateDraftAction(
+  plannerProfileId: string,
+  input: { activeRegionId: string | null; careerYears: number | null; desiredGaCompanyId: string | null }
+): Promise<ActionResult> {
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('save_planner_trust_update_draft', {
+    p_planner_profile_id: plannerProfileId,
+    p_active_region_id: input.activeRegionId,
+    p_career_years: input.careerYears,
+    p_desired_ga_company_id: input.desiredGaCompanyId,
+  });
+  if (error) {
+    return { success: false, error: '임시저장하지 못했습니다.' };
+  }
+  revalidatePath('/planner-market/edit');
   return { success: true };
 }
 
@@ -280,6 +310,15 @@ export async function submitPlannerBadgeApplicationAction(
   revalidatePath('/planner-market/my');
   revalidatePath('/admin/planner-market/badges');
   return { success: true };
+}
+
+/** 열람 알림을 모두 읽음 처리 - 알림 페이지 진입 시 호출된다. */
+export async function markPlannerContactNotificationsReadAction(): Promise<void> {
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  await supabase.rpc('mark_my_planner_contact_notifications_read');
+  revalidatePath('/planner-market/my');
+  revalidatePath('/planner-market/notifications');
 }
 
 /** 설계사 상세페이지 조회 기록 - 실패해도 페이지 렌더링에 영향 없게 결과를 무시한다. */

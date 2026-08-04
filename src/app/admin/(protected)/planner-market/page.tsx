@@ -25,7 +25,7 @@ const TABS = [
 export default async function AdminPlannerMarketPage({ searchParams }: { searchParams: { status?: string } }) {
   const tab = searchParams.status ?? 'pending';
   const all = await listPlannerMarketProfiles();
-  const items = tab === 'pending' ? all.filter((i) => i.status === 'pending_review') : all;
+  const items = tab === 'pending' ? all.filter((i) => i.status === 'pending_review' || i.hasTrustUpdatePending) : all;
 
   return (
     <div className="flex flex-col gap-6">
@@ -82,7 +82,10 @@ export default async function AdminPlannerMarketPage({ searchParams }: { searchP
                     {item.isHidden && ' · 비공개'}
                   </p>
                 </div>
-                <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+                <div className="flex items-center gap-1.5">
+                  {item.hasTrustUpdatePending && <Badge variant="warning">변경 요청</Badge>}
+                  <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+                </div>
               </Link>
             ))
           )}

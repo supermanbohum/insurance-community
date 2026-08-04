@@ -23,6 +23,7 @@ export interface ChangeRequestListItem {
   targetName: string;
   gaCompanyId: string;
   gaCompanyName: string;
+  requestType: 'create' | 'update';
   status: 'pending' | 'approved' | 'rejected';
   fieldChanges: ChangeFieldDiff[];
   submittedByName: string;
@@ -60,43 +61,22 @@ function displayValue(value: unknown): string {
   return String(value);
 }
 
-async function buildFieldChanges(
+function buildFieldChanges(
   requestType: 'create' | 'update',
-  branchId: string | null,
-  payload: Record<string, unknown>
-): Promise<ChangeFieldDiff[]> {
+  payload: Record<string, unknown>,
+  beforeSnapshot: Record<string, unknown>
+): ChangeFieldDiff[] {
   if (requestType === 'create') {
     return [
       { field: '_create', label: '신규 등록', oldValue: '', newValue: `${payload.gaName ?? ''} · ${payload.branchName ?? ''}` },
     ];
   }
-  if (!branchId) return [];
-
-  const admin = createAdminClient();
-  const { data: branch } = await admin.from('ga_branch').select('*').eq('id', branchId).maybeSingle();
-  if (!branch) return [];
-
-  const branchAsRecord = branch as unknown as Record<string, unknown>;
-  const keyMap: Record<string, string> = {
-    name: 'name',
-    address: 'address',
-    addressDetail: 'address_detail',
-    introText: 'intro_text',
-    educationInfo: 'education_info',
-    welfareInfo: 'welfare_info',
-    dbSupportInfo: 'db_support_info',
-    settlementSupportInfo: 'settlement_support_info',
-    plannerCount: 'planner_count',
-    parkingAvailable: 'parking_available',
-    visitConsultAvailable: 'visit_consult_available',
-    businessHours: 'business_hours',
-  };
 
   const diffs: ChangeFieldDiff[] = [];
   for (const [payloadKey, label] of Object.entries(FIELD_LABELS)) {
     if (!(payloadKey in payload)) continue;
     const newValue = payload[payloadKey];
-    const oldValue = branchAsRecord[keyMap[payloadKey]];
+    const oldValue = beforeSnapshot[payloadKey];
     if (String(oldValue ?? '') === String(newValue ?? '')) continue;
     diffs.push({ field: payloadKey, label, oldValue: displayValue(oldValue), newValue: displayValue(newValue) });
   }
@@ -110,6 +90,7 @@ async function toListItem(row: {
   ga_company_id: string | null;
   status: 'pending' | 'approved' | 'rejected';
   payload: Record<string, unknown>;
+  before_snapshot: Record<string, unknown>;
   submitted_by_ga_admin_id: string;
   reviewed_by_admin_id: string | null;
   created_at: string;
@@ -133,8 +114,9 @@ async function toListItem(row: {
     targetName: branch?.name ?? (row.payload.branchName as string | undefined) ?? '알 수 없는 지점',
     gaCompanyId: row.ga_company_id ?? '',
     gaCompanyName: company?.name ?? (row.payload.gaName as string | undefined) ?? '알 수 없는 GA',
+    requestType: row.request_type,
     status: row.status,
-    fieldChanges: await buildFieldChanges(row.request_type, row.branch_id, row.payload),
+    fieldChanges: buildFieldChanges(row.request_type, row.payload, row.before_snapshot ?? {}),
     submittedByName: submittedBy?.display_name ?? '알 수 없음',
     createdAt: row.created_at,
     reviewedAt: row.reviewed_at,
@@ -144,11 +126,17 @@ async function toListItem(row: {
 }
 
 export async function listChangeRequests(
-  options: { status?: 'pending' | 'approved' | 'rejected'; gaCompanyId?: string } = {}
+  options: {
+    status?: 'pending' | 'approved' | 'rejected';
+    requestType?: 'create' | 'update';
+    gaCompanyId?: string;
+  } = {}
 ): Promise<ChangeRequestListItem[]> {
   const admin = createAdminClient();
-  let query = admin.from('branch_registrations').select('*').order('created_at', { ascending: false });
+  // 관리자 화면은 임시저장(draft)을 절대 보지 않는다 - 파트너가 아직 제출하지 않은 초안이다.
+  let query = admin.from('branch_registrations').select('*').neq('status', 'draft').order('created_at', { ascending: false });
   if (options.status) query = query.eq('status', options.status);
+  if (options.requestType) query = query.eq('request_type', options.requestType);
   if (options.gaCompanyId) query = query.eq('ga_company_id', options.gaCompanyId);
 
   const { data, error } = await query;

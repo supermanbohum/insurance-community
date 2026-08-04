@@ -34,6 +34,34 @@ export async function reviewPlannerMarketProfileAction(
   return { success: true };
 }
 
+/** 활동지역/경력/희망GA 재승인 요청 승인/반려 (item 12). */
+export async function reviewPlannerTrustUpdateAction(
+  profileId: string,
+  decision: 'approved' | 'rejected',
+  reason?: string
+): Promise<ActionResult> {
+  if (decision === 'rejected' && !reason?.trim()) {
+    return { success: false, error: '사유를 입력해주세요.' };
+  }
+
+  await requireAdmin();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('admin_review_planner_trust_update', {
+    p_planner_profile_id: profileId,
+    p_decision: decision,
+    p_reason: reason?.trim() || undefined,
+  });
+  if (error) {
+    return { success: false, error: '처리하지 못했습니다.' };
+  }
+
+  revalidatePath('/admin/planner-market');
+  revalidatePath(`/admin/planner-market/${profileId}`);
+  revalidatePath('/planner-market');
+  revalidatePath('/planner-market/search');
+  return { success: true };
+}
+
 /** 배지 승인/반려 - 연봉 인증뿐 아니라 향후 추가되는 모든 self_applicable 배지 신청에 재사용된다. */
 export async function reviewPlannerBadgeAction(badgeId: string, decision: 'approved' | 'rejected', reason?: string): Promise<ActionResult> {
   if (decision === 'rejected' && !reason?.trim()) {

@@ -29,3 +29,18 @@ export function slugify(name: string): string {
     .replace(/[^a-z0-9가-힣]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
+
+/** 일반적인 메신저 방식 상대시간 표기 - "오늘 오전 10:32" / "어제 오후 6:11" / "2026.08.01". */
+export function formatMessengerTime(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const time = date.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+  if (date.toDateString() === now.toDateString()) return `오늘 ${time}`;
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return `어제 ${time}`;
+
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+}

@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Bell } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { countMyUnreadPlannerContactNotifications } from '@/lib/public/planner-notifications.supabase';
 import { PlannerMyProfileCard } from '@/components/planner-market/PlannerMyProfileCard';
 import { PlannerIncomeBadgeUploadForm } from '@/components/planner-market/PlannerIncomeBadgeUploadForm';
 import { PlannerProfileStatsCard } from '@/components/planner-market/PlannerProfileStatsCard';
@@ -32,9 +34,10 @@ export default async function PlannerMarketMyPage() {
     );
   }
 
-  const [{ data: badgeRows }, { data: statsRows }] = await Promise.all([
+  const [{ data: badgeRows }, { data: statsRows }, unreadNotificationCount] = await Promise.all([
     supabase.from('planner_badges').select('*').eq('planner_profile_id', profile.id),
     supabase.rpc('get_my_planner_market_profile_stats'),
+    countMyUnreadPlannerContactNotifications(),
   ]);
 
   const badgeCodes = (badgeRows ?? []).map((b) => b.badge_type_code);
@@ -56,7 +59,22 @@ export default async function PlannerMarketMyPage() {
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-8">
       <BackButton />
-      <h1 className="text-xl font-bold">내가 등록한 설계사 정보</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">내가 등록한 설계사 정보</h1>
+        <Link href="/planner-market/notifications" className="relative flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-surface-sunken">
+          <Bell className="h-3.5 w-3.5" />
+          열람 알림
+          {unreadNotificationCount > 0 && (
+            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-destructive" aria-label={`읽지 않은 알림 ${unreadNotificationCount}건`} />
+          )}
+        </Link>
+      </div>
+
+      {profile.trust_update_status === 'pending' && (
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+          활동지역/경력/희망GA 변경 요청이 관리자 승인 대기 중입니다.
+        </p>
+      )}
 
       {stats && (
         <PlannerProfileStatsCard

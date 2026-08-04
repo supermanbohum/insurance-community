@@ -21,6 +21,7 @@ export interface PlannerMarketProfileListItem {
   memberNickname: string;
   memberUsername: string | null;
   createdAt: string;
+  hasTrustUpdatePending: boolean;
 }
 
 async function toProfileListItem(row: {
@@ -36,6 +37,7 @@ async function toProfileListItem(row: {
   active_region_id: string;
   career_years: number;
   created_at: string;
+  trust_update_status?: 'none' | 'draft' | 'pending';
 }): Promise<PlannerMarketProfileListItem> {
   const admin = createAdminClient();
   const [{ data: member }, { data: region }] = await Promise.all([
@@ -57,6 +59,7 @@ async function toProfileListItem(row: {
     memberNickname: member?.nickname ?? '알 수 없음',
     memberUsername: member?.username ?? null,
     createdAt: row.created_at,
+    hasTrustUpdatePending: row.trust_update_status === 'pending',
   };
 }
 
@@ -102,6 +105,12 @@ export interface PlannerMarketProfileDetail extends PlannerMarketProfileListItem
     withdrawalNotice: boolean;
     agreedAt: string | null;
   };
+  /** 활동지역/경력/희망GA 재승인 요청 - 대기중(pending)일 때만 채워진다. */
+  trustUpdate: {
+    status: 'draft' | 'pending';
+    current: { activeRegionLabel: string; careerYears: number; desiredGaCompanyName: string | null };
+    proposed: { activeRegionLabel: string; careerYears: number; desiredGaCompanyName: string | null };
+  } | null;
 }
 
 export async function getPlannerMarketProfileDetail(id: string): Promise<PlannerMarketProfileDetail | null> {
@@ -150,6 +159,45 @@ export async function getPlannerMarketProfileDetail(id: string): Promise<Planner
       thirdPartyShare: row.consent_third_party_share,
       withdrawalNotice: row.consent_withdrawal_notice,
       agreedAt: row.consent_agreed_at,
+    },
+    trustUpdate: row.trust_update_status === 'pending' ? await buildTrustUpdateDiff(row) : null,
+  };
+}
+
+async function buildTrustUpdateDiff(row: {
+  active_region_id: string;
+  career_years: number;
+  desired_ga_company_id: string | null;
+  pending_active_region_id: string | null;
+  pending_career_years: number | null;
+  pending_desired_ga_company_id: string | null;
+  trust_update_status: 'none' | 'draft' | 'pending';
+}) {
+  const admin = createAdminClient();
+  const proposedRegionId = row.pending_active_region_id ?? row.active_region_id;
+  const proposedCareerYears = row.pending_career_years ?? row.career_years;
+  const proposedGaId = row.pending_desired_ga_company_id;
+
+  const [{ data: currentRegion }, { data: proposedRegion }, { data: currentGa }, { data: proposedGa }] = await Promise.all([
+    admin.from('regions').select('sido_name, sigungu_name').eq('id', row.active_region_id).maybeSingle(),
+    admin.from('regions').select('sido_name, sigungu_name').eq('id', proposedRegionId).maybeSingle(),
+    row.desired_ga_company_id
+      ? admin.from('ga_company').select('name').eq('id', row.desired_ga_company_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    proposedGaId ? admin.from('ga_company').select('name').eq('id', proposedGaId).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+
+  return {
+    status: row.trust_update_status as 'draft' | 'pending',
+    current: {
+      activeRegionLabel: regionLabel(currentRegion),
+      careerYears: row.career_years,
+      desiredGaCompanyName: currentGa?.name ?? null,
+    },
+    proposed: {
+      activeRegionLabel: regionLabel(proposedRegion),
+      careerYears: proposedCareerYears,
+      desiredGaCompanyName: proposedGa?.name ?? null,
     },
   };
 }

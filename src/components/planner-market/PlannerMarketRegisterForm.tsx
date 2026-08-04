@@ -7,6 +7,7 @@ import { ImagePlus, X } from 'lucide-react';
 import {
   submitPlannerMarketProfileAction,
   updatePlannerMarketProfileAction,
+  savePlannerTrustUpdateDraftAction,
   uploadPlannerMarketPhotoAction,
 } from '@/lib/actions/planner-market';
 import type { RegionRow } from '@/lib/admin/branch';
@@ -100,6 +101,8 @@ export function PlannerMarketRegisterForm({
   const router = useRouter();
   const isEditMode = Boolean(initialProfile);
   const [isPending, startTransition] = useTransition();
+  const [isSavingDraft, startDraftTransition] = useTransition();
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [existingPhotoUrl, setExistingPhotoUrl] = useState(initialProfile?.profilePhotoUrl ?? null);
@@ -192,9 +195,26 @@ export function PlannerMarketRegisterForm({
         return;
       }
 
-      toast.success(isEditMode ? '수정되었습니다. 관리자 재검수 후 반영됩니다.' : '설계사 등록 신청이 접수되었습니다. 관리자 승인 후 공개됩니다.');
+      toast.success(isEditMode ? '수정되었습니다. 활동지역/경력/희망GA 변경은 관리자 승인 후 반영됩니다.' : '설계사 등록 신청이 접수되었습니다. 관리자 승인 후 공개됩니다.');
       router.push('/planner-market/my');
       router.refresh();
+    });
+  }
+
+  function handleSaveDraft() {
+    if (!initialProfile) return;
+    startDraftTransition(async () => {
+      const result = await savePlannerTrustUpdateDraftAction(initialProfile.id, {
+        activeRegionId,
+        careerYears: careerYears === '' ? null : careerYears,
+        desiredGaCompanyId,
+      });
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      setDraftSavedAt(new Date());
+      toast.success('임시저장되었습니다.');
     });
   }
 
@@ -350,12 +370,25 @@ export function PlannerMarketRegisterForm({
         </Card>
       )}
 
-      <Button type="submit" disabled={isPending || !canSubmit} size="lg">
-        {isPending ? '저장 중...' : isEditMode ? '수정 저장' : '설계사 등록 신청'}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        {isEditMode && (
+          <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={isSavingDraft || isPending}>
+            {isSavingDraft ? '저장 중...' : '활동지역/경력/희망GA 임시저장'}
+          </Button>
+        )}
+        <Button type="submit" disabled={isPending || !canSubmit} size="lg">
+          {isPending ? '저장 중...' : isEditMode ? '수정 저장' : '설계사 등록 신청'}
+        </Button>
+        {draftSavedAt && <span className="text-xs text-muted-foreground">{draftSavedAt.toLocaleTimeString('ko-KR')}에 임시저장됨</span>}
+      </div>
       {!canSubmit && !isPending && (
         <p className="text-center text-xs text-muted-foreground">
           이름/연락처/이메일/활동지역/경력/현재 상태{isEditMode ? '' : '와 모든 필수 동의 항목'}을 입력해주세요.
+        </p>
+      )}
+      {isEditMode && (
+        <p className="text-center text-xs text-muted-foreground">
+          연락처/사진/자기소개 등은 저장 즉시 반영됩니다. 활동지역/경력/희망GA 변경은 관리자 승인 후 반영됩니다.
         </p>
       )}
     </form>

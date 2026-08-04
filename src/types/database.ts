@@ -36,7 +36,7 @@ export type GaBranchRegistrationStatus = 'pending' | 'approved' | 'rejected';
 /** ga_branch.status_reason - status='hidden'이 된 원인 구분 (콘텐츠 검수/결제 미납/수동) */
 export type GaBranchStatusReason = 'content_review' | 'payment_suspended' | 'manual';
 export type BranchRegistrationRequestType = 'create' | 'update';
-export type BranchRegistrationStatus = 'pending' | 'approved' | 'rejected';
+export type BranchRegistrationStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 /** 고소득 설계사 연봉 구간 - tier_1=1억+, tier_2=2억+, tier_3=3억+ */
 export type PlannerIncomeTier = 'tier_1' | 'tier_2' | 'tier_3';
 export type PlannerCertificationStatus = 'pending_review' | 'approved' | 'rejected' | 'pending_renewal';
@@ -721,6 +721,7 @@ export interface Database {
           lease_contract_path: string | null;
           business_card_path: string | null;
           payload: Record<string, unknown>;
+          before_snapshot: Record<string, unknown>;
           reviewed_by_admin_id: string | null;
           reviewed_at: string | null;
           review_reason: string | null;
@@ -893,6 +894,14 @@ export interface Database {
           consent_third_party_share: boolean;
           consent_withdrawal_notice: boolean;
           consent_agreed_at: string | null;
+          pending_active_region_id: string | null;
+          pending_career_years: number | null;
+          pending_desired_ga_company_id: string | null;
+          trust_update_status: 'none' | 'draft' | 'pending';
+          trust_before_snapshot: Record<string, unknown>;
+          trust_reviewed_by_admin_id: string | null;
+          trust_reviewed_at: string | null;
+          trust_review_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -940,6 +949,20 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['planner_profile_views']['Row']>;
         Update: Partial<Database['public']['Tables']['planner_profile_views']['Row']>;
+        Relationships: [];
+      };
+      planner_contact_view_notifications: {
+        Row: {
+          id: string;
+          planner_profile_id: string;
+          ga_company_id: string;
+          viewer_branch_id: string | null;
+          viewed_by_ga_admin_id: string;
+          created_at: string;
+          read_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_contact_view_notifications']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_contact_view_notifications']['Row']>;
         Relationships: [];
       };
       planner_market_credit_purchases: {
@@ -1497,6 +1520,22 @@ export interface Database {
         Args: Record<string, never>;
         Returns: Database['public']['Tables']['branch_registrations']['Row'][];
       };
+      save_branch_update_draft: {
+        Args: {
+          p_branch_id: string;
+          p_registrant_name?: string | null;
+          p_registrant_title?: string | null;
+          p_registrant_phone?: string | null;
+          p_registrant_company?: string | null;
+          p_registrant_branch_label?: string | null;
+          p_payload?: Record<string, unknown>;
+        };
+        Returns: string;
+      };
+      get_open_branch_update: {
+        Args: { p_branch_id: string };
+        Returns: Database['public']['Tables']['branch_registrations']['Row'][];
+      };
       is_blocked_planner_title: {
         Args: { p_job_title: string };
         Returns: boolean;
@@ -1652,14 +1691,12 @@ export interface Database {
         };
         Returns: string;
       };
-      update_planner_market_profile: {
+      update_planner_market_profile_instant: {
         Args: {
           p_planner_profile_id: string;
           p_name: string;
           p_phone: string;
           p_email: string;
-          p_active_region_id: string;
-          p_career_years: number;
           p_specialties: string[];
           p_currently_employed: boolean;
           p_job_search_status: string;
@@ -1669,9 +1706,30 @@ export interface Database {
           p_profile_photo_path?: string | null;
           p_self_introduction?: string | null;
           p_desired_region_id?: string | null;
-          p_desired_ga_company_id?: string | null;
           p_desired_conditions?: string | null;
         };
+        Returns: void;
+      };
+      save_planner_trust_update_draft: {
+        Args: {
+          p_planner_profile_id: string;
+          p_active_region_id: string | null;
+          p_career_years: number | null;
+          p_desired_ga_company_id?: string | null;
+        };
+        Returns: void;
+      };
+      submit_planner_trust_update: {
+        Args: {
+          p_planner_profile_id: string;
+          p_active_region_id: string;
+          p_career_years: number;
+          p_desired_ga_company_id?: string | null;
+        };
+        Returns: void;
+      };
+      admin_review_planner_trust_update: {
+        Args: { p_planner_profile_id: string; p_decision: string; p_reason?: string | null };
         Returns: void;
       };
       set_planner_profile_hidden: {
@@ -1729,6 +1787,27 @@ export interface Database {
       get_planner_contact: {
         Args: { p_planner_profile_id: string };
         Returns: { name: string; phone: string; email: string; kakao_id: string | null }[];
+      };
+      list_my_planner_contact_notifications: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          branch_id: string | null;
+          branch_slug: string | null;
+          branch_name: string | null;
+          branch_region_label: string | null;
+          ga_company_name: string | null;
+          created_at: string;
+          read_at: string | null;
+        }[];
+      };
+      count_my_unread_planner_contact_notifications: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      mark_my_planner_contact_notifications_read: {
+        Args: Record<string, never>;
+        Returns: void;
       };
       get_my_planner_market_credit_balance: {
         Args: Record<string, never>;
