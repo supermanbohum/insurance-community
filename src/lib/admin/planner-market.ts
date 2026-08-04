@@ -1,6 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '@/lib/supabase/admin';
-import type { PlannerProfileStatus, PlannerMarketCertificationStatus, PlannerMarketCertificationTier } from '@/types/database';
+import type { PlannerProfileStatus, PlannerBadgeSummary, PlannerBadgeStatus } from '@/types/database';
 
 function regionLabel(region: { sido_name: string; sigungu_name: string | null } | null | undefined): string {
   if (!region) return '';
@@ -87,9 +87,11 @@ export interface PlannerMarketProfileDetail extends PlannerMarketProfileListItem
   desiredRegionLabel: string | null;
   desiredGaCompanyName: string | null;
   desiredConditions: string | null;
-  insurerNames: string[];
+  /** 승인된 배지만(대기/반려 제외) - 관리자 화면에서도 "지금 실제로 공개 노출 중인 배지"를 그대로 보여준다. */
+  badges: PlannerBadgeSummary[];
+  /** 상태 무관 전체 배지 - 관리자의 수동 부여/회수 UI(PlannerBadgeManagementCard)에서 사용. */
+  allBadges: { id: string; code: string; label: string; icon: string; status: PlannerBadgeStatus }[];
   reviewReason: string | null;
-  badgeTier: PlannerMarketCertificationTier | null;
   consents: {
     contactPaidView: boolean;
     recruitContact: boolean;
@@ -105,23 +107,25 @@ export async function getPlannerMarketProfileDetail(id: string): Promise<Planner
   const { data: row } = await admin.from('planner_profiles').select('*').eq('id', id).maybeSingle();
   if (!row) return null;
 
-  const [listItem, { data: desiredRegion }, { data: desiredGa }, { data: insurerRows }, { data: cert }] = await Promise.all([
+  const [listItem, { data: desiredRegion }, { data: desiredGa }, { data: badgeRows }] = await Promise.all([
     toProfileListItem(row),
     row.desired_region_id ? admin.from('regions').select('sido_name, sigungu_name').eq('id', row.desired_region_id).maybeSingle() : Promise.resolve({ data: null }),
     row.desired_ga_company_id ? admin.from('ga_company').select('name').eq('id', row.desired_ga_company_id).maybeSingle() : Promise.resolve({ data: null }),
-    admin.from('planner_profile_insurers').select('insurer_id').eq('planner_profile_id', id),
-    admin
-      .from('planner_market_certifications')
-      .select('tier')
-      .eq('planner_profile_id', id)
-      .eq('status', 'approved')
-      .order('approved_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+    admin.from('planner_badges').select('id, badge_type_code, status').eq('planner_profile_id', id),
   ]);
 
-  const insurerIds = (insurerRows ?? []).map((r) => r.insurer_id);
-  const { data: insurers } = insurerIds.length > 0 ? await admin.from('insurers').select('name').in('id', insurerIds) : { data: [] };
+  const badgeCodes = Array.from(new Set((badgeRows ?? []).map((b) => b.badge_type_code)));
+  const { data: badgeTypes } =
+    badgeCodes.length > 0 ? await admin.from('planner_badge_types').select('code, label, icon, sort_order').in('code', badgeCodes) : { data: [] };
+  const typeByCode = new Map((badgeTypes ?? []).map((t) => [t.code, t]));
+
+  const allBadges = (badgeRows ?? [])
+    .map((b) => {
+      const t = typeByCode.get(b.badge_type_code);
+      return { id: b.id, code: b.badge_type_code, label: t?.label ?? b.badge_type_code, icon: t?.icon ?? '', status: b.status, sortOrder: t?.sort_order ?? 0 };
+    })
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const badges: PlannerBadgeSummary[] = allBadges.filter((b) => b.status === 'approved').map((b) => ({ code: b.code, label: b.label, icon: b.icon }));
 
   return {
     ...listItem,
@@ -132,9 +136,9 @@ export async function getPlannerMarketProfileDetail(id: string): Promise<Planner
     desiredRegionLabel: desiredRegion ? regionLabel(desiredRegion) : null,
     desiredGaCompanyName: desiredGa?.name ?? null,
     desiredConditions: row.desired_conditions,
-    insurerNames: (insurers ?? []).map((i) => i.name),
+    badges,
+    allBadges: allBadges.map(({ id, code, label, icon, status }) => ({ id, code, label, icon, status })),
     reviewReason: row.review_reason,
-    badgeTier: cert?.tier ?? null,
     consents: {
       contactPaidView: row.consent_contact_paid_view,
       recruitContact: row.consent_recruit_contact,
@@ -143,85 +147,5 @@ export async function getPlannerMarketProfileDetail(id: string): Promise<Planner
       withdrawalNotice: row.consent_withdrawal_notice,
       agreedAt: row.consent_agreed_at,
     },
-  };
-}
-
-export interface PlannerMarketCertificationListItem {
-  id: string;
-  plannerProfileId: string;
-  plannerName: string;
-  status: PlannerMarketCertificationStatus;
-  createdAt: string;
-}
-
-export async function listPlannerMarketCertifications(
-  options: { status?: PlannerMarketCertificationStatus } = {}
-): Promise<PlannerMarketCertificationListItem[]> {
-  const admin = createAdminClient();
-  let query = admin.from('planner_market_certifications').select('*').order('created_at', { ascending: false });
-  if (options.status) query = query.eq('status', options.status);
-  const { data } = await query;
-  if (!data) return [];
-
-  const profileIds = Array.from(new Set(data.map((r) => r.planner_profile_id)));
-  const { data: profiles } = profileIds.length > 0 ? await admin.from('planner_profiles').select('id, name').in('id', profileIds) : { data: [] };
-  const nameByProfileId = new Map((profiles ?? []).map((p) => [p.id, p.name]));
-
-  return data.map((row) => ({
-    id: row.id,
-    plannerProfileId: row.planner_profile_id,
-    plannerName: nameByProfileId.get(row.planner_profile_id) ?? '알 수 없음',
-    status: row.status,
-    createdAt: row.created_at,
-  }));
-}
-
-export async function countPendingPlannerMarketCertifications(): Promise<number> {
-  const admin = createAdminClient();
-  const { count } = await admin
-    .from('planner_market_certifications')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'pending_review');
-  return count ?? 0;
-}
-
-export interface PlannerMarketCertificationDetail extends PlannerMarketCertificationListItem {
-  incomeDocUrl: string | null;
-  reviewReason: string | null;
-  approvedAt: string | null;
-}
-
-export async function getPlannerMarketCertificationDetail(id: string): Promise<PlannerMarketCertificationDetail | null> {
-  const admin = createAdminClient();
-  const { data: row } = await admin.from('planner_market_certifications').select('*').eq('id', id).maybeSingle();
-  if (!row) return null;
-
-  const [{ data: profile }, { data: doc }] = await Promise.all([
-    admin.from('planner_profiles').select('name').eq('id', row.planner_profile_id).maybeSingle(),
-    admin
-      .from('verification_documents')
-      .select('storage_path')
-      .eq('owner_type', 'planner_market_certification')
-      .eq('owner_id', id)
-      .order('uploaded_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
-
-  let incomeDocUrl: string | null = null;
-  if (doc?.storage_path) {
-    const { data: signed } = await admin.storage.from('planner-market-income-docs').createSignedUrl(doc.storage_path, 600);
-    incomeDocUrl = signed?.signedUrl ?? null;
-  }
-
-  return {
-    id: row.id,
-    plannerProfileId: row.planner_profile_id,
-    plannerName: profile?.name ?? '알 수 없음',
-    status: row.status,
-    createdAt: row.created_at,
-    incomeDocUrl,
-    reviewReason: row.review_reason,
-    approvedAt: row.approved_at,
   };
 }

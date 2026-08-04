@@ -135,6 +135,18 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'scale(0.95) translateY(6px)' },
           '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
+        'gradient-pan': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        'glow-pulse': {
+          '0%, 100%': { boxShadow: '0 0 18px 0 var(--glow-color, rgba(37,99,235,0.35))' },
+          '50%': { boxShadow: '0 0 34px 6px var(--glow-color, rgba(37,99,235,0.55))' },
+        },
+        ripple: {
+          '0%': { transform: 'scale(0)', opacity: '0.45' },
+          '100%': { transform: 'scale(2.8)', opacity: '0' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
@@ -147,6 +159,13 @@ const config: Config = {
         'brand-people': 'brand-people 0.25s ease-out 0.42s both',
         'brand-text': 'brand-text 0.35s ease-out 0.5s both',
         'popup-in': 'popup-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'gradient-pan': 'gradient-pan 6s ease-in-out infinite',
+        'glow-pulse': 'glow-pulse 2.4s ease-in-out infinite',
+        // 같은 요소에 animate-gradient-pan과 animate-glow-pulse를 동시에 걸면 둘 다
+        // `animation` 단축 속성을 통째로 덮어써서 나중 클래스만 적용된다 - 그래서
+        // 두 키프레임을 콤마로 묶은 조합 유틸을 하나 더 둔다(HeroCtaButton 전용).
+        'cta-glow': 'gradient-pan 6s ease-in-out infinite, glow-pulse 2.4s ease-in-out infinite',
+        ripple: 'ripple 0.6s ease-out forwards',
       },
     },
   },

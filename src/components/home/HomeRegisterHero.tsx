@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Megaphone, MessageSquareText, Plus, UserPlus } from 'lucide-react';
 import type { HomeStats } from '@/lib/public/branch';
 import { StatCountUp } from '@/components/home/StatCountUp';
+import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 
 /**
  * 헤더에 이미 로고+검색창이 있어(BohomMapHeader) 예전 HeroSearch가 그걸 그대로
@@ -17,22 +18,20 @@ export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { 
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Link
+        <HeroCtaButton
           href="/partner/register"
-          className="group relative flex animate-breathe items-center justify-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 to-brand-700 py-7 shadow-pop transition-shadow hover:shadow-card-hover active:scale-[0.99]"
-        >
-          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-white/10" />
-          <Plus className="relative h-6 w-6 text-white" strokeWidth={2.5} />
-          <span className="relative text-xl font-extrabold tracking-tight text-white">{ctaLabel}</span>
-        </Link>
-        <Link
+          label={ctaLabel}
+          icon={<Plus className="h-6 w-6" strokeWidth={2.5} />}
+          gradientClassName="from-brand-500 via-brand-600 to-brand-800"
+          glowColor="rgba(37,99,235,0.45)"
+        />
+        <HeroCtaButton
           href="/planner-market/register"
-          className="group relative flex items-center justify-center gap-2 overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 py-7 shadow-pop transition-shadow hover:shadow-card-hover active:scale-[0.99]"
-        >
-          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-white/10" />
-          <UserPlus className="relative h-6 w-6 text-white" strokeWidth={2.5} />
-          <span className="relative text-xl font-extrabold tracking-tight text-white">설계사 등록하기</span>
-        </Link>
+          label="설계사 등록하기"
+          icon={<UserPlus className="h-6 w-6" strokeWidth={2.5} />}
+          gradientClassName="from-indigo-500 via-violet-600 to-violet-800"
+          glowColor="rgba(124,58,237,0.45)"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2">

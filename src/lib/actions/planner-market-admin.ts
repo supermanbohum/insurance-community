@@ -34,20 +34,16 @@ export async function reviewPlannerMarketProfileAction(
   return { success: true };
 }
 
-/** 인증 설계사 배지 승인/반려. */
-export async function reviewPlannerMarketCertificationAction(
-  certificationId: string,
-  decision: 'approved' | 'rejected',
-  reason?: string
-): Promise<ActionResult> {
+/** 배지 승인/반려 - 연봉 인증뿐 아니라 향후 추가되는 모든 self_applicable 배지 신청에 재사용된다. */
+export async function reviewPlannerBadgeAction(badgeId: string, decision: 'approved' | 'rejected', reason?: string): Promise<ActionResult> {
   if (decision === 'rejected' && !reason?.trim()) {
     return { success: false, error: '사유를 입력해주세요.' };
   }
 
   await requireAdmin();
   const supabase = createServerSupabaseClient();
-  const { error } = await supabase.rpc('admin_review_planner_market_certification', {
-    p_certification_id: certificationId,
+  const { error } = await supabase.rpc('admin_review_planner_badge', {
+    p_badge_id: badgeId,
     p_decision: decision,
     p_reason: reason?.trim() || undefined,
   });
@@ -55,8 +51,58 @@ export async function reviewPlannerMarketCertificationAction(
     return { success: false, error: '처리하지 못했습니다.' };
   }
 
-  revalidatePath('/admin/planner-market/certifications');
-  revalidatePath(`/admin/planner-market/certifications/${certificationId}`);
+  revalidatePath('/admin/planner-market/badges');
+  revalidatePath(`/admin/planner-market/badges/${badgeId}`);
+  revalidatePath('/planner-market');
+  return { success: true };
+}
+
+/** 이미 승인/반려된 배지를 다시 심사 대기로 되돌린다("재검토"). */
+export async function resetPlannerBadgeForReviewAction(badgeId: string): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('admin_reset_planner_badge_for_review', { p_badge_id: badgeId });
+  if (error) {
+    return { success: false, error: '처리하지 못했습니다.' };
+  }
+
+  revalidatePath('/admin/planner-market/badges');
+  revalidatePath(`/admin/planner-market/badges/${badgeId}`);
+  revalidatePath('/planner-market');
+  return { success: true };
+}
+
+/** 관리자 수동 배지 부여 - self_applicable=false인 배지(TOP 설계사 등)를 서류 없이 즉시 승인 상태로. */
+export async function grantPlannerBadgeAction(plannerProfileId: string, badgeTypeCode: string, reason?: string): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('admin_grant_planner_badge', {
+    p_planner_profile_id: plannerProfileId,
+    p_badge_type_code: badgeTypeCode,
+    p_reason: reason?.trim() || undefined,
+  });
+  if (error) {
+    return { success: false, error: '처리하지 못했습니다.' };
+  }
+
+  revalidatePath(`/admin/planner-market/${plannerProfileId}`);
+  revalidatePath('/planner-market');
+  return { success: true };
+}
+
+/** 관리자 수동 배지 회수. */
+export async function revokePlannerBadgeAction(badgeId: string, plannerProfileId: string, reason?: string): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('admin_revoke_planner_badge', {
+    p_badge_id: badgeId,
+    p_reason: reason?.trim() || undefined,
+  });
+  if (error) {
+    return { success: false, error: '처리하지 못했습니다.' };
+  }
+
+  revalidatePath(`/admin/planner-market/${plannerProfileId}`);
   revalidatePath('/planner-market');
   return { success: true };
 }

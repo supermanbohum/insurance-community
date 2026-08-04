@@ -8,14 +8,14 @@ import { PlannerCard } from '@/components/planner-market/PlannerCard';
 export default async function PlannerMarketSearchPage({
   searchParams,
 }: {
-  searchParams: { region?: string; minCareer?: string; badge?: string };
+  searchParams: { region?: string; minCareer?: string; incomeVerified?: string };
 }) {
   const [regions, planners] = await Promise.all([
     listRegions(),
     listPublicPlannerProfiles({
       regionId: searchParams.region,
       minCareerYears: searchParams.minCareer ? Number(searchParams.minCareer) : undefined,
-      badgeOnly: searchParams.badge === '1',
+      incomeVerifiedOnly: searchParams.incomeVerified === '1',
       limit: 60,
     }),
   ]);
@@ -29,7 +29,11 @@ export default async function PlannerMarketSearchPage({
 
       <PlannerMarketSearchFilters
         regions={regions}
-        initial={{ regionId: searchParams.region ?? null, minCareerYears: searchParams.minCareer ?? '', badgeOnly: searchParams.badge === '1' }}
+        initial={{
+          regionId: searchParams.region ?? null,
+          minCareerYears: searchParams.minCareer ?? '',
+          incomeVerifiedOnly: searchParams.incomeVerified === '1',
+        }}
       />
 
       <p className="text-sm text-muted-foreground">{planners.length}명</p>

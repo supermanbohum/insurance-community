@@ -8,24 +8,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 export function PlannerMarketSearchFilters({
   regions,
   initial,
 }: {
   regions: RegionRow[];
-  initial: { regionId: string | null; minCareerYears: string; badgeOnly: boolean };
+  initial: { regionId: string | null; minCareerYears: string; incomeVerifiedOnly: boolean };
 }) {
   const router = useRouter();
   const [regionId, setRegionId] = useState<string | null>(initial.regionId);
   const [minCareerYears, setMinCareerYears] = useState(initial.minCareerYears);
-  const [badgeOnly, setBadgeOnly] = useState(initial.badgeOnly);
+  const [incomeVerifiedOnly, setIncomeVerifiedOnly] = useState(initial.incomeVerifiedOnly);
 
   function apply() {
     const params = new URLSearchParams();
     if (regionId) params.set('region', regionId);
     if (minCareerYears) params.set('minCareer', minCareerYears);
-    if (badgeOnly) params.set('badge', '1');
+    if (incomeVerifiedOnly) params.set('incomeVerified', '1');
     router.push(`/planner-market/search${params.toString() ? `?${params.toString()}` : ''}`);
   }
 
@@ -49,9 +50,14 @@ export function PlannerMarketSearchFilters({
             onChange={(e) => setMinCareerYears(e.target.value)}
           />
         </div>
-        <label className="flex items-center gap-2 pb-2 text-sm">
-          <Checkbox checked={badgeOnly} onCheckedChange={(v) => setBadgeOnly(v === true)} />
-          <span>✅ 인증 설계사만 보기</span>
+        <label
+          className={cn(
+            'mb-2 flex cursor-pointer items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition-colors',
+            incomeVerifiedOnly ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-line text-ink-soft hover:border-amber-200'
+          )}
+        >
+          <Checkbox checked={incomeVerifiedOnly} onCheckedChange={(v) => setIncomeVerifiedOnly(v === true)} />
+          <span>🏆 직전연봉 인증 설계사만 보기</span>
         </label>
         <Button type="button" onClick={apply} className="ml-auto">
           검색 적용

@@ -29,9 +29,19 @@ export default async function AdminPlannerMarketPage({ searchParams }: { searchP
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">설계사 마켓 - 설계사 등록</h1>
-        <p className="text-sm text-muted-foreground">설계사가 신청한 구직 프로필을 검토합니다. 승인해야 &quot;설계사 찾기&quot;에 공개됩니다.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">설계사 마켓 - 설계사 등록</h1>
+          <p className="text-sm text-muted-foreground">설계사가 신청한 구직 프로필을 검토합니다. 승인해야 &quot;설계사 찾기&quot;에 공개됩니다.</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/admin/planner-market/badges" className="text-sm font-medium text-brand-600 hover:underline">
+            🏆 배지 심사 →
+          </Link>
+          <Link href="/admin/planner-market/credits" className="text-sm font-medium text-brand-600 hover:underline">
+            열람권 관리 →
+          </Link>
+        </div>
       </div>
 
       <div className="inline-flex w-fit items-center gap-1 rounded-lg bg-muted p-1">

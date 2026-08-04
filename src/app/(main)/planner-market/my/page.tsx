@@ -3,11 +3,13 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { PlannerMyProfileCard } from '@/components/planner-market/PlannerMyProfileCard';
-import { PlannerCertificationUploadForm } from '@/components/planner-market/PlannerCertificationUploadForm';
+import { PlannerIncomeBadgeUploadForm } from '@/components/planner-market/PlannerIncomeBadgeUploadForm';
+import { PlannerProfileStatsCard } from '@/components/planner-market/PlannerProfileStatsCard';
 import { Button } from '@/components/ui/button';
 import { BackButton } from '@/components/shared/BackButton';
+import type { PlannerBadgeSummary } from '@/types/database';
 
-/** 내가 등록한 설계사 정보 - 자가서비스(비공개/해지/철회) + 인증배지 신청 진입점. */
+/** 내가 등록한 설계사 정보 - 자가서비스(비공개/해지/철회) + 배지 신청 진입점 + 조회수 통계. */
 export default async function PlannerMarketMyPage() {
   const user = await getCurrentUser();
   if (!user?.isFullMember) {
@@ -30,21 +32,37 @@ export default async function PlannerMarketMyPage() {
     );
   }
 
-  const { data: certification } = await supabase
-    .from('planner_market_certifications')
-    .select('status, tier')
-    .eq('planner_profile_id', profile.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: badgeRows }, { data: statsRows }] = await Promise.all([
+    supabase.from('planner_badges').select('*').eq('planner_profile_id', profile.id),
+    supabase.rpc('get_my_planner_market_profile_stats'),
+  ]);
 
-  const badgeTier = certification?.status === 'approved' ? certification.tier : null;
-  const showCertForm = profile.status === 'approved' && certification?.status !== 'pending_review' && !badgeTier;
+  const badgeCodes = (badgeRows ?? []).map((b) => b.badge_type_code);
+  const { data: badgeTypes } =
+    badgeCodes.length > 0 ? await supabase.from('planner_badge_types').select('code, label, icon, sort_order').in('code', badgeCodes) : { data: [] };
+  const typeByCode = new Map((badgeTypes ?? []).map((t) => [t.code, t]));
+
+  const approvedBadges: PlannerBadgeSummary[] = (badgeRows ?? [])
+    .filter((b) => b.status === 'approved')
+    .map((b) => typeByCode.get(b.badge_type_code))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((t) => ({ code: t.code, label: t.label, icon: t.icon }));
+
+  const incomeBadge = (badgeRows ?? []).find((b) => b.badge_type_code === 'income_verified');
+  const showIncomeBadgeForm = profile.status === 'approved' && incomeBadge?.status !== 'pending_review' && incomeBadge?.status !== 'approved';
+  const stats = statsRows?.[0];
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4 px-4 py-8">
       <BackButton />
       <h1 className="text-xl font-bold">내가 등록한 설계사 정보</h1>
+
+      {stats && (
+        <PlannerProfileStatsCard
+          stats={{ totalViews: stats.total_views, viewsLast7Days: stats.views_last_7_days, contactUnlockCount: stats.contact_unlock_count }}
+        />
+      )}
 
       <PlannerMyProfileCard
         profile={{
@@ -54,15 +72,15 @@ export default async function PlannerMarketMyPage() {
           isHidden: profile.is_hidden,
           contactSharingRevoked: profile.contact_sharing_revoked_at !== null,
           reviewReason: profile.review_reason,
-          badgeTier,
+          badges: approvedBadges,
         }}
       />
 
-      {certification?.status === 'pending_review' && (
-        <p className="rounded-2xl border border-line bg-amber-50 p-4 text-sm text-amber-700">✅ 인증 설계사 배지 심사 중입니다.</p>
+      {incomeBadge?.status === 'pending_review' && (
+        <p className="rounded-2xl border border-line bg-amber-50 p-4 text-sm text-amber-700">🏆 연봉 인증 배지 심사 중입니다.</p>
       )}
 
-      {showCertForm && <PlannerCertificationUploadForm plannerProfileId={profile.id} />}
+      {showIncomeBadgeForm && <PlannerIncomeBadgeUploadForm plannerProfileId={profile.id} />}
     </div>
   );
 }

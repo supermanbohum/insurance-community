@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { User, BadgeCheck } from 'lucide-react';
+import { User } from 'lucide-react';
 import type { PublicPlannerProfileSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
+import { PlannerBadgeList } from '@/components/planner-market/PlannerBadgeList';
 
 export function PlannerCard({ planner, className }: { planner: PublicPlannerProfileSummary; className?: string }) {
   return (
@@ -28,11 +29,8 @@ export function PlannerCard({ planner, className }: { planner: PublicPlannerProf
             <User className="h-8 w-8" strokeWidth={1.5} />
           </div>
         )}
-        {planner.badgeTier && (
-          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white">
-            <BadgeCheck className="h-3 w-3" />
-            인증 설계사
-          </span>
+        {planner.badges.length > 0 && (
+          <PlannerBadgeList badges={planner.badges} size="sm" className="absolute left-2 top-2" />
         )}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-3">

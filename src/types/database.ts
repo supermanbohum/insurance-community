@@ -42,8 +42,8 @@ export type PlannerIncomeTier = 'tier_1' | 'tier_2' | 'tier_3';
 export type PlannerCertificationStatus = 'pending_review' | 'approved' | 'rejected' | 'pending_renewal';
 export type PlannerCertificationHistoryEventType = 'initial_approval' | 'renewal_approval' | 'rejection';
 export type PlannerApplicationSource = 'partner' | 'public';
-export type VerificationDocumentOwnerType = 'planner_certification' | 'planner_market_certification';
-export type VerificationDocumentType = 'withholding_tax_certificate' | 'income_proof';
+export type VerificationDocumentOwnerType = 'planner_certification' | 'planner_badge';
+export type VerificationDocumentType = 'withholding_tax_certificate' | 'badge_document';
 export type SubscriptionSubjectType = 'branch_listing' | 'planner_addon';
 export type SubscriptionPlanCode = 'branch_standard' | 'branch_early_bird' | 'planner_addon';
 export type SubscriptionStatus = 'active' | 'past_due' | 'grace_period' | 'suspended' | 'canceled';
@@ -51,8 +51,16 @@ export type PaymentTransactionStatus = 'succeeded' | 'failed' | 'refunded';
 
 /** 설계사 마켓(0034~0036) - TOP설계사(planner_certifications)와는 완전히 별개인 시스템. */
 export type PlannerProfileStatus = 'pending_review' | 'approved' | 'rejected';
-export type PlannerMarketCertificationTier = 'verified';
-export type PlannerMarketCertificationStatus = 'pending_review' | 'approved' | 'rejected';
+/** 확장형 배지 시스템(0038) - 새 배지 종류는 planner_badge_types에 행만 추가하면 되고
+ * 이 status 도메인은 모든 배지 종류가 공유한다(연봉인증/TOP설계사/본인인증/향후 MDRT 등). */
+export type PlannerBadgeStatus = 'pending_review' | 'approved' | 'rejected';
+
+/** public_planner_profiles 뷰의 badges 컬럼(jsonb 배열) 원소 하나. */
+export interface PlannerBadgeSummary {
+  code: string;
+  label: string;
+  icon: string;
+}
 export type CreditPurchaseTierCode = 'credits_1' | 'credits_10' | 'credits_30' | 'credits_50' | 'credits_100';
 export type CreditPurchaseStatus = 'paid' | 'refunded' | 'failed';
 
@@ -890,29 +898,46 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['planner_profiles']['Row']>;
         Relationships: [];
       };
-      planner_profile_insurers: {
+      planner_badge_types: {
         Row: {
-          planner_profile_id: string;
-          insurer_id: string;
+          code: string;
+          label: string;
+          icon: string;
+          description: string | null;
+          requires_document: boolean;
+          self_applicable: boolean;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
         };
-        Insert: Partial<Database['public']['Tables']['planner_profile_insurers']['Row']>;
-        Update: Partial<Database['public']['Tables']['planner_profile_insurers']['Row']>;
+        Insert: Partial<Database['public']['Tables']['planner_badge_types']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_badge_types']['Row']>;
         Relationships: [];
       };
-      planner_market_certifications: {
+      planner_badges: {
         Row: {
           id: string;
           planner_profile_id: string;
-          tier: PlannerMarketCertificationTier;
-          status: PlannerMarketCertificationStatus;
-          approved_by_admin_id: string | null;
-          approved_at: string | null;
+          badge_type_code: string;
+          status: PlannerBadgeStatus;
+          granted_by_admin_id: string | null;
+          granted_at: string | null;
           review_reason: string | null;
           created_at: string;
           updated_at: string;
         };
-        Insert: Partial<Database['public']['Tables']['planner_market_certifications']['Row']>;
-        Update: Partial<Database['public']['Tables']['planner_market_certifications']['Row']>;
+        Insert: Partial<Database['public']['Tables']['planner_badges']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_badges']['Row']>;
+        Relationships: [];
+      };
+      planner_profile_views: {
+        Row: {
+          id: string;
+          planner_profile_id: string;
+          viewed_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['planner_profile_views']['Row']>;
+        Update: Partial<Database['public']['Tables']['planner_profile_views']['Row']>;
         Relationships: [];
       };
       planner_market_credit_purchases: {
@@ -1039,8 +1064,9 @@ export interface Database {
           desired_ga_company_id: string | null;
           desired_conditions: string | null;
           created_at: string;
-          insurer_ids: string[] | null;
-          badge_tier: PlannerMarketCertificationTier | null;
+          badges: PlannerBadgeSummary[];
+          has_income_verified: boolean;
+          has_top_planner: boolean;
         };
         Relationships: [];
       };
@@ -1604,7 +1630,6 @@ export interface Database {
           p_active_region_id: string;
           p_career_years: number;
           p_specialties: string[];
-          p_insurer_ids: string[];
           p_currently_employed: boolean;
           p_open_to_move: boolean;
           p_consent_contact_paid_view: boolean;
@@ -1630,7 +1655,6 @@ export interface Database {
           p_active_region_id: string;
           p_career_years: number;
           p_specialties: string[];
-          p_insurer_ids: string[];
           p_currently_employed: boolean;
           p_open_to_move: boolean;
           p_kakao_id?: string | null;
@@ -1662,13 +1686,33 @@ export interface Database {
         Args: { p_planner_profile_id: string; p_decision: string; p_reason?: string | null };
         Returns: void;
       };
-      submit_planner_market_certification: {
-        Args: { p_planner_profile_id: string; p_income_doc_path: string };
+      submit_planner_badge_application: {
+        Args: { p_planner_profile_id: string; p_badge_type_code: string; p_doc_path?: string | null };
         Returns: string;
       };
-      admin_review_planner_market_certification: {
-        Args: { p_certification_id: string; p_decision: string; p_reason?: string | null };
+      admin_review_planner_badge: {
+        Args: { p_badge_id: string; p_decision: string; p_reason?: string | null };
         Returns: void;
+      };
+      admin_reset_planner_badge_for_review: {
+        Args: { p_badge_id: string };
+        Returns: void;
+      };
+      admin_grant_planner_badge: {
+        Args: { p_planner_profile_id: string; p_badge_type_code: string; p_reason?: string | null };
+        Returns: string;
+      };
+      admin_revoke_planner_badge: {
+        Args: { p_badge_id: string; p_reason?: string | null };
+        Returns: void;
+      };
+      record_planner_profile_view: {
+        Args: { p_planner_profile_id: string };
+        Returns: void;
+      };
+      get_my_planner_market_profile_stats: {
+        Args: Record<string, never>;
+        Returns: { total_views: number; views_last_7_days: number; contact_unlock_count: number }[];
       };
       purchase_planner_market_credits: {
         Args: { p_tier_code: string; p_payment_method: string; p_provider_transaction_ref: string };
@@ -1790,7 +1834,8 @@ export interface PublicPlannerProfileSummary {
   desiredGaCompanyId: string | null;
   desiredGaCompanyName: string | null;
   desiredConditions: string | null;
-  insurerNames: string[];
-  badgeTier: PlannerMarketCertificationTier | null;
+  badges: PlannerBadgeSummary[];
+  hasIncomeVerified: boolean;
+  hasTopPlanner: boolean;
   createdAt: string;
 }

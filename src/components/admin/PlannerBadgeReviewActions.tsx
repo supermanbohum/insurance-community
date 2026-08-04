@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { reviewPlannerMarketCertificationAction } from '@/lib/actions/planner-market-admin';
+import { reviewPlannerBadgeAction, resetPlannerBadgeForReviewAction } from '@/lib/actions/planner-market-admin';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -19,7 +19,19 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-export function PlannerMarketCertificationReviewActions({ certificationId, plannerName }: { certificationId: string; plannerName: string }) {
+/** 배지 승인/반려/재검토 - 어떤 배지 종류든 동일하게 동작한다(연봉 인증뿐 아니라
+ * 향후 self_applicable 배지가 추가돼도 이 컴포넌트를 그대로 재사용). */
+export function PlannerBadgeReviewActions({
+  badgeId,
+  plannerName,
+  badgeLabel,
+  status,
+}: {
+  badgeId: string;
+  plannerName: string;
+  badgeLabel: string;
+  status: 'pending_review' | 'approved' | 'rejected';
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
@@ -27,17 +39,37 @@ export function PlannerMarketCertificationReviewActions({ certificationId, plann
 
   function run(decision: 'approved' | 'rejected', reasonText?: string) {
     startTransition(async () => {
-      const result = await reviewPlannerMarketCertificationAction(certificationId, decision, reasonText);
+      const result = await reviewPlannerBadgeAction(badgeId, decision, reasonText);
       if (result.success) {
         toast.success('처리되었습니다.');
         setReasonDialogOpen(false);
         setReason('');
-        router.push('/admin/planner-market/certifications');
+        router.push('/admin/planner-market/badges');
         router.refresh();
       } else {
         toast.error(result.error);
       }
     });
+  }
+
+  function resetForReview() {
+    startTransition(async () => {
+      const result = await resetPlannerBadgeForReviewAction(badgeId);
+      if (result.success) {
+        toast.success('재검토 대기 상태로 되돌렸습니다.');
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
+
+  if (status !== 'pending_review') {
+    return (
+      <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={resetForReview}>
+        재검토
+      </Button>
+    );
   }
 
   return (
@@ -48,8 +80,10 @@ export function PlannerMarketCertificationReviewActions({ certificationId, plann
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{plannerName}님의 인증 설계사 배지를 승인할까요?</AlertDialogTitle>
-            <AlertDialogDescription>승인 시 즉시 &quot;설계사 찾기&quot;에 인증 배지가 표시됩니다.</AlertDialogDescription>
+            <AlertDialogTitle>
+              {plannerName}님의 {badgeLabel} 배지를 승인할까요?
+            </AlertDialogTitle>
+            <AlertDialogDescription>승인 시 즉시 프로필에 배지가 표시됩니다.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>

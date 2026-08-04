@@ -10,8 +10,10 @@ import {
   withdrawPlannerProfileAction,
   revokePlannerContactSharingAction,
 } from '@/lib/actions/planner-market';
+import { PlannerBadgeList } from '@/components/planner-market/PlannerBadgeList';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import type { PlannerBadgeSummary } from '@/types/database';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +45,7 @@ export interface MyPlannerProfileSummary {
   isHidden: boolean;
   contactSharingRevoked: boolean;
   reviewReason: string | null;
-  badgeTier: string | null;
+  badges: PlannerBadgeSummary[];
 }
 
 export function PlannerMyProfileCard({ profile }: { profile: MyPlannerProfileSummary }) {
@@ -93,12 +95,13 @@ export function PlannerMyProfileCard({ profile }: { profile: MyPlannerProfileSum
           <h2 className="text-lg font-bold">{profile.name}</h2>
           <Badge variant={STATUS_VARIANT[profile.status]}>{STATUS_LABEL[profile.status]}</Badge>
           {profile.isHidden && <Badge variant="outline">비공개</Badge>}
-          {profile.badgeTier && <Badge variant="success">✅ 인증 설계사</Badge>}
         </div>
         <Button asChild size="sm" variant="outline">
           <Link href="/planner-market/edit">정보 수정</Link>
         </Button>
       </div>
+
+      {profile.badges.length > 0 && <PlannerBadgeList badges={profile.badges} />}
 
       {profile.status === 'rejected' && profile.reviewReason && (
         <p className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">반려 사유: {profile.reviewReason}</p>

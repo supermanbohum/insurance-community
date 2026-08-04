@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { listRegions, listInsurers } from '@/lib/admin/branch';
+import { listRegions } from '@/lib/admin/branch';
 import { listGaFilterOptions } from '@/lib/public/ga-directory';
 import { PlannerMarketRegisterForm } from '@/components/planner-market/PlannerMarketRegisterForm';
 import { BackButton } from '@/components/shared/BackButton';
@@ -19,10 +19,9 @@ export default async function PlannerMarketEditPage() {
   }
 
   const supabase = createServerSupabaseClient();
-  const [{ data: profiles }, regions, insurers, gaOptions] = await Promise.all([
+  const [{ data: profiles }, regions, gaOptions] = await Promise.all([
     supabase.rpc('get_my_planner_market_profile'),
     listRegions(),
-    listInsurers(),
     listGaFilterOptions(),
   ]);
   const profile = profiles?.[0] ?? null;
@@ -30,15 +29,12 @@ export default async function PlannerMarketEditPage() {
     redirect('/planner-market/register');
   }
 
-  const { data: insurerRows } = await supabase.from('planner_profile_insurers').select('insurer_id').eq('planner_profile_id', profile.id);
-
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 px-4 py-10">
       <BackButton />
       <h1 className="text-xl font-bold">설계사 정보 수정</h1>
       <PlannerMarketRegisterForm
         regions={regions}
-        insurers={insurers}
         gaOptions={gaOptions}
         initialProfile={{
           id: profile.id,
@@ -51,7 +47,6 @@ export default async function PlannerMarketEditPage() {
           activeRegionId: profile.active_region_id,
           careerYears: profile.career_years,
           specialties: profile.specialties,
-          insurerIds: (insurerRows ?? []).map((r) => r.insurer_id),
           currentlyEmployed: profile.currently_employed,
           openToMove: profile.open_to_move,
           selfIntroduction: profile.self_introduction,

@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPlannerMarketProfileDetail } from '@/lib/admin/planner-market';
+import { listPlannerBadgeTypes } from '@/lib/admin/planner-badges';
 import { PlannerMarketProfileReviewActions } from '@/components/admin/PlannerMarketProfileReviewActions';
+import { PlannerBadgeManagementCard } from '@/components/admin/PlannerBadgeManagementCard';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -18,7 +20,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function AdminPlannerMarketProfileDetailPage({ params }: { params: { profileId: string } }) {
-  const detail = await getPlannerMarketProfileDetail(params.profileId);
+  const [detail, badgeTypes] = await Promise.all([getPlannerMarketProfileDetail(params.profileId), listPlannerBadgeTypes()]);
   if (!detail) notFound();
 
   const canReview = detail.status === 'pending_review';
@@ -35,7 +37,6 @@ export default async function AdminPlannerMarketProfileDetailPage({ params }: { 
           <div className="mt-1 flex items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">{detail.name}</h1>
             <Badge variant={STATUS_VARIANT[detail.status]}>{STATUS_LABEL[detail.status]}</Badge>
-            {detail.badgeTier && <Badge variant="success">✅ 인증 설계사</Badge>}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {new Date(detail.createdAt).toLocaleString('ko-KR')} 신청 · 회원 {detail.memberNickname}
@@ -65,7 +66,6 @@ export default async function AdminPlannerMarketProfileDetailPage({ params }: { 
           <InfoRow label="활동지역" value={detail.activeRegionLabel || '-'} />
           <InfoRow label="경력" value={`${detail.careerYears}년`} />
           <InfoRow label="전문분야" value={detail.specialties.length > 0 ? detail.specialties.join(', ') : '-'} />
-          <InfoRow label="취급 보험사" value={detail.insurerNames.length > 0 ? detail.insurerNames.join(', ') : '-'} />
           <InfoRow label="현재 근무 여부" value={detail.currentlyEmployed ? '재직중' : '미재직'} />
           <InfoRow label="이직 가능 여부" value={detail.openToMove ? '가능' : '불가'} />
           <InfoRow label="희망 근무지역" value={detail.desiredRegionLabel ?? '-'} />
@@ -92,6 +92,8 @@ export default async function AdminPlannerMarketProfileDetailPage({ params }: { 
           <ConsentRow label="철회 가능 고지 확인" checked={detail.consents.withdrawalNotice} />
         </CardContent>
       </Card>
+
+      <PlannerBadgeManagementCard plannerProfileId={detail.id} badges={detail.allBadges} badgeTypes={badgeTypes} />
 
       {detail.reviewReason && (
         <Card>

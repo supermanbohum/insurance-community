@@ -9,11 +9,10 @@ import {
   updatePlannerMarketProfileAction,
   uploadPlannerMarketPhotoAction,
 } from '@/lib/actions/planner-market';
-import type { RegionRow, InsurerRow } from '@/lib/admin/branch';
+import type { RegionRow } from '@/lib/admin/branch';
 import type { GaFilterOption } from '@/lib/public/ga-directory';
 import { RegionSelect } from '@/components/admin/RegionSelect';
 import { GaSearchSelect } from '@/components/auth/GaSearchSelect';
-import { InsurerMultiSelect } from '@/components/admin/InsurerMultiSelect';
 import { PlannerMarketConsentCheckboxes, EMPTY_CONSENTS, type PlannerMarketConsents } from '@/components/planner-market/PlannerMarketConsentCheckboxes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +34,6 @@ export interface PlannerMarketEditableProfile {
   activeRegionId: string;
   careerYears: number;
   specialties: string[];
-  insurerIds: string[];
   currentlyEmployed: boolean;
   openToMove: boolean;
   selfIntroduction: string | null;
@@ -48,12 +46,10 @@ export interface PlannerMarketEditableProfile {
  * updatePlannerMarketProfileAction 호출), 없으면 신규 등록 모드다. */
 export function PlannerMarketRegisterForm({
   regions,
-  insurers,
   gaOptions,
   initialProfile,
 }: {
   regions: RegionRow[];
-  insurers: InsurerRow[];
   gaOptions: GaFilterOption[];
   initialProfile?: PlannerMarketEditableProfile;
 }) {
@@ -70,7 +66,6 @@ export function PlannerMarketRegisterForm({
   const [activeRegionId, setActiveRegionId] = useState<string | null>(initialProfile?.activeRegionId ?? null);
   const [careerYears, setCareerYears] = useState<number | ''>(initialProfile?.careerYears ?? '');
   const [specialtiesText, setSpecialtiesText] = useState(initialProfile?.specialties.join(', ') ?? '');
-  const [insurerIds, setInsurerIds] = useState<string[]>(initialProfile?.insurerIds ?? []);
   const [currentlyEmployed, setCurrentlyEmployed] = useState(initialProfile?.currentlyEmployed ?? false);
   const [openToMove, setOpenToMove] = useState(initialProfile?.openToMove ?? true);
   const [selfIntroduction, setSelfIntroduction] = useState(initialProfile?.selfIntroduction ?? '');
@@ -122,7 +117,6 @@ export function PlannerMarketRegisterForm({
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean),
-        insurerIds,
         currentlyEmployed,
         openToMove,
         selfIntroduction,
@@ -229,10 +223,6 @@ export function PlannerMarketRegisterForm({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pm-specialties">전문분야 (쉼표로 구분)</Label>
             <Input id="pm-specialties" value={specialtiesText} onChange={(e) => setSpecialtiesText(e.target.value)} placeholder="예: 종신보험, 변액보험, 손해사정" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>취급 보험사</Label>
-            <InsurerMultiSelect insurers={insurers} selectedIds={insurerIds} onChange={setInsurerIds} />
           </div>
           <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
             <Label htmlFor="pm-employed" className="cursor-pointer font-normal">

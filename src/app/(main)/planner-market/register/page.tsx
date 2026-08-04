@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/session';
-import { listRegions, listInsurers } from '@/lib/admin/branch';
+import { listRegions } from '@/lib/admin/branch';
 import { listGaFilterOptions } from '@/lib/public/ga-directory';
 import { PlannerMarketRegisterForm } from '@/components/planner-market/PlannerMarketRegisterForm';
 import { BackButton } from '@/components/shared/BackButton';
@@ -13,7 +13,7 @@ export default async function PlannerMarketRegisterPage() {
     redirect('/login?next=/planner-market/register');
   }
 
-  const [regions, insurers, gaOptions] = await Promise.all([listRegions(), listInsurers(), listGaFilterOptions()]);
+  const [regions, gaOptions] = await Promise.all([listRegions(), listGaFilterOptions()]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 px-4 py-10">
@@ -25,7 +25,7 @@ export default async function PlannerMarketRegisterPage() {
           사용해야만 볼 수 있습니다. 관리자 승인 후 공개됩니다.
         </p>
       </div>
-      <PlannerMarketRegisterForm regions={regions} insurers={insurers} gaOptions={gaOptions} />
+      <PlannerMarketRegisterForm regions={regions} gaOptions={gaOptions} />
     </div>
   );
 }

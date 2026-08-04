@@ -1,8 +1,10 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { BadgeCheck, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import { getPublicPlannerProfile } from '@/lib/public/planner-market.supabase';
+import { recordPlannerProfileViewAction } from '@/lib/actions/planner-market';
 import { PlannerContactUnlockButton } from '@/components/planner-market/PlannerContactUnlockButton';
+import { PlannerBadgeList } from '@/components/planner-market/PlannerBadgeList';
 import { BackButton } from '@/components/shared/BackButton';
 import { avatarGradient } from '@/lib/utils';
 
@@ -10,6 +12,8 @@ import { avatarGradient } from '@/lib/utils';
 export default async function PlannerMarketDetailPage({ params }: { params: { plannerId: string } }) {
   const planner = await getPublicPlannerProfile(params.plannerId);
   if (!planner) notFound();
+
+  await recordPlannerProfileViewAction(planner.id);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
@@ -25,13 +29,8 @@ export default async function PlannerMarketDetailPage({ params }: { params: { pl
             </div>
           )}
         </div>
-        <div className="flex flex-col gap-1">
-          {planner.badgeTier && (
-            <span className="flex w-fit items-center gap-1 rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white">
-              <BadgeCheck className="h-3 w-3" />
-              인증 설계사
-            </span>
-          )}
+        <div className="flex flex-col gap-1.5">
+          <PlannerBadgeList badges={planner.badges} />
           <h1 className="text-lg font-bold">{planner.activeRegionLabel || '지역 미상'} · 경력 {planner.careerYears}년</h1>
           {planner.specialties.length > 0 && <p className="text-sm text-ink-soft">{planner.specialties.join(', ')}</p>}
         </div>
@@ -51,7 +50,6 @@ export default async function PlannerMarketDetailPage({ params }: { params: { pl
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <InfoItem label="현재 근무 여부" value={planner.currentlyEmployed ? '재직중' : '미재직'} />
           <InfoItem label="이직 가능 여부" value={planner.openToMove ? '가능' : '불가'} />
-          <InfoItem label="취급 보험사" value={planner.insurerNames.length > 0 ? planner.insurerNames.join(', ') : '-'} />
           <InfoItem label="희망 근무지역" value={planner.desiredRegionLabel ?? '-'} />
           <InfoItem label="희망 GA" value={planner.desiredGaCompanyName ?? '-'} />
         </dl>

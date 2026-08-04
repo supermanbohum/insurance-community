@@ -1,5 +1,5 @@
 import { createPublicSupabaseClient } from '@/lib/supabase/public';
-import type { PublicPlannerProfileSummary, PlannerMarketCertificationTier } from '@/types/database';
+import type { PublicPlannerProfileSummary, PlannerBadgeSummary } from '@/types/database';
 
 /** cookies()를 건드리지 않는 공개 클라이언트로 public_planner_profiles 뷰만 읽는다 -
  * "설계사 찾기" 목록/상세는 로그인 여부와 무관하게 누구나 볼 수 있다(공개 필드만).
@@ -19,8 +19,9 @@ interface PublicPlannerProfileRow {
   desired_ga_company_id: string | null;
   desired_conditions: string | null;
   created_at: string;
-  insurer_ids: string[] | null;
-  badge_tier: PlannerMarketCertificationTier | null;
+  badges: PlannerBadgeSummary[];
+  has_income_verified: boolean;
+  has_top_planner: boolean;
 }
 
 function getPhotoBaseUrl(): string {
@@ -43,23 +44,18 @@ async function toSummaries(
     new Set(rows.flatMap((r) => [r.active_region_id, r.desired_region_id]).filter((id): id is string => Boolean(id)))
   );
   const gaCompanyIds = Array.from(new Set(rows.map((r) => r.desired_ga_company_id).filter((id): id is string => Boolean(id))));
-  const insurerIds = Array.from(new Set(rows.flatMap((r) => r.insurer_ids ?? [])));
 
-  const [{ data: regions }, { data: gaCompanies }, { data: insurers }] = await Promise.all([
+  const [{ data: regions }, { data: gaCompanies }] = await Promise.all([
     regionIds.length > 0
       ? supabase.from('regions').select('id, sido_name, sigungu_name').in('id', regionIds)
       : Promise.resolve({ data: [] as { id: string; sido_name: string; sigungu_name: string | null }[] }),
     gaCompanyIds.length > 0
       ? supabase.from('ga_company').select('id, name').in('id', gaCompanyIds)
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    insurerIds.length > 0
-      ? supabase.from('insurers').select('id, name').in('id', insurerIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ]);
 
   const regionMap = new Map((regions ?? []).map((r) => [r.id, r]));
   const gaCompanyMap = new Map((gaCompanies ?? []).map((c) => [c.id, c.name]));
-  const insurerMap = new Map((insurers ?? []).map((i) => [i.id, i.name]));
 
   return rows.map((row) => ({
     id: row.id,
@@ -76,8 +72,9 @@ async function toSummaries(
     desiredGaCompanyId: row.desired_ga_company_id,
     desiredGaCompanyName: row.desired_ga_company_id ? (gaCompanyMap.get(row.desired_ga_company_id) ?? null) : null,
     desiredConditions: row.desired_conditions,
-    insurerNames: (row.insurer_ids ?? []).map((id) => insurerMap.get(id)).filter((name): name is string => Boolean(name)),
-    badgeTier: row.badge_tier,
+    badges: row.badges ?? [],
+    hasIncomeVerified: row.has_income_verified,
+    hasTopPlanner: row.has_top_planner,
     createdAt: row.created_at,
   }));
 }
@@ -87,7 +84,8 @@ export async function listPublicPlannerProfiles(options: {
   sidoCode?: string;
   minCareerYears?: number;
   desiredGaCompanyId?: string;
-  badgeOnly?: boolean;
+  /** 🏆 연봉 인증 설계사만 보기 필터 - has_income_verified=true인 행만. */
+  incomeVerifiedOnly?: boolean;
   limit?: number;
 } = {}): Promise<PublicPlannerProfileSummary[]> {
   const supabase = createPublicSupabaseClient();
@@ -105,10 +103,14 @@ export async function listPublicPlannerProfiles(options: {
   if (options.desiredGaCompanyId) {
     query = query.eq('desired_ga_company_id', options.desiredGaCompanyId);
   }
-  if (options.badgeOnly) {
-    query = query.not('badge_tier', 'is', null);
+  if (options.incomeVerifiedOnly) {
+    query = query.eq('has_income_verified', true);
   }
-  query = query.order('created_at', { ascending: false });
+  // 기본 정렬 우선순위: ① 연봉 인증 → ② TOP 설계사 → ③ 최신 등록 → ④ 일반.
+  query = query
+    .order('has_income_verified', { ascending: false })
+    .order('has_top_planner', { ascending: false })
+    .order('created_at', { ascending: false });
   if (options.limit) {
     query = query.limit(options.limit);
   }

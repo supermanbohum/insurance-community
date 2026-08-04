@@ -17,7 +17,6 @@ export interface PlannerMarketProfileInput {
   activeRegionId: string;
   careerYears: number;
   specialties: string[];
-  insurerIds: string[];
   currentlyEmployed: boolean;
   openToMove: boolean;
   selfIntroduction?: string;
@@ -105,7 +104,6 @@ export async function submitPlannerMarketProfileAction(
     p_active_region_id: input.activeRegionId,
     p_career_years: input.careerYears,
     p_specialties: input.specialties,
-    p_insurer_ids: input.insurerIds,
     p_currently_employed: input.currentlyEmployed,
     p_open_to_move: input.openToMove,
     p_consent_contact_paid_view: consents.contactPaidView,
@@ -156,7 +154,6 @@ export async function updatePlannerMarketProfileAction(
     p_active_region_id: input.activeRegionId,
     p_career_years: input.careerYears,
     p_specialties: input.specialties,
-    p_insurer_ids: input.insurerIds,
     p_currently_employed: input.currentlyEmployed,
     p_open_to_move: input.openToMove,
     p_kakao_id: input.kakaoId?.trim() || null,
@@ -227,47 +224,60 @@ const DOC_MIME_EXTENSIONS: Record<string, string> = {
   'application/pdf': 'pdf',
 };
 
-/** 인증 설계사 배지 신청 - 소득증빙 서류 업로드 + RPC 호출을 한 번에 처리한다.
- * TOP설계사의 submitPlannerCertificationAction과 모양만 같고 완전히 별개 경로다. */
-export async function submitPlannerMarketCertificationAction(
+/** 배지 신청 - 연봉 인증처럼 서류가 필요한 배지(requires_document=true)와, 향후 추가될
+ * 서류 없는 self_applicable 배지 모두 이 액션 하나로 처리한다(badgeTypeCode만 다르게
+ * 넘기면 됨 - 새 배지 종류가 생겨도 이 함수는 그대로 재사용). TOP설계사의 인증 신청과는
+ * 완전히 별개 경로다. */
+export async function submitPlannerBadgeApplicationAction(
   plannerProfileId: string,
-  formData: FormData
+  badgeTypeCode: string,
+  formData: FormData | null
 ): Promise<ActionResult> {
-  const file = formData.get('file');
-  if (!(file instanceof File) || file.size === 0) {
-    return { success: false, error: '소득증빙 서류를 선택해주세요.' };
-  }
-  const extension = DOC_MIME_EXTENSIONS[file.type];
-  if (!extension) {
-    return { success: false, error: 'jpg, png, webp, pdf 형식만 업로드할 수 있습니다.' };
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    return { success: false, error: '파일은 최대 10MB까지 업로드할 수 있습니다.' };
-  }
-
   await requireUser();
   const supabase = createServerSupabaseClient();
-  const path = `${plannerProfileId}/${crypto.randomUUID()}.${extension}`;
-  const { error: uploadError } = await supabase.storage
-    .from('planner-market-income-docs')
-    .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
-  if (uploadError) {
-    return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+
+  let docPath: string | null = null;
+  const file = formData?.get('file');
+  if (file instanceof File && file.size > 0) {
+    const extension = DOC_MIME_EXTENSIONS[file.type];
+    if (!extension) {
+      return { success: false, error: 'jpg, png, webp, pdf 형식만 업로드할 수 있습니다.' };
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return { success: false, error: '파일은 최대 10MB까지 업로드할 수 있습니다.' };
+    }
+    const path = `${plannerProfileId}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage
+      .from('planner-market-income-docs')
+      .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
+    if (uploadError) {
+      return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+    }
+    docPath = path;
   }
 
-  const { error } = await supabase.rpc('submit_planner_market_certification', {
+  const { error } = await supabase.rpc('submit_planner_badge_application', {
     p_planner_profile_id: plannerProfileId,
-    p_income_doc_path: path,
+    p_badge_type_code: badgeTypeCode,
+    p_doc_path: docPath,
   });
   if (error) {
-    await createAdminClient().storage.from('planner-market-income-docs').remove([path]);
-    const message = error.message.includes('CERTIFICATION_ALREADY_PENDING')
-      ? '이미 심사 대기 중인 신청이 있습니다.'
-      : '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';
+    if (docPath) await createAdminClient().storage.from('planner-market-income-docs').remove([docPath]);
+    const message = error.message.includes('MISSING_DOCUMENT')
+      ? '증빙 서류를 선택해주세요.'
+      : error.message.includes('ALREADY_APPROVED')
+        ? '이미 승인된 배지입니다.'
+        : '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';
     return { success: false, error: message };
   }
 
   revalidatePath('/planner-market/my');
-  revalidatePath('/admin/planner-market/certifications');
+  revalidatePath('/admin/planner-market/badges');
   return { success: true };
+}
+
+/** 설계사 상세페이지 조회 기록 - 실패해도 페이지 렌더링에 영향 없게 결과를 무시한다. */
+export async function recordPlannerProfileViewAction(plannerProfileId: string): Promise<void> {
+  const supabase = createServerSupabaseClient();
+  await supabase.rpc('record_planner_profile_view', { p_planner_profile_id: plannerProfileId });
 }
