@@ -10,10 +10,13 @@ import { ChevronLeft } from 'lucide-react';
 export function LegalPageLayout({
   title,
   effectiveDate,
+  dateLabel = '시행일',
   children,
 }: {
   title: string;
   effectiveDate: string;
+  /** /contact처럼 "시행일" 개념이 어색한 페이지를 위한 라벨 오버라이드(예: "안내"). */
+  dateLabel?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -29,7 +32,7 @@ export function LegalPageLayout({
 
         <header className="mb-8 border-b border-[var(--lp-line)] pb-6">
           <h1 className="text-[26px] font-extrabold tracking-tight text-[var(--lp-ink)] sm:text-[30px]">{title}</h1>
-          <p className="mt-2 text-[13px] text-[var(--lp-ink-faint)]">시행일: {effectiveDate}</p>
+          <p className="mt-2 text-[13px] text-[var(--lp-ink-faint)]">{dateLabel}: {effectiveDate}</p>
         </header>
 
         <article className="rounded-2xl border border-[var(--lp-line)] bg-[var(--lp-card)] p-5 sm:p-8">{children}</article>
@@ -38,9 +41,9 @@ export function LegalPageLayout({
   );
 }
 
-export function LegalSection({ title, children }: { title: string; children: React.ReactNode }) {
+export function LegalSection({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
-    <section className="border-b border-[var(--lp-line)] py-6 first:pt-0 last:border-b-0 last:pb-0">
+    <section id={id} className="scroll-mt-6 border-b border-[var(--lp-line)] py-6 first:pt-0 last:border-b-0 last:pb-0">
       <h2 className="mb-3 text-[16px] font-bold text-[var(--lp-ink)]">{title}</h2>
       <div className="flex flex-col gap-2.5 text-[14px] leading-relaxed text-[var(--lp-ink-soft)]">{children}</div>
     </section>

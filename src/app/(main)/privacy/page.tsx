@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { LegalPageLayout, LegalSection, LegalList, LegalTable } from '@/components/legal/LegalPageLayout';
 
 export const metadata: Metadata = {
@@ -50,7 +51,7 @@ export default function PrivacyPage() {
         />
       </LegalSection>
 
-      <LegalSection title="3. 개인정보의 보유 및 이용기간">
+      <LegalSection id="3" title="3. 개인정보의 보유 및 이용기간">
         <p>
           회사는 원칙적으로 개인정보 수집 및 이용목적이 달성된 후에는 해당 정보를 지체 없이 파기합니다. 다만, 관계
           법령의 규정에 의하여 보존할 필요가 있는 경우 회사는 아래와 같이 관계 법령에서 정한 일정한 기간 동안 회원정보를
@@ -107,6 +108,13 @@ export default function PrivacyPage() {
           수 있습니다. 이용자는 개인정보 열람, 정정, 삭제, 처리정지를 요구할 권리를 가지며, 이는 서비스 내 설정 메뉴
           또는 아래의 문의처를 통해 요청할 수 있습니다. 회사는 본 서비스를 만 14세 미만 아동을 대상으로 제공하지
           않습니다.
+        </p>
+        <p>
+          회원 탈퇴 및 개인정보 삭제를 요청하는 구체적인 방법과 삭제 항목·처리기간은{' '}
+          <Link href="/delete-account" className="font-medium text-[var(--lp-brand)] underline underline-offset-2">
+            데이터 삭제 요청 안내
+          </Link>{' '}
+          페이지에서 확인하실 수 있습니다.
         </p>
       </LegalSection>
 

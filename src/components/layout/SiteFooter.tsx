@@ -1,20 +1,14 @@
 import Link from 'next/link';
 import { MessageCircle, Mail } from 'lucide-react';
 import { BrandMark } from '@/components/brand/BrandMark';
+import { COMPANY_INFO as COMPANY } from '@/lib/config/site';
 
 const MENU_LINKS = [
   { href: '/terms', label: '이용약관' },
   { href: '/privacy', label: '개인정보처리방침' },
-  { href: 'mailto:dlgoghk1538@gmail.com', label: '광고·제휴문의', external: true },
-  { href: 'https://open.kakao.com/o/sNMQngGi', label: '고객센터', external: true },
+  { href: '/delete-account', label: '데이터 삭제 요청' },
+  { href: '/contact', label: '문의하기' },
 ];
-
-const COMPANY = {
-  name: '보험슈퍼맨',
-  ceo: '신한국',
-  bizNo: '699-01-04079',
-  address: '경기도 시흥시 시청로 25, 904호',
-};
 
 // 국세청 홈택스는 사업자등록번호를 URL 파라미터로 바로 조회하는 방식을 제공하지 않아
 // (직접 조회 화면에서 번호를 입력해야 함) 정확한 상태조회 결과 페이지로 바로 연결할 수는
@@ -67,30 +61,18 @@ export function SiteFooter() {
         {/* 메뉴 */}
         <div className="flex flex-col gap-2.5">
           <span className="text-xs font-bold uppercase tracking-wide text-slate-500">메뉴</span>
-          {MENU_LINKS.map((link) =>
-            link.external ? (
-              <a
-                key={link.label}
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-fit text-sm text-slate-300 transition-colors hover:text-white"
-              >
-                {link.label}
-              </a>
-            ) : (
-              <Link key={link.label} href={link.href} className="w-fit text-sm text-slate-300 transition-colors hover:text-white">
-                {link.label}
-              </Link>
-            )
-          )}
+          {MENU_LINKS.map((link) => (
+            <Link key={link.label} href={link.href} className="w-fit text-sm text-slate-300 transition-colors hover:text-white">
+              {link.label}
+            </Link>
+          ))}
         </div>
 
         {/* 고객센터 / 제휴문의 */}
         <div className="flex flex-col gap-2.5">
           <span className="text-xs font-bold uppercase tracking-wide text-slate-500">문의</span>
           <a
-            href="https://open.kakao.com/o/sNMQngGi"
+            href={COMPANY.kakaoChannelUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-xl bg-white/5 px-3.5 py-3 text-sm text-slate-200 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
@@ -102,13 +84,13 @@ export function SiteFooter() {
             </span>
           </a>
           <a
-            href="mailto:dlgoghk1538@gmail.com"
+            href={`mailto:${COMPANY.email}`}
             className="flex items-center gap-2 rounded-xl bg-white/5 px-3.5 py-3 text-sm text-slate-200 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
           >
             <Mail className="h-4 w-4 shrink-0 text-brand-300" />
             <span className="flex flex-col">
               <span className="font-semibold">광고·제휴문의</span>
-              <span className="text-xs text-slate-400">dlgoghk1538@gmail.com</span>
+              <span className="text-xs text-slate-400">{COMPANY.email}</span>
             </span>
           </a>
         </div>
