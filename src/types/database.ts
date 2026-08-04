@@ -43,6 +43,17 @@ export type PlannerCertificationStatus = 'pending_review' | 'approved' | 'reject
 export type PlannerCertificationHistoryEventType = 'initial_approval' | 'renewal_approval' | 'rejection';
 export type PlannerApplicationSource = 'partner' | 'public';
 export type VerificationDocumentOwnerType = 'planner_certification' | 'planner_badge';
+/** banners.slot (0001) - PC/모바일 × 위치별 광고 슬롯. 현재 실제로 연동된 것은 pc_left뿐이다. */
+export type BannerSlot =
+  | 'pc_top'
+  | 'pc_left'
+  | 'pc_right'
+  | 'pc_list_middle'
+  | 'pc_detail_bottom'
+  | 'mobile_top'
+  | 'mobile_list_middle'
+  | 'mobile_detail_bottom'
+  | 'mobile_sticky_bottom';
 export type VerificationDocumentType = 'withholding_tax_certificate' | 'badge_document';
 export type SubscriptionSubjectType = 'branch_listing' | 'planner_addon';
 export type SubscriptionPlanCode = 'branch_standard' | 'branch_early_bird' | 'planner_addon';
@@ -1075,6 +1086,29 @@ export interface Database {
             referencedColumns: ['id'];
           },
         ];
+      };
+      banners: {
+        Row: {
+          id: string;
+          advertiser_name: string;
+          campaign_name: string;
+          pc_image_path: string | null;
+          mobile_image_path: string | null;
+          link_url: string;
+          slot: BannerSlot;
+          start_at: string;
+          end_at: string;
+          priority: number;
+          is_active: boolean;
+          total_contract_amount: number | null;
+          admin_memo: string | null;
+          created_by_admin_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['banners']['Row']>;
+        Update: Partial<Database['public']['Tables']['banners']['Row']>;
+        Relationships: [];
       };
     };
     Views: {

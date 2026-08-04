@@ -1,9 +1,12 @@
+import Link from 'next/link';
+import Image from 'next/image';
 import { getCurrentUser } from '@/lib/auth/session';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { BohomMapHeader } from '@/components/layout/BohomMapHeader';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { listActiveBanners } from '@/lib/public/banners';
 
 /**
  * 공개(비관리자) 페이지 전용 레이아웃 - 보험맵 헤더 + 공통 푸터를 담당한다.
@@ -19,17 +22,26 @@ import { ChatPanel } from '@/components/chat/ChatPanel';
  * 대체된다. 2xl 이상 초광폭 화면에서만 좌측에 향후 광고 영역을 위한 자리를 비워둔다.
  */
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
+  const [user, leftBanners] = await Promise.all([getCurrentUser(), listActiveBanners('pc_left')]);
+  const leftBanner = leftBanners[0] ?? null;
 
   return (
     <AuthProvider initialUser={user}>
       <BohomMapHeader />
       <div className="mx-auto flex w-full max-w-[1440px] items-start gap-6 2xl:px-6">
         <aside className="hidden w-[240px] shrink-0 2xl:block">
-          <div className="sticky top-[76px] rounded-2xl border border-dashed border-line bg-surface-sunken py-10 text-center text-xs text-ink-faint">
-            광고 영역
-            <br />
-            (준비 중)
+          <div className="sticky top-[76px]">
+            {leftBanner?.pcImageUrl ? (
+              <Link href={leftBanner.linkUrl} className="block overflow-hidden rounded-2xl border border-line shadow-card transition-shadow hover:shadow-card-hover">
+                <Image src={leftBanner.pcImageUrl} alt="광고" width={240} height={320} className="h-auto w-full" />
+              </Link>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-line bg-surface-sunken py-10 text-center text-xs text-ink-faint">
+                광고 영역
+                <br />
+                (준비 중)
+              </div>
+            )}
           </div>
         </aside>
         <main className="min-w-0 flex-1">

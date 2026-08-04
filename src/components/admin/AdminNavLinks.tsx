@@ -16,6 +16,7 @@ import {
   PartyPopper,
   Users2,
   Megaphone,
+  GalleryHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/recruits', label: '채용 관리', icon: Briefcase },
   { href: '/admin/design/home', label: '디자인 편집', icon: LayoutTemplate },
   { href: '/admin/event-popup', label: '이벤트 팝업', icon: PartyPopper },
+  { href: '/admin/banners', label: '배너 관리', icon: GalleryHorizontal },
 ];
 
 export function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
