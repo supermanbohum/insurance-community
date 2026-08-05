@@ -29,7 +29,7 @@
 
 ## 2. 현재 구현 완료 기능
 
-(상세 스키마/RPC는 [APP_DEVELOPER_GUIDE.md](APP_DEVELOPER_GUIDE.md) 참고, 마이그레이션 0001~0050 적용됨)
+(상세 스키마/RPC는 [APP_DEVELOPER_GUIDE.md](APP_DEVELOPER_GUIDE.md) 참고, 마이그레이션 0001~0051 적용됨)
 
 - **일반 회원**: 카카오/구글/이메일 로그인, 즐겨찾기, 실시간 채팅(플랫폼 전체 단일 공용방), GA 소속 변경요청
 - **지점(GA/Branch) 시스템**: GA 마스터 50개 중 선택해 지점 등록 → 관리자 승인 → 지도/검색 노출. 신뢰도 항목(이름/주소/소개 등) 재승인, 연락처/보험사/채용 등은 즉시반영. **임시저장 + 대기중 재수정 + 정확한 변경이력(전/후 스냅샷)** 지원(수정 흐름), **신규 등록 폼도 텍스트 필드 임시저장** 지원(파일 제외). TOP설계사 검색필터 + 지도 연동 완료
@@ -41,6 +41,7 @@
 - **앱 연동 기반**: `push_tokens` 저장 인프라 + `window.__boheom` postMessage 브릿지 클라이언트(ready/push-token/deeplink 처리) — 앱 Phase 1(푸시)의 선행 조건 완료
 - **관리자**: GA/지점/변경요청/TOP설계사/설계사마켓/배지/열람권/광고상품/광고배너/구독/문의/이벤트팝업/페이지레이아웃 전체 관리 화면
 - **Play 스토어 출시 정책 페이지**: `/privacy`(개인정보처리방침)·`/terms`(이용약관)에 이어 `/delete-account`(데이터 삭제 요청 — Google Play 계정삭제 정책 대응, 삭제 항목/법정 보관 항목/처리기간 명시, 본인확인용 이메일 프리필 CTA)·`/contact`(문의하기 — 카카오톡/이메일 채널) 신규 추가. 사업자 정보(`COMPANY_INFO`)를 `src/lib/config/site.ts`에 단일화해 푸터/정책 페이지가 모두 공유. 푸터 메뉴에 4개 페이지 전부 연결.
+- **관리자 대시보드 운영 관점 전면 개선(0051)**: GA/지점 KPI를 승인 기준으로 통일(미승인 GA 소속 지점 집계 제외), "오늘 신규"를 승인일 기준으로 통일 + KST 자정 경계 버그 수정, 사이트 전역 방문 로그 신설로 "오늘 조회수/방문자"가 실제 홈페이지 방문 기준으로 정상 집계, 설계사 통계 5종(등록/승인/공개중/연봉인증/오늘신규) 신규, 메인 KPI 4종(등록지점/등록설계사/오늘신규/오늘방문자) 재구성, 승인대기 알림(사이드바 배지+상단 카드), 최근 활동(GA/지점/설계사 3열), 이번 달 조회수 TOP5 인기지점/설계사
 - **SEO 인프라 전면 점검**: sitemap.xml에 게시글/설계사마켓 상세 동적 URL 추가(전에는 지점/지역/게시판만 있었음), robots.txt에 설계사마켓 비공개 경로 disallow 추가, 게시글/설계사마켓/인기지점/지도 페이지에 title·description·canonical·OG 신규 추가, `best`/`jobs`/`events`(준비중 placeholder)는 noindex 처리, Organization JSON-LD의 깨진 로고 URL 수정 + alternateName/description 보강, 게시글(DiscussionForumPosting)·설계사프로필(ProfilePage, PII 제외) 구조화 데이터 신규 추가, PWA manifest.webmanifest + apple-touch-icon 추가, **네이버 검색용 RSS(`/rss.xml`) 신규**(공개 게시글 최신 50개, 사이트 전역 `<link rel=alternate>`로 연결), 핵심 키워드(보험맵/보험대리점/GA/보험설계사/보험회사/보험 리크루팅) 자연스럽게 강화(홈 title/description/keywords, 홈페이지 sr-only h1 신규 추가 — 기존엔 화면에 보이는 제목이 아예 없었음). **Google Search Console/Naver Search Advisor 등록 시 소유권 인증 메타태그(`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`/`NEXT_PUBLIC_NAVER_SITE_VERIFICATION`)는 아직 Vercel 프로덕션 환경변수에 없음 — 등록 진행 시 반드시 추가 필요**
 - **결제/구독**: 인터페이스는 완성, 실제 PG는 스텁(항상 성공)
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
-import { AdminNavLinks } from '@/components/admin/AdminNavLinks';
+import { AdminNavLinks, type AdminNavBadges } from '@/components/admin/AdminNavLinks';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -11,9 +11,11 @@ import { SITE_CONFIG } from '@/lib/config/site';
 
 export function AdminShell({
   adminName,
+  navBadges,
   children,
 }: {
   adminName: string;
+  navBadges?: AdminNavBadges;
   children: React.ReactNode;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -26,7 +28,7 @@ export function AdminShell({
           {SITE_CONFIG.shortName} 관리자
         </div>
         <div className="flex-1 overflow-y-auto p-3">
-          <AdminNavLinks />
+          <AdminNavLinks badges={navBadges} />
         </div>
         <AdminAccountFooter adminName={adminName} />
       </aside>
@@ -39,7 +41,7 @@ export function AdminShell({
             {SITE_CONFIG.shortName} 관리자
           </div>
           <div className="flex-1 overflow-y-auto p-3">
-            <AdminNavLinks onNavigate={() => setMobileNavOpen(false)} />
+            <AdminNavLinks onNavigate={() => setMobileNavOpen(false)} badges={navBadges} />
           </div>
           <AdminAccountFooter adminName={adminName} />
         </SheetContent>

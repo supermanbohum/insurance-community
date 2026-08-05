@@ -20,13 +20,20 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
+/** 사이드바 nav 배지용 승인대기 카운트 - GA/지점(신규등록)/설계사 3종. */
+export interface AdminNavBadges {
+  ga: number;
+  branchCreate: number;
+  planner: number;
+}
+
+const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: keyof AdminNavBadges }[] = [
   { href: '/admin', label: '대시보드', icon: LayoutDashboard, exact: true },
-  { href: '/admin/ga', label: 'GA 관리', icon: Building2 },
+  { href: '/admin/ga', label: 'GA 관리', icon: Building2, badgeKey: 'ga' },
   { href: '/admin/branches', label: '지점 관리', icon: MapPin },
-  { href: '/admin/change-requests', label: '변경 요청', icon: ClipboardCheck },
+  { href: '/admin/change-requests', label: '변경 요청', icon: ClipboardCheck, badgeKey: 'branchCreate' },
   { href: '/admin/planners', label: '고소득 설계사', icon: Award },
-  { href: '/admin/planner-market', label: '설계사 마켓', icon: Users2 },
+  { href: '/admin/planner-market', label: '설계사 마켓', icon: Users2, badgeKey: 'planner' },
   { href: '/admin/ad-products', label: '광고 관리', icon: Megaphone },
   { href: '/admin/ga-change-requests', label: 'GA 변경 요청', icon: UserCog },
   { href: '/admin/billing', label: '결제 관리', icon: CreditCard },
@@ -37,7 +44,7 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/banners', label: '배너 관리', icon: GalleryHorizontal },
 ];
 
-export function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
+export function AdminNavLinks({ onNavigate, badges }: { onNavigate?: () => void; badges?: AdminNavBadges }) {
   const pathname = usePathname();
 
   return (
@@ -45,6 +52,7 @@ export function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
       {NAV_ITEMS.map((item) => {
         const isActive = item.exact ? pathname === item.href : pathname?.startsWith(item.href);
         const Icon = item.icon;
+        const badgeCount = item.badgeKey && badges ? badges[item.badgeKey] : 0;
         return (
           <Link
             key={item.href}
@@ -58,7 +66,17 @@ export function AdminNavLinks({ onNavigate }: { onNavigate?: () => void }) {
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {badgeCount > 0 && (
+              <span
+                className={cn(
+                  'flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[11px] font-bold',
+                  isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-red-500 text-white'
+                )}
+              >
+                {badgeCount > 99 ? '99+' : badgeCount}
+              </span>
+            )}
           </Link>
         );
       })}

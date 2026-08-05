@@ -7,11 +7,14 @@ export function StatCard({
   value,
   icon: Icon,
   accent,
+  sublabel,
 }: {
   label: string;
   value: string | number;
   icon: LucideIcon;
   accent?: 'default' | 'warning';
+  /** 값 아래에 작게 덧붙이는 부가 설명(예: "GA 1 · 지점 2 · 설계사 4"). */
+  sublabel?: string;
 }) {
   return (
     <Card>
@@ -27,6 +30,7 @@ export function StatCard({
         <div className="min-w-0">
           <p className="truncate text-xs text-muted-foreground">{label}</p>
           <p className="text-xl font-semibold tabular-nums">{value}</p>
+          {sublabel && <p className="truncate text-[11px] text-muted-foreground">{sublabel}</p>}
         </div>
       </CardContent>
     </Card>

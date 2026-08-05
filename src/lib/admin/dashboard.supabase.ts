@@ -2,22 +2,94 @@ import 'server-only';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { Database } from '@/types/database';
 
+export interface PlannerStats {
+  /** 등록 설계사 - 철회하지 않은 전체 프로필 수(승인 대기/반려 포함). */
+  registered: number;
+  /** 승인 설계사 - 관리자 승인이 완료된 프로필 수(비공개 처리된 것도 포함). */
+  approved: number;
+  /** 공개중 설계사 - 실제로 "설계사 찾기"에 노출 중인 수(public_planner_profiles와 동일 기준). */
+  visible: number;
+  /** 직전연봉 인증 설계사 - income_verified 배지가 승인된 수. */
+  incomeVerified: number;
+  /** 오늘 신규 설계사 - 오늘 승인된 수(가입일이 아니라 승인일 기준). */
+  todayNew: number;
+}
+
+export interface PendingApprovalCounts {
+  ga: number;
+  branchCreate: number;
+  planner: number;
+}
+
+export interface RecentBranchItem {
+  id: string;
+  slug: string;
+  name: string;
+  gaCompanyName: string;
+  createdAt: string;
+}
+
+export interface RecentPlannerItem {
+  id: string;
+  name: string;
+  careerYears: number;
+  regionLabel: string;
+  createdAt: string;
+}
+
+export interface TopBranchItem {
+  id: string;
+  slug: string;
+  name: string;
+  viewCount: number;
+}
+
+export interface TopPlannerItem {
+  id: string;
+  name: string;
+  regionLabel: string;
+  viewCount: number;
+}
+
 export interface DashboardStats {
-  totalGaCount: number;
-  totalBranchCount: number;
-  todayNewCount: number;
+  // 메인 KPI(4종) - "등록"이라는 라벨이어도 실제로는 승인/공개 등 서비스에 실제
+  // 반영된 상태만 센다(집계 기준을 approval_status/registration_status/status에
+  // 맞춰 통일 - 이전에는 등록만 해도, 심지어 미승인 GA 소속 지점도 카운트됐었다).
+  approvedBranchCount: number;
+  registeredPlannerCount: number;
+  todayNewApprovedCount: number;
+  todayVisitorCount: number;
+
+  // 보조 통계
+  approvedGaCount: number;
   todayViewCount: number;
   todayContactClickCount: number;
   activeRecruitCount: number;
   last7DaysContactClickCount: number;
+
+  // 오늘 신규 승인 세부 내역(GA/지점/설계사 각각) - 메인 KPI 합계의 근거를 보여준다.
+  todayNewBreakdown: { ga: number; branch: number; planner: number };
+
+  plannerStats: PlannerStats;
+  pendingApprovalCounts: PendingApprovalCounts;
+
   pendingGaList: Database['public']['Tables']['ga_company']['Row'][];
   recentGaList: Database['public']['Tables']['ga_company']['Row'][];
+  recentBranches: RecentBranchItem[];
+  recentPlanners: RecentPlannerItem[];
+
+  topBranches: TopBranchItem[];
+  topPlanners: TopPlannerItem[];
 }
 
-function startOfTodayIso(): string {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  return now.toISOString();
+/** "오늘"은 한국 표준시(KST) 기준 하루로 계산한다 - Vercel 서버는 UTC로 돌아가서
+ * 단순 new Date().setHours(0,0,0,0)를 쓰면 자정~오전 9시(KST) 사이엔 "오늘"이
+ * 실제로는 어제 UTC 날짜로 계산되는 버그가 있었다. */
+function startOfTodayKstIso(): string {
+  const nowUtc = new Date();
+  const kstNow = new Date(nowUtc.getTime() + 9 * 60 * 60 * 1000);
+  kstNow.setUTCHours(0, 0, 0, 0);
+  return new Date(kstNow.getTime() - 9 * 60 * 60 * 1000).toISOString();
 }
 
 function daysAgoIso(days: number): string {
@@ -26,53 +98,253 @@ function daysAgoIso(days: number): string {
   return d.toISOString();
 }
 
+function regionLabel(region: { sido_name: string; sigungu_name: string | null } | null | undefined): string {
+  if (!region) return '지역 미상';
+  return region.sigungu_name ? `${region.sido_name} ${region.sigungu_name}` : region.sido_name;
+}
+
+/**
+ * 승인 대기 알림 전용 - 대시보드 페이지뿐 아니라 관리자 레이아웃(사이드바 배지)에서도
+ * 매 페이지 로드마다 가볍게 호출되므로, getDashboardStats() 전체를 부르지 않고
+ * 이 3개 카운트만 별도로 뗀다.
+ */
+export async function getPendingApprovalCounts(): Promise<PendingApprovalCounts> {
+  const supabase = createAdminClient();
+
+  const [ga, branchCreate, planner] = await Promise.all([
+    supabase.from('ga_company').select('id', { count: 'exact', head: true }).eq('approval_status', 'pending'),
+    supabase
+      .from('branch_registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('request_type', 'create')
+      .eq('status', 'pending'),
+    supabase
+      .from('planner_profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending_review')
+      .is('withdrawn_at', null),
+  ]);
+
+  return {
+    ga: ga.count ?? 0,
+    branchCreate: branchCreate.count ?? 0,
+    planner: planner.count ?? 0,
+  };
+}
+
 /**
  * 대시보드 요약 통계. admin_users는 RLS로 이 값들에 접근할 수 없으므로
- * (특히 pending 상태 ga_company, 전체 branch_views/branch_contact_clicks 등)
+ * (특히 pending 상태 ga_company, 전체 site_visits/branch_contact_clicks 등)
  * service role client로 조회한다. 호출 전 requireAdmin()으로 세션을 검증해야 한다.
+ *
+ * 집계 기준(중요 - 이 파일 전체에서 일관되게 지킨다):
+ * - GA "승인" = ga_company.approval_status = 'approved'
+ * - 지점 "등록/공개" = ga_branch.status='visible' AND registration_status='approved'
+ *   AND 소속 ga_company.approval_status='approved' (미승인 GA의 지점은 절대 포함하지 않음)
+ * - 설계사 "공개" = public_planner_profiles 뷰와 동일(status='approved' AND
+ *   is_hidden=false AND withdrawn_at is null)
+ * - "오늘 신규"는 생성일(created_at)이 아니라 승인일(reviewed_at) 기준
+ *
+ * PostgREST의 embedded-resource 필터(`fk!inner(...)`)는 이 저장소가 수기로 관리하는
+ * Database 타입에서 신뢰성 있게 타입체크되지 않아, GA↔지점처럼 두 테이블을 걸쳐야 하는
+ * 조건은 전부 "먼저 승인된 GA id 목록을 가져온 뒤 .in()으로 좁히는" 2단계 방식으로 푼다 -
+ * 이 코드베이스의 다른 서버 조회 함수들(예: planner-market.supabase.ts)과 동일한 패턴이다.
  */
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = createAdminClient();
-  const todayStart = startOfTodayIso();
+  const todayStart = startOfTodayKstIso();
 
   const [
-    totalGa,
-    totalBranch,
-    newGaToday,
-    newBranchToday,
-    viewsToday,
+    approvedGaRows,
+    registeredPlanner,
+    approvedPlanner,
+    visiblePlanner,
+    incomeVerifiedPlanner,
+    newGaApprovedToday,
+    newBranchApprovedToday,
+    newPlannerApprovedToday,
+    siteTraffic,
     clicksToday,
     activeRecruits,
     clicksLast7Days,
+    pendingApprovalCounts,
     pendingGa,
-    recentGa,
+    recentPlannersRaw,
+    topBranchRanking,
+    topPlannerRanking,
   ] = await Promise.all([
-    supabase.from('ga_company').select('id', { count: 'exact', head: true }),
-    supabase.from('ga_branch').select('id', { count: 'exact', head: true }).neq('status', 'deleted'),
-    supabase.from('ga_company').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
-    supabase.from('ga_branch').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
-    supabase.from('branch_views').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
+    supabase.from('ga_company').select('id, name').eq('approval_status', 'approved'),
+    supabase.from('planner_profiles').select('id', { count: 'exact', head: true }).is('withdrawn_at', null),
+    supabase
+      .from('planner_profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'approved')
+      .is('withdrawn_at', null),
+    supabase.from('public_planner_profiles').select('id', { count: 'exact', head: true }),
+    supabase
+      .from('planner_badges')
+      .select('id', { count: 'exact', head: true })
+      .eq('badge_type_code', 'income_verified')
+      .eq('status', 'approved'),
+    supabase
+      .from('ga_company')
+      .select('id', { count: 'exact', head: true })
+      .eq('approval_status', 'approved')
+      .gte('reviewed_at', todayStart),
+    supabase
+      .from('branch_registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('request_type', 'create')
+      .eq('status', 'approved')
+      .gte('reviewed_at', todayStart),
+    supabase
+      .from('planner_profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'approved')
+      .gte('reviewed_at', todayStart),
+    supabase.rpc('get_today_site_traffic_stats'),
     supabase.from('branch_contact_clicks').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
     supabase.from('branch_recruit').select('id', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('branch_contact_clicks').select('id', { count: 'exact', head: true }).gte('created_at', daysAgoIso(7)),
+    getPendingApprovalCounts(),
     supabase
       .from('ga_company')
       .select('*')
       .eq('approval_status', 'pending')
       .order('created_at', { ascending: true })
       .limit(10),
-    supabase.from('ga_company').select('*').order('created_at', { ascending: false }).limit(10),
+    supabase
+      .from('planner_profiles')
+      .select('id, name, career_years, active_region_id, created_at')
+      .eq('status', 'approved')
+      .eq('is_hidden', false)
+      .is('withdrawn_at', null)
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase.rpc('list_monthly_top_branches', { p_limit: 5 }),
+    supabase.rpc('list_monthly_top_planner_profiles', { p_limit: 5 }),
   ]);
 
+  const approvedGaList = approvedGaRows.data ?? [];
+  const approvedGaIds = approvedGaList.map((g) => g.id);
+  const gaNameMap = new Map(approvedGaList.map((g) => [g.id, g.name]));
+
+  // 승인된 GA가 하나도 없으면(초기 상태 등) .in()에 빈 배열을 넘기지 않고 바로 빈 결과로
+  // 처리한다 - PostgREST 버전에 따라 빈 배열 .in()이 예외를 던질 수 있어 직접 방어한다.
+  const [recentGa, approvedBranchCountResult, recentBranchesRaw] =
+    approvedGaIds.length === 0
+      ? [
+          { data: [] as Database['public']['Tables']['ga_company']['Row'][] },
+          { count: 0 },
+          { data: [] as { id: string; slug: string; name: string; ga_company_id: string; created_at: string }[] },
+        ]
+      : await Promise.all([
+          supabase
+            .from('ga_company')
+            .select('*')
+            .eq('approval_status', 'approved')
+            .order('created_at', { ascending: false })
+            .limit(5),
+          supabase
+            .from('ga_branch')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'visible')
+            .eq('registration_status', 'approved')
+            .in('ga_company_id', approvedGaIds),
+          supabase
+            .from('ga_branch')
+            .select('id, slug, name, ga_company_id, created_at')
+            .eq('status', 'visible')
+            .eq('registration_status', 'approved')
+            .in('ga_company_id', approvedGaIds)
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ]);
+
+  // TOP5 랭킹은 id/조회수만 반환되므로 표시용 정보(이름/지역 등)를 별도로 조회한다.
+  const topBranchIds = (topBranchRanking.data ?? []).map((r) => r.branch_id);
+  const topPlannerIds = (topPlannerRanking.data ?? []).map((r) => r.planner_profile_id);
+
+  const recentPlannerRegionIds = Array.from(new Set((recentPlannersRaw.data ?? []).map((p) => p.active_region_id)));
+
+  const [topBranchDetails, topPlannerDetails, recentPlannerRegions] = await Promise.all([
+    topBranchIds.length > 0
+      ? supabase.from('ga_branch').select('id, slug, name').in('id', topBranchIds)
+      : Promise.resolve({ data: [] as { id: string; slug: string; name: string }[] }),
+    topPlannerIds.length > 0
+      ? supabase.from('planner_profiles').select('id, name, active_region_id').in('id', topPlannerIds)
+      : Promise.resolve({ data: [] as { id: string; name: string; active_region_id: string }[] }),
+    recentPlannerRegionIds.length > 0
+      ? supabase.from('regions').select('id, sido_name, sigungu_name').in('id', recentPlannerRegionIds)
+      : Promise.resolve({ data: [] as { id: string; sido_name: string; sigungu_name: string | null }[] }),
+  ]);
+
+  const topPlannerRegionIds = Array.from(new Set((topPlannerDetails.data ?? []).map((p) => p.active_region_id)));
+  const topPlannerRegions =
+    topPlannerRegionIds.length > 0
+      ? ((await supabase.from('regions').select('id, sido_name, sigungu_name').in('id', topPlannerRegionIds)).data ?? [])
+      : [];
+
+  const regionMap = new Map([...(recentPlannerRegions.data ?? []), ...topPlannerRegions].map((r) => [r.id, r]));
+  const branchNameMap = new Map((topBranchDetails.data ?? []).map((b) => [b.id, b]));
+  const plannerNameMap = new Map((topPlannerDetails.data ?? []).map((p) => [p.id, p]));
+
+  const todayNewGa = newGaApprovedToday.count ?? 0;
+  const todayNewBranch = newBranchApprovedToday.count ?? 0;
+  const todayNewPlanner = newPlannerApprovedToday.count ?? 0;
+  const traffic = siteTraffic.data?.[0] ?? { view_count: 0, visitor_count: 0 };
+
   return {
-    totalGaCount: totalGa.count ?? 0,
-    totalBranchCount: totalBranch.count ?? 0,
-    todayNewCount: (newGaToday.count ?? 0) + (newBranchToday.count ?? 0),
-    todayViewCount: viewsToday.count ?? 0,
+    approvedBranchCount: approvedBranchCountResult.count ?? 0,
+    registeredPlannerCount: registeredPlanner.count ?? 0,
+    todayNewApprovedCount: todayNewGa + todayNewBranch + todayNewPlanner,
+    todayVisitorCount: traffic.visitor_count ?? 0,
+
+    approvedGaCount: approvedGaList.length,
+    todayViewCount: traffic.view_count ?? 0,
     todayContactClickCount: clicksToday.count ?? 0,
     activeRecruitCount: activeRecruits.count ?? 0,
     last7DaysContactClickCount: clicksLast7Days.count ?? 0,
+
+    todayNewBreakdown: { ga: todayNewGa, branch: todayNewBranch, planner: todayNewPlanner },
+
+    plannerStats: {
+      registered: registeredPlanner.count ?? 0,
+      approved: approvedPlanner.count ?? 0,
+      visible: visiblePlanner.count ?? 0,
+      incomeVerified: incomeVerifiedPlanner.count ?? 0,
+      todayNew: todayNewPlanner,
+    },
+
+    pendingApprovalCounts,
+
     pendingGaList: pendingGa.data ?? [],
     recentGaList: recentGa.data ?? [],
+
+    recentBranches: (recentBranchesRaw.data ?? []).map((b) => ({
+      id: b.id,
+      slug: b.slug,
+      name: b.name,
+      gaCompanyName: gaNameMap.get(b.ga_company_id) ?? '알 수 없음',
+      createdAt: b.created_at,
+    })),
+    recentPlanners: (recentPlannersRaw.data ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      careerYears: p.career_years,
+      regionLabel: regionLabel(regionMap.get(p.active_region_id)),
+      createdAt: p.created_at,
+    })),
+
+    topBranches: (topBranchRanking.data ?? []).flatMap((r) => {
+      const b = branchNameMap.get(r.branch_id);
+      return b ? [{ id: b.id, slug: b.slug, name: b.name, viewCount: r.view_count }] : [];
+    }),
+    topPlanners: (topPlannerRanking.data ?? []).flatMap((r) => {
+      const p = plannerNameMap.get(r.planner_profile_id);
+      return p
+        ? [{ id: p.id, name: p.name, regionLabel: regionLabel(regionMap.get(p.active_region_id)), viewCount: r.view_count }]
+        : [];
+    }),
   };
 }

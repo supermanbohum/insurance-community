@@ -7,6 +7,7 @@ import { PageTransition } from '@/components/layout/PageTransition';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { listActiveBanners } from '@/lib/public/banners';
+import { recordSiteVisit } from '@/lib/public/site-traffic.supabase';
 
 /**
  * 공개(비관리자) 페이지 전용 레이아웃 - 보험맵 헤더 + 공통 푸터를 담당한다.
@@ -22,7 +23,14 @@ import { listActiveBanners } from '@/lib/public/banners';
  * 대체된다. 2xl 이상 초광폭 화면에서만 좌측에 향후 광고 영역을 위한 자리를 비워둔다.
  */
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const [user, leftBanners] = await Promise.all([getCurrentUser(), listActiveBanners('pc_left')]);
+  const [user, leftBanners] = await Promise.all([
+    getCurrentUser(),
+    listActiveBanners('pc_left'),
+    // 관리자 대시보드 "오늘 방문자/오늘 조회수" 집계용 - (main) 그룹 전체(홈 포함
+    // 모든 공개 페이지) 로드마다 기록된다. /admin, /partner는 이 레이아웃 밖이라
+    // 관리자·파트너 자신의 방문은 집계되지 않는다.
+    recordSiteVisit(),
+  ]);
   const leftBanner = leftBanners[0] ?? null;
 
   return (

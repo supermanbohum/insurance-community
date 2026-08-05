@@ -183,7 +183,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 | 경로 | 기능 |
 |---|---|
-| `/admin` | 대시보드 |
+| `/admin` | 대시보드 (0051, 최신 - 아래 설명 참고) |
 | `/admin/ga`, `/admin/ga/[gaId]`, `/admin/ga/new` | GA 법인 관리 |
 | `/admin/branches`, `/admin/branches/[branchId]` | 지점 관리 |
 | `/admin/change-requests` | 지점 신규/수정 승인 큐 (신규/수정 탭 분리) |
@@ -199,6 +199,8 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | `/admin/event-popup` | 홈 이벤트 팝업 콘텐츠 |
 | `/admin/design/[page]` | 페이지 섹션 순서/노출 제어 |
 | `/admin/login` | 관리자 로그인 (일반회원 로그인과 별개) |
+
+**대시보드 집계 기준(0051, 중요)**: "등록"이라는 라벨이 붙어도 전부 실제 서비스에 반영된 상태만 센다 - GA는 `approval_status='approved'`, 지점은 `status='visible' AND registration_status='approved' AND 소속 GA도 approved`(미승인 GA 소속 지점은 절대 포함 안 함), 설계사 "공개중"은 `public_planner_profiles`와 동일 기준. "오늘 신규"는 생성일이 아니라 승인일(`reviewed_at`) 기준이며, "오늘"은 KST(한국 표준시) 자정 기준으로 계산한다(서버가 UTC로 도는 Vercel 환경에서 자정~오전 9시 사이 값이 어제로 잡히던 버그를 함께 고쳤다). "오늘 조회수/방문자"는 신설된 `site_visits` 로그(`(main)` 레이아웃이 페이지 로드마다 `record_site_visit()` RPC 호출, `branch_views`와 동일한 30분 dedup 패턴)를 소스로 하며, 조회수=이벤트 총합/방문자=고유 익명 프로필 수다 - 이전엔 지점 상세 페이지 조회만 집계돼 홈페이지 방문으로는 전혀 증가하지 않았다. 사이드바 GA관리/변경요청/설계사마켓 메뉴의 빨간 배지와 대시보드 상단 알림 카드는 `getPendingApprovalCounts()` 하나를 공유한다(관리자 레이아웃이 매 페이지 로드마다 가볍게 호출).
 
 ---
 
@@ -231,7 +233,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 ---
 
-## 16. 마이그레이션 이력 요약 (0001~0050)
+## 16. 마이그레이션 이력 요약 (0001~0051)
 
 <details>
 <summary>펼치기 — 전체 49개 마이그레이션 한 줄 요약</summary>
@@ -288,5 +290,6 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | 0048 | branch_ad_new_open_badge | 지점 광고상품 "신규오픈배지" 노출 로직 |
 | 0049 | planner_badge_types_expansion | 설계사 배지 확장(MDRT/COT/TOT/우수후기) |
 | 0050 | remove_credits_1_tier | 열람권 최소구매 10건 정책 변경 (1건 상품 폐지) |
+| 0051 | admin_dashboard_kpi_overhaul | 사이트 전역 방문 로그(site_visits) + 오늘 트래픽/설계사 인기랭킹 RPC + 승인일 기준 인덱스 |
 
 </details>

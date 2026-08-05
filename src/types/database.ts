@@ -585,6 +585,16 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['branch_contact_clicks']['Row']>;
         Relationships: [];
       };
+      site_visits: {
+        Row: {
+          id: string;
+          anonymous_profile_id: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['site_visits']['Row']>;
+        Update: Partial<Database['public']['Tables']['site_visits']['Row']>;
+        Relationships: [];
+      };
       ga_admin_users: {
         Row: {
           id: string;
@@ -1400,6 +1410,14 @@ export interface Database {
         Args: { p_branch_id: string };
         Returns: void;
       };
+      record_site_visit: {
+        Args: Record<string, never>;
+        Returns: void;
+      };
+      get_today_site_traffic_stats: {
+        Args: Record<string, never>;
+        Returns: { view_count: number; visitor_count: number }[];
+      };
       record_branch_contact_click: {
         Args: { p_contact_id: string };
         Returns: void;
@@ -1521,6 +1539,10 @@ export interface Database {
       list_monthly_top_branches: {
         Args: { p_limit?: number };
         Returns: { branch_id: string; view_count: number }[];
+      };
+      list_monthly_top_planner_profiles: {
+        Args: { p_limit?: number };
+        Returns: { planner_profile_id: string; view_count: number }[];
       };
       upsert_page_layout: {
         Args: { p_page_key: string; p_device: string; p_config: unknown };
