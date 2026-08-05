@@ -4,6 +4,15 @@ import { listRegions } from '@/lib/admin/branch';
 import { PlannerMarketSearchFilters } from '@/components/planner-market/PlannerMarketSearchFilters';
 import { PlannerCard } from '@/components/planner-market/PlannerCard';
 
+// 이 페이지는 cookies()를 전혀 읽지 않아(공개 조회 전용) Next.js가 세그먼트 단위로
+// 정적/프리페치 캐시가 가능하다고 판단한다 - 그 결과 홈 화면 진입 즉시 백그라운드로
+// 실행되는 <Link> 프리페치가 이 페이지의 RSC 응답을 캐시해버리고, 실제 클릭 시
+// 그 캐시된(때로는 비어 보이는) 응답을 재사용해 "처음 진입시 목록이 비어 보이고
+// 새로고침해야 나온다"는 증상으로 이어졌다. 같은 (main) 아래의 다른 공개 목록
+// 페이지(/search, /map, /region 등)는 전부 이미 force-dynamic이라 이 문제가 없었다 -
+// 여기도 동일하게 맞춰 세그먼트 캐싱/프리페치 캐시 자체를 막는다.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: '설계사 찾기',
   description: '활동지역/경력/전문분야로 구직중인 보험설계사를 검색하세요. 연락처는 열람권으로 확인할 수 있습니다.',

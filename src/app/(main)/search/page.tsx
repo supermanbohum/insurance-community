@@ -56,7 +56,13 @@ export default async function SearchPage({
 
   const hasFilters =
     Boolean(region) || gaIds.length > 0 || minPlanners > 0 || Boolean(parking) || Boolean(structure) || hasHighIncomePlanners;
-  const shouldSearch = Boolean(q) || hasFilters;
+  // 홈의 "인기 GA"/"신규 등록" 더보기 링크가 /search?sort=views, /search?sort=newest처럼
+  // 검색어/필터 없이 sort만 넘겨서 "전체를 이 기준으로 보여달라"는 의도로 진입한다.
+  // sort를 hasFilters/shouldSearch 판단에서 빠뜨리면 이 경우 "검색어를 입력하세요"
+  // 빈 상태만 보이고 실제 목록은 영원히 뜨지 않는다 - sort의 명시적 존재 자체를
+  // "전체 목록을 보여달라"는 신호로 취급한다.
+  const hasExplicitSort = Boolean(searchParams.sort);
+  const shouldSearch = Boolean(q) || hasFilters || hasExplicitSort;
   const { registeredIds: registeredGaIds, hasUnregisteredOnly } = splitRegisteredGaIds(gaIds);
 
   const [branchResults, regions, allGaOptions] = await Promise.all([
