@@ -7,6 +7,9 @@ export type AuthorNameType = 'custom' | 'random' | 'admin' | 'system';
 export type BestOverrideStatus = 'auto' | 'force_include' | 'force_exclude';
 export type AdminRole = 'super_admin' | 'content_admin' | 'moderation_admin' | 'banner_admin';
 export type PostStatus = 'visible' | 'hidden' | 'deleted';
+export type ReportTargetType = 'post' | 'comment';
+export type ReportReason = 'privacy' | 'abuse' | 'spam' | 'misinformation' | 'solicitation_violation' | 'illegal' | 'other';
+export type ReportStatus = 'pending' | 'resolved_normal' | 'resolved_hidden' | 'resolved_deleted' | 'resolved_ban';
 
 /** ga_branch의 공개 상태 (posts.status와 동일한 값 도메인) */
 export type GaStatus = 'visible' | 'hidden' | 'deleted';
@@ -198,6 +201,48 @@ export interface Database {
         };
         Insert: Partial<Database['public']['Tables']['comments']['Row']>;
         Update: Partial<Database['public']['Tables']['comments']['Row']>;
+        Relationships: [];
+      };
+      reports: {
+        Row: {
+          id: string;
+          target_type: ReportTargetType;
+          target_id: string;
+          reporter_id: string;
+          reason: ReportReason;
+          detail: string | null;
+          status: ReportStatus;
+          handled_by_admin_id: string | null;
+          handled_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['reports']['Row']>;
+        Update: Partial<Database['public']['Tables']['reports']['Row']>;
+        Relationships: [];
+      };
+      user_blocks: {
+        Row: {
+          id: string;
+          anonymous_profile_id: string;
+          blocked_by_admin_id: string | null;
+          reason: string | null;
+          blocked_until: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['user_blocks']['Row']>;
+        Update: Partial<Database['public']['Tables']['user_blocks']['Row']>;
+        Relationships: [];
+      };
+      site_visit_adjustments: {
+        Row: {
+          adjustment_date: string;
+          delta: number;
+          reason: string | null;
+          adjusted_by_admin_id: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['site_visit_adjustments']['Row']>;
+        Update: Partial<Database['public']['Tables']['site_visit_adjustments']['Row']>;
         Relationships: [];
       };
       admin_users: {
@@ -1935,6 +1980,42 @@ export interface Database {
       };
       admin_refund_planner_market_credit_purchase: {
         Args: { p_purchase_id: string; p_reason: string };
+        Returns: void;
+      };
+      admin_set_visitor_adjustment: {
+        Args: { p_delta: number; p_reason?: string | null };
+        Returns: void;
+      };
+      get_today_visitor_breakdown: {
+        Args: Record<string, never>;
+        Returns: { real_count: number; adjustment: number; display_count: number }[];
+      };
+      admin_set_post_status: {
+        Args: { p_post_id: string; p_status: string; p_reason?: string | null };
+        Returns: void;
+      };
+      admin_set_post_notice: {
+        Args: { p_post_id: string; p_is_notice: boolean };
+        Returns: void;
+      };
+      admin_set_post_best: {
+        Args: { p_post_id: string; p_force: boolean };
+        Returns: void;
+      };
+      admin_set_comment_status: {
+        Args: { p_comment_id: string; p_status: string; p_reason?: string | null };
+        Returns: void;
+      };
+      admin_block_user: {
+        Args: { p_anonymous_profile_id: string; p_reason: string; p_until?: string | null };
+        Returns: void;
+      };
+      admin_unblock_user: {
+        Args: { p_anonymous_profile_id: string };
+        Returns: void;
+      };
+      admin_resolve_report: {
+        Args: { p_report_id: string; p_status: string; p_note?: string | null };
         Returns: void;
       };
       purchase_branch_ad_product: {

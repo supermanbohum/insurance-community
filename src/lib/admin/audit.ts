@@ -1,3 +1,3 @@
-export type { AuditLogItem } from './audit.supabase';
+export type { AuditLogItem, AuditLogPage } from './audit.supabase';
 
-export { listRecentAuditLogs, formatAuditAction } from './audit.supabase';
+export { listRecentAuditLogs, listAuditLogsPage, formatAuditAction } from './audit.supabase';

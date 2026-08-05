@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/admin/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { searchGaCompaniesForCreditGrant, type GaCompanySearchResult } from '@/lib/admin/planner-market-credits';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
@@ -133,6 +134,12 @@ export async function revokePlannerBadgeAction(badgeId: string, plannerProfileId
   revalidatePath(`/admin/planner-market/${plannerProfileId}`);
   revalidatePath('/planner-market');
   return { success: true };
+}
+
+/** 열람권 지급 대상 검색(회사명) - 검색창에서 타이핑할 때마다 호출된다. */
+export async function searchGaCompaniesForCreditGrantAction(q: string): Promise<GaCompanySearchResult[]> {
+  await requireAdmin();
+  return searchGaCompaniesForCreditGrant(q);
 }
 
 /** 열람권 수동 지급/차감 - delta 양수면 지급, 음수면 차감. 항상 사유가 필요하다(감사로그). */

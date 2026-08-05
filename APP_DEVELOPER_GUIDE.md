@@ -193,13 +193,16 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | `/admin/planners`, `/admin/planners/[certificationId]` | TOP설계사 인증 승인 (설계사 마켓과 별개) |
 | `/admin/planner-market`, `/admin/planner-market/[profileId]` | 설계사 마켓 프로필 승인 + 재승인(활동지역/경력/희망GA) diff |
 | `/admin/planner-market/badges/[badgeId]` | 설계사 배지(연봉인증 등) 승인 |
-| `/admin/planner-market/credits` | 열람권 구매내역/수동지급/환불 |
+| `/admin/planner-market/credits` | 열람권 구매내역/수동지급/환불 + GA사 검색 후 지급(0053, 최신) |
 | `/admin/ad-products/[id]` | 지점 광고상품 승인/연장 |
 | `/admin/billing` | 구독/결제 현황 |
 | `/admin/recruits` | 채용공고 관리 |
 | `/admin/inquiries` | 문의 관리 |
 | `/admin/event-popup` | 홈 이벤트 팝업 콘텐츠 |
 | `/admin/design/[page]` | 페이지 섹션 순서/노출 제어 |
+| `/admin/visitors` (0053) | 방문자수 관리자 보정 - 실제/보정값/최종표시 |
+| `/admin/community`, `/community/comments`, `/community/reports` (0053) | 커뮤니티 관리 - 게시글/댓글 상태변경·공지·베스트, 신고 처리, 회원 차단 |
+| `/admin/audit-log` (0053) | 관리자 작업 로그 전체 조회(페이지네이션) |
 | `/admin/login` | 관리자 로그인 (일반회원 로그인과 별개) |
 
 **대시보드 집계 기준(0051, 중요)**: "등록"이라는 라벨이 붙어도 전부 실제 서비스에 반영된 상태만 센다 - GA는 `approval_status='approved'`, 지점은 `status='visible' AND registration_status='approved' AND 소속 GA도 approved`(미승인 GA 소속 지점은 절대 포함 안 함), 설계사 "공개중"은 `public_planner_profiles`와 동일 기준. "오늘 신규"는 생성일이 아니라 승인일(`reviewed_at`) 기준이며, "오늘"은 KST(한국 표준시) 자정 기준으로 계산한다(서버가 UTC로 도는 Vercel 환경에서 자정~오전 9시 사이 값이 어제로 잡히던 버그를 함께 고쳤다). "오늘 조회수/방문자"는 신설된 `site_visits` 로그(`(main)` 레이아웃이 페이지 로드마다 `record_site_visit()` RPC 호출, `branch_views`와 동일한 30분 dedup 패턴)를 소스로 하며, 조회수=이벤트 총합/방문자=고유 익명 프로필 수다 - 이전엔 지점 상세 페이지 조회만 집계돼 홈페이지 방문으로는 전혀 증가하지 않았다. 사이드바 GA관리/변경요청/설계사마켓 메뉴의 빨간 배지와 대시보드 상단 알림 카드는 `getPendingApprovalCounts()` 하나를 공유한다(관리자 레이아웃이 매 페이지 로드마다 가볍게 호출).
@@ -235,7 +238,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 ---
 
-## 16. 마이그레이션 이력 요약 (0001~0052)
+## 16. 마이그레이션 이력 요약 (0001~0053)
 
 <details>
 <summary>펼치기 — 전체 49개 마이그레이션 한 줄 요약</summary>
@@ -294,5 +297,6 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | 0050 | remove_credits_1_tier | 열람권 최소구매 10건 정책 변경 (1건 상품 폐지) |
 | 0051 | admin_dashboard_kpi_overhaul | 사이트 전역 방문 로그(site_visits) + 오늘 트래픽/설계사 인기랭킹 RPC + 승인일 기준 인덱스 |
 | 0052 | public_read_fixes_and_platform_stats | planner_profiles/banners anon 읽기 정책 추가(설계사찾기 0건·배너 미노출 버그 수정) + get_platform_core_stats() 홈/관리자 공용 RPC |
+| 0053 | admin_credit_grant_visitor_community_audit | 열람권 지급(감사로그 보강)/방문자수 보정(site_visit_adjustments)/커뮤니티 관리(게시글·댓글·신고·회원차단 RPC 신설)/관리자 작업 로그 통합 |
 
 </details>

@@ -17,6 +17,10 @@ import {
   Users2,
   Megaphone,
   GalleryHorizontal,
+  Ticket,
+  Footprints,
+  MessageSquareText,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,14 +38,18 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/change-requests', label: '변경 요청', icon: ClipboardCheck, badgeKey: 'branchCreate' },
   { href: '/admin/planners', label: '고소득 설계사', icon: Award },
   { href: '/admin/planner-market', label: '설계사 마켓', icon: Users2, badgeKey: 'planner' },
+  { href: '/admin/planner-market/credits', label: '열람권 관리', icon: Ticket },
   { href: '/admin/ad-products', label: '광고 관리', icon: Megaphone },
   { href: '/admin/ga-change-requests', label: 'GA 변경 요청', icon: UserCog },
   { href: '/admin/billing', label: '결제 관리', icon: CreditCard },
   { href: '/admin/inquiries', label: '문의 관리', icon: PhoneCall },
   { href: '/admin/recruits', label: '채용 관리', icon: Briefcase },
+  { href: '/admin/visitors', label: '방문자 관리', icon: Footprints },
+  { href: '/admin/community', label: '커뮤니티 관리', icon: MessageSquareText },
   { href: '/admin/design/home', label: '디자인 편집', icon: LayoutTemplate },
   { href: '/admin/event-popup', label: '이벤트 팝업', icon: PartyPopper },
   { href: '/admin/banners', label: '배너 관리', icon: GalleryHorizontal },
+  { href: '/admin/audit-log', label: '작업 로그', icon: History },
 ];
 
 export function AdminNavLinks({ onNavigate, badges }: { onNavigate?: () => void; badges?: AdminNavBadges }) {
