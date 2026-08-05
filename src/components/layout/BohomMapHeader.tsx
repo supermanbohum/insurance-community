@@ -51,8 +51,9 @@ const MENU_GROUPS = [
     // 설계사 마켓(열람권)/지점 광고 - TOP설계사(아래 "인증" 그룹)와는 완전히 별개 시스템이다.
     label: '리크루팅',
     items: [
-      // prefetch:false - QuickMenuGrid와 동일한 이유(라우트 참고).
-      { href: '/planner-market/search', label: '설계사 찾기', icon: Search, tile: 'bg-emerald-50 text-emerald-600', prefetch: false },
+      // hardNavigate:true - QuickMenuGrid.tsx와 동일한 이유(라우트 참고). Next 클라이언트
+      // 라우터를 우회해 항상 전체 페이지 이동을 강제한다.
+      { href: '/planner-market/search', label: '설계사 찾기', icon: Search, tile: 'bg-emerald-50 text-emerald-600', hardNavigate: true },
       { href: '/planner-market/register', label: '설계사 등록', icon: UserPlus, tile: 'bg-indigo-50 text-indigo-600' },
       // 본인이 등록한 정보만 수정 가능 - 각 진입점 자체가 소유자 확인 후 없으면 등록 화면으로 보낸다.
       { href: '/planner-market/edit', label: '설계사 수정', icon: Edit3, tile: 'bg-indigo-50 text-indigo-600' },
@@ -171,8 +172,14 @@ export function BohomMapHeader() {
                         <Link
                           key={item.label}
                           href={item.href}
-                          onClick={() => setMenuOpen(false)}
-                          prefetch={'prefetch' in item ? item.prefetch : undefined}
+                          onClick={(e) => {
+                            setMenuOpen(false);
+                            if ('hardNavigate' in item && item.hardNavigate) {
+                              e.preventDefault();
+                              window.location.href = item.href;
+                            }
+                          }}
+                          prefetch={'hardNavigate' in item && item.hardNavigate ? false : undefined}
                           className={cn(
                             'flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-sunken hover:text-ink',
                             'hideOnDesktop' in item && item.hideOnDesktop && 'lg:hidden'
