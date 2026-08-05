@@ -5,12 +5,15 @@ import { PlannerMarketSearchFilters } from '@/components/planner-market/PlannerM
 import { PlannerCard } from '@/components/planner-market/PlannerCard';
 
 // 이 페이지는 cookies()를 전혀 읽지 않아(공개 조회 전용) Next.js가 세그먼트 단위로
-// 정적/프리페치 캐시가 가능하다고 판단한다 - 그 결과 홈 화면 진입 즉시 백그라운드로
-// 실행되는 <Link> 프리페치가 이 페이지의 RSC 응답을 캐시해버리고, 실제 클릭 시
-// 그 캐시된(때로는 비어 보이는) 응답을 재사용해 "처음 진입시 목록이 비어 보이고
-// 새로고침해야 나온다"는 증상으로 이어졌다. 같은 (main) 아래의 다른 공개 목록
-// 페이지(/search, /map, /region 등)는 전부 이미 force-dynamic이라 이 문제가 없었다 -
-// 여기도 동일하게 맞춰 세그먼트 캐싱/프리페치 캐시 자체를 막는다.
+// 정적/프리페치 캐시가 가능하다고 판단한다. force-dynamic만으로는 서버 응답에
+// no-store 헤더가 붙을 뿐, 홈 화면 진입 즉시 백그라운드로 실행되는 <Link> 프리페치
+// 문제는 해결되지 않는다 - loading.tsx가 없는 완전 동적 페이지는 Next가 실제 목록
+// 없이 "정적 셸"만 프리페치해 캐시해두고, 클릭 시 그 셸(비어 보임)을 그대로
+// 최종 결과로 재사용해버린다("처음 진입시 목록이 비어 보이고 새로고침해야 나온다").
+// 같은 (main) 아래의 /search가 이 문제를 안 겪는 이유는 이미 loading.tsx가 있어서다 -
+// 이 페이지에도 loading.tsx를 추가해 프리페치가 항상 로딩 스켈레톤까지만 캐시하고,
+// 실제 목록은 진짜 이동 시점에 매번 새로 가져오도록 만든다(핵심 수정은 loading.tsx
+// 쪽이고, force-dynamic은 서버 측 캐시를 막기 위한 보조 장치).
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
