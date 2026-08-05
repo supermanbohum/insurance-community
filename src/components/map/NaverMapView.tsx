@@ -63,6 +63,17 @@ function myLocationHtml() {
     <style>@keyframes bohommap-pulse{0%{transform:scale(0.6);opacity:0.5;}100%{transform:scale(2.2);opacity:0;}}</style>`;
 }
 
+// PC 전용 확대/축소 슬라이더 노출 기준 - 지도 페이지의 데스크톱 사이드바/모바일
+// 하단시트 전환과 동일한 lg 브레이크포인트(1024px)를 그대로 쓴다. 모바일(App
+// WebView 포함)에서는 슬라이더가 화면(특히 하단 시트)을 가리는 문제가 있어 완전히
+// 숨기고, 대신 원래부터 기본 제스처인 두 손가락 핀치 확대/한 손가락 드래그 이동을
+// 그대로 쓰게 한다 - 이 둘은 zoomControl과 무관하게 Naver 지도의 기본 동작이라
+// 슬라이더를 꺼도 계속 작동한다. PC는 마우스 휠 확대(기본 동작, 별도 설정 불필요)를
+// 유지하면서 슬라이더만 화면을 가리지 않는 우측 하단에 둔다.
+function isDesktopViewport(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches;
+}
+
 function toBoundsLike(bounds: naver.maps.LatLngBounds): MapBoundsLike {
   const center = bounds.getCenter();
   return {
@@ -105,6 +116,7 @@ export function NaverMapView({
   const myLocationMarkerRef = useRef<naver.maps.Marker | null>(null);
   const userMovedRef = useRef(false);
   const programmaticMoveRef = useRef(false);
+  const zoomControlResizeHandlerRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
@@ -116,10 +128,20 @@ export function NaverMapView({
         const map = new naverNs.maps.Map(containerRef.current, {
           center: new naverNs.maps.LatLng(initialCenter[0], initialCenter[1]),
           zoom: initialZoom,
-          zoomControl: true,
+          zoomControl: isDesktopViewport(),
           zoomControlOptions: { position: naverNs.maps.Position.BOTTOM_RIGHT },
         });
         mapRef.current = map;
+
+        // 브라우저 창 크기 변경(반응형 리사이즈)이나 모바일 회전으로 lg 기준을
+        // 넘나들 때마다 슬라이더 노출 여부를 다시 맞춘다 - 그렇지 않으면 처음 로드
+        // 시점의 화면 폭 기준으로 고정돼버려, PC↔모바일 전환 시 슬라이더가 없어야
+        // 할 화면에 남아있거나 있어야 할 화면에서 사라지는 문제가 생긴다.
+        const handleViewportChange = () => {
+          map.setOptions('zoomControl', isDesktopViewport());
+        };
+        window.addEventListener('resize', handleViewportChange);
+        zoomControlResizeHandlerRef.current = handleViewportChange;
 
         const cluster = new MarkerClustering({
           map,
@@ -171,6 +193,10 @@ export function NaverMapView({
 
     return () => {
       cancelled = true;
+      if (zoomControlResizeHandlerRef.current) {
+        window.removeEventListener('resize', zoomControlResizeHandlerRef.current);
+        zoomControlResizeHandlerRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -40,6 +40,8 @@ declare namespace naver.maps {
     setZoom(zoom: number, animate?: boolean): void;
     getBounds(): LatLngBounds;
     morph(coord: LatLng, zoom?: number, options?: { duration?: number }): void;
+    setOptions(key: string, value: unknown): void;
+    setOptions(options: Partial<MapOptions>): void;
     destroy(): void;
   }
   interface MarkerIcon {
