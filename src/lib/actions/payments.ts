@@ -40,7 +40,18 @@ export async function createBranchSubscriptionAction(
   if (error) return { success: false, error: error.message };
 
   const { data: sub } = await supabase.from('subscriptions').select('monthly_amount_krw').eq('id', subscriptionId).single();
-  if (sub) await chargeSubscription(subscriptionId, sub.monthly_amount_krw);
+  if (sub) {
+    try {
+      await chargeSubscription(subscriptionId, sub.monthly_amount_krw);
+    } catch {
+      // 구독 행 자체는 이미 생성됐다(위 RPC가 성공했으므로) - 결제 기록 단계만
+      // 실패한 것이라 이 자체를 실패로 되돌리지 않고, 사용자에게는 구조화된
+      // 에러 메시지로 알려 재시도/문의를 유도한다(Server Action 예외가 그대로
+      // 새 나가면 클라이언트에서 "무한 로딩"처럼 보인다).
+      revalidatePath('/partner');
+      return { success: false, error: '구독은 생성됐지만 결제 처리 중 오류가 발생했습니다. 잠시 후 다시 확인해주세요.' };
+    }
+  }
 
   revalidatePath('/partner');
   return { success: true };
@@ -57,7 +68,14 @@ export async function createPlannerAddonSubscriptionAction(
   if (error) return { success: false, error: error.message };
 
   const { data: sub } = await supabase.from('subscriptions').select('monthly_amount_krw').eq('id', subscriptionId).single();
-  if (sub) await chargeSubscription(subscriptionId, sub.monthly_amount_krw);
+  if (sub) {
+    try {
+      await chargeSubscription(subscriptionId, sub.monthly_amount_krw);
+    } catch {
+      revalidatePath('/partner');
+      return { success: false, error: '구독은 생성됐지만 결제 처리 중 오류가 발생했습니다. 잠시 후 다시 확인해주세요.' };
+    }
+  }
 
   revalidatePath('/partner');
   return { success: true };

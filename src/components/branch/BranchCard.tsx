@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { BadgeCheck, MapPin, Eye, MessageCircle, Building2, RefreshCw } from 'lucide-react';
@@ -7,6 +6,7 @@ import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
 import { HighlightText } from '@/components/search/HighlightText';
 import { INCOME_TIER_BADGE } from '@/lib/planners/tier';
+import { SafeBranchImage } from '@/components/shared/SafeBranchImage';
 
 const RANK_STYLE: Record<number, string> = {
   1: 'bg-gradient-to-br from-amber-300 to-gold-500',
@@ -38,11 +38,9 @@ export function BranchCard({
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-sunken">
         {branch.mainImageUrl ? (
-          <Image
+          <SafeBranchImage
             src={branch.mainImageUrl}
             alt={branch.name}
-            fill
-            loading="lazy"
             sizes="(min-width: 1024px) 220px, 45vw"
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
           />

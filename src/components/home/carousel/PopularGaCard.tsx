@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { Eye, MapPin, Building2 } from 'lucide-react';
 import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
+import { SafeBranchImage } from '@/components/shared/SafeBranchImage';
 
 export function PopularGaCard({ branch, rank }: { branch: PublicBranchSummary; rank?: number }) {
   return (
@@ -12,14 +13,7 @@ export function PopularGaCard({ branch, rank }: { branch: PublicBranchSummary; r
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-sunken">
         {branch.mainImageUrl ? (
-          <Image
-            src={branch.mainImageUrl}
-            alt={branch.name}
-            fill
-            loading="lazy"
-            sizes="220px"
-            className="object-cover"
-          />
+          <SafeBranchImage src={branch.mainImageUrl} alt={branch.name} sizes="220px" className="object-cover" />
         ) : (
           <div
             className={cn(

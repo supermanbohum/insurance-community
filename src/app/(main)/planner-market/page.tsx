@@ -4,6 +4,12 @@ import { Search, UserPlus, Ticket } from 'lucide-react';
 import { listPublicPlannerProfiles } from '@/lib/public/planner-market.supabase';
 import { PlannerCard } from '@/components/planner-market/PlannerCard';
 
+// /planner-market/search와 같은 이유(그 페이지의 주석 참고) - cookies()를 안 읽는
+// 공개 조회 페이지라 세그먼트 캐싱/프리페치 캐시 위험이 있다. 이 페이지로 들어오는
+// 가장 트래픽이 큰 경로(설계사 카드 클릭)는 PlannerCard.tsx에서 하드 네비게이션으로
+// 이미 우회했고, 여기는 보조 방어로 force-dynamic만 추가한다.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: '설계사 마켓 - 보험설계사 리크루팅',
   description: '좋은 보험설계사를 찾는 GA, 좋은 GA를 찾는 보험설계사가 만나는 보험 리크루팅 플랫폼. 무료로 구직 프로필을 등록하고, 열람권으로 연락처를 확인하세요.',

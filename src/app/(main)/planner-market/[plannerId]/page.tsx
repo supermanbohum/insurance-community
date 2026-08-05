@@ -13,6 +13,11 @@ import { Breadcrumb } from '@/components/seo/Breadcrumb';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { plannerProfileJsonLd } from '@/lib/seo/jsonld';
 
+// /planner-market/search와 동일한 이유(그 페이지의 주석 참고)로 force-dynamic을
+// 추가한다. 가장 트래픽이 큰 진입 경로(PlannerCard 클릭)는 PlannerCard.tsx에서
+// 하드 네비게이션으로 이미 우회했다.
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({ params }: { params: { plannerId: string } }): Promise<Metadata> {
   const planner = await getPublicPlannerProfile(params.plannerId);
   if (!planner) return {};
