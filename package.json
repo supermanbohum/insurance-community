@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed": "node seed/_seed_tmp.mjs",
+    "seed:dry": "node seed/_seed_tmp.mjs --dry-run"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.20",

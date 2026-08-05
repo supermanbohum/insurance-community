@@ -7,6 +7,16 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.supabase.co',
       },
+      {
+        // 지점 대표사진/사무실사진(branch_media, source='external')이 더미 데이터에서
+        // Picsum 직접 링크를 쓴다 - next/image가 렌더링하려면 허용 호스트에 등록되어야 한다.
+        protocol: 'https',
+        hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'fastly.picsum.photos',
+      },
     ],
     // AVIF를 우선 시도하고 미지원 브라우저는 WebP로 폴백 - next/image가 원본보다
     // 훨씬 작은 포맷을 자동으로 골라준다.
