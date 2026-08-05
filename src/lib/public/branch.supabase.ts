@@ -559,29 +559,35 @@ export interface HomeStats {
   branchCount: number;
   plannerTotal: number;
   todayCount: number;
+  todayVisitorCount: number;
 }
 
 /**
- * 홈 화면 실시간 통계 - 등록 지점 수 / 설계사 수(구간 선택값 합계, 실제 인원의 근사치) /
- * 오늘 신규 등록 지점 수. 공개 조회이므로 RLS(공개+승인된 지점만)에 그대로 의존한다.
+ * 홈 화면 상단 통계 - 관리자 대시보드와 완전히 동일한 기준을 쓰기 위해 두 곳 모두
+ * get_platform_core_stats()/get_today_site_traffic_stats() RPC 하나씩을 공유한다
+ * (직접 SQL을 두 곳에 따로 작성하면 나중에 기준이 어긋나기 쉽다).
+ * - branchCount = 승인된 지점 수(소속 GA도 승인 상태여야 함, 미승인 GA 지점은 제외)
+ * - plannerTotal = 승인된 지점이 등록 시 선택한 예상 설계사 인원 합계 + 직접
+ *   등록해 승인·공개된 설계사 수
+ * - todayCount = 오늘 승인된 GA + 지점 + 설계사 합계(생성일이 아니라 승인일 기준)
+ * - todayVisitorCount = 오늘 사이트를 방문한 고유 방문자 수
  */
 export async function getHomeStats(): Promise<HomeStats> {
   const supabase = createPublicSupabaseClient();
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
 
-  const [branchCountRes, plannerRes, todayCountRes] = await Promise.all([
-    supabase.from('ga_branch').select('id', { count: 'exact', head: true }),
-    supabase.from('ga_branch').select('planner_count'),
-    supabase.from('ga_branch').select('id', { count: 'exact', head: true }).gte('created_at', startOfToday.toISOString()),
+  const [coreRes, trafficRes] = await Promise.all([
+    supabase.rpc('get_platform_core_stats'),
+    supabase.rpc('get_today_site_traffic_stats'),
   ]);
 
-  const plannerTotal = (plannerRes.data ?? []).reduce((sum, row) => sum + (row.planner_count ?? 0), 0);
+  const core = coreRes.data?.[0];
+  const traffic = trafficRes.data?.[0];
 
   return {
-    branchCount: branchCountRes.count ?? 0,
-    plannerTotal,
-    todayCount: todayCountRes.count ?? 0,
+    branchCount: core?.approved_branch_count ?? 0,
+    plannerTotal: core?.registered_planner_count ?? 0,
+    todayCount: (core?.today_new_ga_count ?? 0) + (core?.today_new_branch_count ?? 0) + (core?.today_new_planner_count ?? 0),
+    todayVisitorCount: traffic?.visitor_count ?? 0,
   };
 }
 

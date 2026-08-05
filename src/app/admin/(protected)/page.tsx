@@ -43,7 +43,12 @@ export default async function AdminDashboardPage() {
       {/* 메인 KPI - "등록"이라는 이름이어도 실제로 서비스에 반영된(승인/공개) 상태만 센다. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="등록 지점" value={stats.approvedBranchCount} icon={MapPin} />
-        <StatCard label="등록 설계사" value={stats.registeredPlannerCount} icon={Users2} />
+        <StatCard
+          label="등록 설계사"
+          value={stats.registeredPlannerCount}
+          icon={Users2}
+          sublabel="지점 예상인원 + 직접등록"
+        />
         <StatCard
           label="오늘 신규"
           value={stats.todayNewApprovedCount}

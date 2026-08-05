@@ -20,7 +20,8 @@ import { recordSiteVisit } from '@/lib/public/site-traffic.supabase';
  * PC(lg 이상)에서는 우측에 채팅 패널이 항상 고정 노출된다 - 이 레이아웃이 (main) 그룹의
  * 모든 페이지(홈 포함)를 감싸므로, 페이지 이동 시에도 리마운트되지 않고 그대로 유지된다.
  * 태블릿/모바일(lg 미만)에서는 패널이 숨고 헤더 햄버거 메뉴의 "실시간 채팅" → /chat 페이지로
- * 대체된다. 2xl 이상 초광폭 화면에서만 좌측에 향후 광고 영역을 위한 자리를 비워둔다.
+ * 대체된다. 좌측 광고 배너도 같은 lg 기준으로 노출한다(원래 2xl 초광폭 전용이었으나 테스트가
+ * 너무 어려워 PC 일반 화면부터 보이도록 낮췄다 - 반응형 폭 조정은 추후 별도 진행).
  */
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const [user, leftBanners] = await Promise.all([
@@ -37,7 +38,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     <AuthProvider initialUser={user}>
       <BohomMapHeader />
       <div className="mx-auto flex w-full max-w-[1440px] items-start gap-6 2xl:px-6">
-        <aside className="hidden w-[240px] shrink-0 2xl:block">
+        <aside className="hidden w-[240px] shrink-0 lg:block">
           <div className="sticky top-[76px]">
             {leftBanner?.pcImageUrl ? (
               <Link href={leftBanner.linkUrl} className="block overflow-hidden rounded-2xl border border-line shadow-card transition-shadow hover:shadow-card-hover">

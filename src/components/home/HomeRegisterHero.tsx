@@ -51,17 +51,21 @@ export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { 
         </Link>
       </div>
 
-      <div className="flex items-center justify-between rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
+      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3 sm:flex sm:items-center sm:justify-between">
         <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
           📍 등록 지점 <span className="text-brand-600"><StatCountUp value={stats.branchCount} /></span>개
         </span>
-        <span className="h-3.5 w-px shrink-0 bg-line" />
+        <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
         <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
           👨‍💼 등록 설계사 <span className="text-brand-600"><StatCountUp value={stats.plannerTotal} /></span>명
         </span>
-        <span className="h-3.5 w-px shrink-0 bg-line" />
+        <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
         <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
           🔥 오늘 신규 <span className="text-brand-600"><StatCountUp value={stats.todayCount} /></span>건
+        </span>
+        <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
+        <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
+          👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={stats.todayVisitorCount} /></span>명
         </span>
       </div>
     </div>

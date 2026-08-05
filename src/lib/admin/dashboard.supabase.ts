@@ -137,32 +137,34 @@ export async function getPendingApprovalCounts(): Promise<PendingApprovalCounts>
  * (특히 pending 상태 ga_company, 전체 site_visits/branch_contact_clicks 등)
  * service role client로 조회한다. 호출 전 requireAdmin()으로 세션을 검증해야 한다.
  *
- * 집계 기준(중요 - 이 파일 전체에서 일관되게 지킨다):
- * - GA "승인" = ga_company.approval_status = 'approved'
- * - 지점 "등록/공개" = ga_branch.status='visible' AND registration_status='approved'
- *   AND 소속 ga_company.approval_status='approved' (미승인 GA의 지점은 절대 포함하지 않음)
+ * 메인 KPI 4종(승인GA/승인지점/등록설계사/오늘신규)은 get_platform_core_stats() RPC
+ * 하나를 홈 화면(getHomeStats())과 그대로 공유한다 - 관리자와 홈이 각자 SQL을 따로
+ * 작성하면 나중에 기준이 어긋나기 쉬워, 숫자 계산 로직 자체를 한 곳(RPC)에만 둔다.
+ * "등록 설계사"는 이제 (승인된 지점이 등록 시 선택한 예상 설계사 인원 합계) + (직접
+ * 등록해 승인·공개된 설계사 수)다 - 아래 plannerStats.registered(개별 프로필 원본
+ * 등록 수)와는 다른 개념이니 혼동하지 않는다.
+ *
+ * 나머지 집계 기준:
  * - 설계사 "공개" = public_planner_profiles 뷰와 동일(status='approved' AND
  *   is_hidden=false AND withdrawn_at is null)
  * - "오늘 신규"는 생성일(created_at)이 아니라 승인일(reviewed_at) 기준
  *
  * PostgREST의 embedded-resource 필터(`fk!inner(...)`)는 이 저장소가 수기로 관리하는
  * Database 타입에서 신뢰성 있게 타입체크되지 않아, GA↔지점처럼 두 테이블을 걸쳐야 하는
- * 조건은 전부 "먼저 승인된 GA id 목록을 가져온 뒤 .in()으로 좁히는" 2단계 방식으로 푼다 -
- * 이 코드베이스의 다른 서버 조회 함수들(예: planner-market.supabase.ts)과 동일한 패턴이다.
+ * 조건(최근 등록 지점 표시용 GA 이름 조인 등)은 "먼저 승인된 GA id 목록을 가져온 뒤
+ * .in()으로 좁히는" 2단계 방식으로 푼다.
  */
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = createAdminClient();
   const todayStart = startOfTodayKstIso();
 
   const [
+    coreStats,
     approvedGaRows,
     registeredPlanner,
     approvedPlanner,
     visiblePlanner,
     incomeVerifiedPlanner,
-    newGaApprovedToday,
-    newBranchApprovedToday,
-    newPlannerApprovedToday,
     siteTraffic,
     clicksToday,
     activeRecruits,
@@ -173,6 +175,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     topBranchRanking,
     topPlannerRanking,
   ] = await Promise.all([
+    supabase.rpc('get_platform_core_stats'),
     supabase.from('ga_company').select('id, name').eq('approval_status', 'approved'),
     supabase.from('planner_profiles').select('id', { count: 'exact', head: true }).is('withdrawn_at', null),
     supabase
@@ -186,22 +189,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .select('id', { count: 'exact', head: true })
       .eq('badge_type_code', 'income_verified')
       .eq('status', 'approved'),
-    supabase
-      .from('ga_company')
-      .select('id', { count: 'exact', head: true })
-      .eq('approval_status', 'approved')
-      .gte('reviewed_at', todayStart),
-    supabase
-      .from('branch_registrations')
-      .select('id', { count: 'exact', head: true })
-      .eq('request_type', 'create')
-      .eq('status', 'approved')
-      .gte('reviewed_at', todayStart),
-    supabase
-      .from('planner_profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'approved')
-      .gte('reviewed_at', todayStart),
     supabase.rpc('get_today_site_traffic_stats'),
     supabase.from('branch_contact_clicks').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
     supabase.from('branch_recruit').select('id', { count: 'exact', head: true }).eq('is_active', true),
@@ -225,17 +212,25 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     supabase.rpc('list_monthly_top_planner_profiles', { p_limit: 5 }),
   ]);
 
+  const core = coreStats.data?.[0] ?? {
+    approved_ga_count: 0,
+    approved_branch_count: 0,
+    registered_planner_count: 0,
+    today_new_ga_count: 0,
+    today_new_branch_count: 0,
+    today_new_planner_count: 0,
+  };
+
   const approvedGaList = approvedGaRows.data ?? [];
   const approvedGaIds = approvedGaList.map((g) => g.id);
   const gaNameMap = new Map(approvedGaList.map((g) => [g.id, g.name]));
 
   // 승인된 GA가 하나도 없으면(초기 상태 등) .in()에 빈 배열을 넘기지 않고 바로 빈 결과로
   // 처리한다 - PostgREST 버전에 따라 빈 배열 .in()이 예외를 던질 수 있어 직접 방어한다.
-  const [recentGa, approvedBranchCountResult, recentBranchesRaw] =
+  const [recentGa, recentBranchesRaw] =
     approvedGaIds.length === 0
       ? [
           { data: [] as Database['public']['Tables']['ga_company']['Row'][] },
-          { count: 0 },
           { data: [] as { id: string; slug: string; name: string; ga_company_id: string; created_at: string }[] },
         ]
       : await Promise.all([
@@ -245,12 +240,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
             .eq('approval_status', 'approved')
             .order('created_at', { ascending: false })
             .limit(5),
-          supabase
-            .from('ga_branch')
-            .select('id', { count: 'exact', head: true })
-            .eq('status', 'visible')
-            .eq('registration_status', 'approved')
-            .in('ga_company_id', approvedGaIds),
           supabase
             .from('ga_branch')
             .select('id, slug, name, ga_company_id, created_at')
@@ -289,18 +278,18 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const branchNameMap = new Map((topBranchDetails.data ?? []).map((b) => [b.id, b]));
   const plannerNameMap = new Map((topPlannerDetails.data ?? []).map((p) => [p.id, p]));
 
-  const todayNewGa = newGaApprovedToday.count ?? 0;
-  const todayNewBranch = newBranchApprovedToday.count ?? 0;
-  const todayNewPlanner = newPlannerApprovedToday.count ?? 0;
+  const todayNewGa = core.today_new_ga_count;
+  const todayNewBranch = core.today_new_branch_count;
+  const todayNewPlanner = core.today_new_planner_count;
   const traffic = siteTraffic.data?.[0] ?? { view_count: 0, visitor_count: 0 };
 
   return {
-    approvedBranchCount: approvedBranchCountResult.count ?? 0,
-    registeredPlannerCount: registeredPlanner.count ?? 0,
+    approvedBranchCount: core.approved_branch_count,
+    registeredPlannerCount: core.registered_planner_count,
     todayNewApprovedCount: todayNewGa + todayNewBranch + todayNewPlanner,
     todayVisitorCount: traffic.visitor_count ?? 0,
 
-    approvedGaCount: approvedGaList.length,
+    approvedGaCount: core.approved_ga_count,
     todayViewCount: traffic.view_count ?? 0,
     todayContactClickCount: clicksToday.count ?? 0,
     activeRecruitCount: activeRecruits.count ?? 0,

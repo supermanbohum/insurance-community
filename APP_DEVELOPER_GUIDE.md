@@ -80,6 +80,8 @@ Storage 공개 파일 URL 패턴 (버킷이 public인 경우): `${NEXT_PUBLIC_SU
 
 SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은 누구나, 소유자/관리자는 상태 무관하게 자기 것" — 예를 들어 `ga_company`는 익명 사용자에게 `approval_status='approved' AND status='visible'`인 행만 보이고, 소속 GA 관리자는 자기 회사 행을 상태와 무관하게 봅니다.
 
+> **`security_invoker=true` 뷰를 새로 만들 때 반드시 기억할 것(0052에서 실제로 겪은 버그)**: `public_planner_profiles`/`public_banners`처럼 `with (security_invoker=true)`로 만든 공개 뷰는 뷰 자체의 `where`절이 맞아도, **기반 테이블에 같은 조건의 anon SELECT 정책이 없으면 anon 조회 시 무조건 0행**이 나옵니다(기반 테이블 RLS가 호출자 권한으로 그대로 적용되기 때문). 뷰를 새로 만들 때는 뷰의 `where`절과 **동일한 조건의 SELECT 정책을 기반 테이블에도 반드시 추가**하세요(`ga_company`/`ga_branch`가 이미 이렇게 되어 있어 정상 동작하는 것과 대조적으로, planner_profiles/banners는 이 정책이 누락돼 있었습니다).
+
 ---
 
 ## 5. Storage 버킷
@@ -233,7 +235,7 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 
 ---
 
-## 16. 마이그레이션 이력 요약 (0001~0051)
+## 16. 마이그레이션 이력 요약 (0001~0052)
 
 <details>
 <summary>펼치기 — 전체 49개 마이그레이션 한 줄 요약</summary>
@@ -291,5 +293,6 @@ SELECT 정책의 일반적인 모양: "공개 상태(approved/visible)인 것은
 | 0049 | planner_badge_types_expansion | 설계사 배지 확장(MDRT/COT/TOT/우수후기) |
 | 0050 | remove_credits_1_tier | 열람권 최소구매 10건 정책 변경 (1건 상품 폐지) |
 | 0051 | admin_dashboard_kpi_overhaul | 사이트 전역 방문 로그(site_visits) + 오늘 트래픽/설계사 인기랭킹 RPC + 승인일 기준 인덱스 |
+| 0052 | public_read_fixes_and_platform_stats | planner_profiles/banners anon 읽기 정책 추가(설계사찾기 0건·배너 미노출 버그 수정) + get_platform_core_stats() 홈/관리자 공용 RPC |
 
 </details>

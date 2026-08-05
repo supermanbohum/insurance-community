@@ -1418,6 +1418,17 @@ export interface Database {
         Args: Record<string, never>;
         Returns: { view_count: number; visitor_count: number }[];
       };
+      get_platform_core_stats: {
+        Args: Record<string, never>;
+        Returns: {
+          approved_ga_count: number;
+          approved_branch_count: number;
+          registered_planner_count: number;
+          today_new_ga_count: number;
+          today_new_branch_count: number;
+          today_new_planner_count: number;
+        }[];
+      };
       record_branch_contact_click: {
         Args: { p_contact_id: string };
         Returns: void;
