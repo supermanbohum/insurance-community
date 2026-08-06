@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { MessageCircle, Mail, Building2, ExternalLink } from 'lucide-react';
+import { MessageCircle, Mail, Phone, Building2, ExternalLink } from 'lucide-react';
 import { LegalPageLayout, LegalSection } from '@/components/legal/LegalPageLayout';
 import { COMPANY_INFO } from '@/lib/config/site';
 
@@ -73,6 +73,10 @@ export default function ContactPage() {
             </a>
           ))}
         </div>
+        <p className="mt-1 flex items-center gap-1.5 text-[13px] text-[var(--lp-ink-faint)]">
+          <Phone className="h-3.5 w-3.5 shrink-0" />
+          고객센터 전화 문의: {COMPANY_INFO.phone || '추후 등록'}
+        </p>
         <p className="mt-1 text-[13px] text-[var(--lp-ink-faint)]">
           영업일 기준 2~3일 이내 답변드리며, 문의가 많은 시기에는 다소 지연될 수 있는 점 양해 부탁드립니다.
         </p>

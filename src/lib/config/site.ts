@@ -28,6 +28,11 @@ export const COMPANY_INFO = {
   address: '경기도 시흥시 시청로 25, 904호',
   email: 'dlgoghk1538@gmail.com',
   kakaoChannelUrl: 'https://open.kakao.com/o/sNMQngGi',
+  // TODO(결제 심사): 관할 시/군/구청·정부24에서 통신판매업 신고 완료 후 신고번호 기입.
+  // 빈 문자열인 동안 푸터/문의 페이지는 "발급 후 입력 예정"으로 표시한다.
+  mailOrderBizNo: '',
+  // TODO(결제 심사): 고객센터 전화번호 개설 후 기입. 빈 문자열인 동안 "추후 등록"으로 표시한다.
+  phone: '',
 } as const;
 
 export const DEFAULT_CATEGORIES = [

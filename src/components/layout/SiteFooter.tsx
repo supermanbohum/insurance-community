@@ -6,8 +6,9 @@ import { COMPANY_INFO as COMPANY } from '@/lib/config/site';
 const MENU_LINKS = [
   { href: '/terms', label: '이용약관' },
   { href: '/privacy', label: '개인정보처리방침' },
+  { href: '/refund-policy', label: '환불정책' },
   { href: '/delete-account', label: '데이터 삭제 요청' },
-  { href: '/contact', label: '문의하기' },
+  { href: '/contact', label: '고객센터' },
 ];
 
 // 국세청 홈택스는 사업자등록번호를 URL 파라미터로 바로 조회하는 방식을 제공하지 않아
@@ -54,6 +55,14 @@ export function SiteFooter() {
             <div className="flex flex-wrap gap-x-1.5">
               <dt className="text-slate-500">주소</dt>
               <dd>{COMPANY.address}</dd>
+            </div>
+            <div className="flex flex-wrap gap-x-1.5">
+              <dt className="text-slate-500">통신판매업신고번호</dt>
+              <dd>{COMPANY.mailOrderBizNo || '발급 후 입력 예정'}</dd>
+            </div>
+            <div className="flex flex-wrap gap-x-1.5">
+              <dt className="text-slate-500">고객센터 전화</dt>
+              <dd>{COMPANY.phone || '추후 등록'}</dd>
             </div>
           </dl>
         </div>

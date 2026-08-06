@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = '2026년 7월 29일';
+const PG_ENTRUSTEE_ADDED_DATE = '2026년 8월 6일';
 
 export default function PrivacyPage() {
   return (
@@ -90,8 +91,13 @@ export default function PrivacyPage() {
           head={['수탁업체', '위탁업무 내용']}
           rows={[
             ['클라우드 인프라 제공업체', '서비스 운영을 위한 서버 호스팅 및 데이터베이스 관리'],
+            ['결제서비스 제공업체(계약 완료 후 반영)', '유료서비스 결제 처리, 결제 수단 정보 보관, 매출 정산'],
           ]}
         />
+        <p className="text-[13px] text-[var(--lp-ink-faint)]">
+          ※ 결제대행(PG)사와의 계약이 체결되는 대로 상호명 등 구체적인 수탁업체 정보를 갱신하여 반영합니다. 결제
+          시 입력하는 카드·계좌 정보는 결제대행사가 직접 수집·처리하며, 회사는 해당 정보를 저장하지 않습니다.
+        </p>
       </LegalSection>
 
       <LegalSection title="6. 쿠키(Cookie)의 운영 및 거부">
@@ -162,6 +168,7 @@ export default function PrivacyPage() {
           변경사항의 시행 7일 전부터 서비스 내 공지사항을 통하여 고지할 것입니다.
         </p>
         <p>이 방침은 {EFFECTIVE_DATE}부터 시행됩니다.</p>
+        <p>제5조 위탁업체 표의 결제서비스 제공업체 항목은 {PG_ENTRUSTEE_ADDED_DATE}에 추가되었으며, 결제대행사 계약 체결 후 구체적인 업체명으로 갱신될 예정입니다.</p>
       </LegalSection>
     </LegalPageLayout>
   );

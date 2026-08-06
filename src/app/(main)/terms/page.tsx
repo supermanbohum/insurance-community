@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { LegalPageLayout, LegalSection, LegalList } from '@/components/legal/LegalPageLayout';
 
 export const metadata: Metadata = {
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = '2026년 7월 29일';
+const PAYMENT_CLAUSES_ADDED_DATE = '2026년 8월 6일';
 
 export default function TermsPage() {
   return (
@@ -160,7 +162,84 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="제14조 (면책조항)">
+      <LegalSection title="제14조 (유료서비스 이용 및 결제)">
+        <p>
+          회사는 서비스 내에서 다음과 같은 유료서비스를 제공하며, 유료서비스의 종류·가격·이용조건은 각 서비스
+          화면에서 이용자에게 별도로 고지합니다.
+        </p>
+        <LegalList
+          items={[
+            'GA·지점 등록비: 지점 정보 노출을 위한 월 정기구독형 서비스',
+            '고소득 설계사 인증 부가서비스: 설계사 인증 배지 노출을 위한 월 정기구독형 서비스',
+            '설계사 마켓 열람권: 설계사 연락처 열람을 위한 1회성 결제 크레딧 상품',
+            '지점 광고 상품: 추천 지점 노출 등 기간제 노출을 위한 1회성 결제 상품',
+          ]}
+        />
+        <p className="font-semibold text-[var(--lp-ink)]">① 결제수단</p>
+        <p>
+          이용자는 회사가 지정하는 전자지급결제대행업체(PG사)를 통해 신용카드, 체크카드, 계좌이체 등 회사가 정하는
+          방법으로 결제할 수 있습니다. 결제 시 입력하는 카드·계좌 정보는 PG사가 직접 수집·처리하며, 회사는 결제
+          수단의 상세 정보를 저장하지 않습니다.
+        </p>
+        <p className="font-semibold text-[var(--lp-ink)]">② 정기결제</p>
+        <p>
+          GA·지점 등록비, 고소득 설계사 인증 부가서비스는 매월 동일한 금액이 청구되는 정기결제 방식으로 제공됩니다.
+          가입 시 최초 결제일이 기준일이 되며, 이용자가 제15조에 따라 해지하지 않는 한 매월 동일한 결제일에 자동으로
+          갱신·청구됩니다. 열람권, 광고 상품은 정기결제 대상이 아닌 1회성 결제 상품입니다.
+        </p>
+        <p className="font-semibold text-[var(--lp-ink)]">③ 자동결제</p>
+        <p>
+          정기결제 상품에 가입하면 이용자가 등록한 결제수단 정보가 PG사에 안전하게 등록되며, 회사는 매 결제 주기마다
+          별도의 사전 동의 절차 없이 등록된 결제수단으로 자동 청구합니다. 이용자는 언제든지 제15조의 방법으로
+          자동결제를 해지할 수 있습니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="제15조 (해지, 결제실패 및 환불)">
+        <p className="font-semibold text-[var(--lp-ink)]">① 해지 방법</p>
+        <p>
+          정기결제 상품은 파트너센터 내 구독 관리 메뉴 또는 고객센터(카카오톡·이메일)를 통해 언제든지 해지를 신청할
+          수 있습니다. 해지를 신청하면 다음 결제일부터 청구가 중단되며, 이미 결제가 완료된 당월 이용 기간 동안은
+          서비스를 계속 이용할 수 있습니다.
+        </p>
+        <p className="font-semibold text-[var(--lp-ink)]">② 결제실패 처리</p>
+        <p>
+          정기결제일에 결제가 실패한 경우 회사는 최대 7일의 유예기간을 부여하며, 유예기간 중에는 이용자가 결제수단을
+          변경하거나 직접 재결제할 수 있습니다. 유예기간이 지나도록 결제가 이루어지지 않으면 해당 지점·서비스의
+          노출이 비공개(정지) 처리되며, 이후 결제가 완료되면 즉시 노출이 복구됩니다.
+        </p>
+        <p className="font-semibold text-[var(--lp-ink)]">③ 환불 기준</p>
+        <p>
+          유료서비스의 환불은 「전자상거래 등에서의 소비자보호에 관한 법률」 등 관계 법령 및 회사가 별도로 정하는{' '}
+          <Link href="/refund-policy" className="font-medium text-[var(--lp-brand)] underline underline-offset-2">
+            환불정책
+          </Link>
+          에 따라 처리됩니다. 상품 종류별 구체적인 환불 가능·불가 조건, 부분환불 기준, 결제취소 절차는 환불정책
+          페이지에서 확인할 수 있습니다.
+        </p>
+        <p className="font-semibold text-[var(--lp-ink)]">④ 청약철회의 예외</p>
+        <p>
+          다음 각 호의 경우에는 「전자상거래 등에서의 소비자보호에 관한 법률」 제17조 제2항 등 관계 법령이 정하는
+          바에 따라 이용자의 청약철회가 제한될 수 있습니다.
+        </p>
+        <LegalList
+          items={[
+            '이용자에게 책임 있는 사유로 서비스(콘텐츠 등)가 멸실되거나 훼손된 경우',
+            '이용자의 사용 또는 일부 소비로 서비스의 가치가 현저히 감소한 경우',
+            '이미 대가가 지급된 용역이 전부 또는 일부 제공된 경우(예: 결제 완료 후 지점·광고가 노출된 기간, 열람권 사용으로 연락처가 열람된 건)',
+            '시간의 경과에 의해 재판매가 곤란할 정도로 재화 등의 가치가 현저히 감소한 경우',
+            '그 밖에 관계 법령이 정하는 청약철회 제한 사유에 해당하는 경우',
+          ]}
+        />
+        <p className="font-semibold text-[var(--lp-ink)]">⑤ 서비스 중단 시 처리</p>
+        <p>
+          제5조에 따른 서비스 중단이 회사의 귀책사유로 상당 기간 지속되어 이용자가 유료서비스를 정상적으로 이용하지
+          못한 경우, 회사는 중단된 기간에 비례하여 이용기간을 연장하거나 그에 상응하는 금액을 환불하는 등 합리적인
+          조치를 취합니다.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="제16조 (면책조항)">
         <p>
           회사는 천재지변, 전쟁, 기간통신사업자의 서비스 중지, 정부의 규제 등 불가항력으로 인하여 서비스를 제공할 수
           없는 경우 책임이 면제됩니다. 회사는 이용자의 귀책사유로 인한 서비스 이용의 장애에 대하여 책임을 지지
@@ -174,7 +253,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="제15조 (분쟁해결 및 준거법)">
+      <LegalSection title="제17조 (분쟁해결 및 준거법)">
         <p>
           회사는 이용자가 제기하는 정당한 의견이나 불만을 반영하고 그 피해를 보상처리하기 위하여 고객센터를 운영합니다.
           이 약관과 관련하여 회사와 이용자 간에 발생한 분쟁에 대해서는 대한민국 법을 준거법으로 하며, 소송이 제기되는
@@ -184,6 +263,7 @@ export default function TermsPage() {
 
       <LegalSection title="부칙">
         <p>이 약관은 {EFFECTIVE_DATE}부터 적용됩니다.</p>
+        <p>제14조·제15조(유료서비스 이용 및 결제, 해지·결제실패·환불)는 {PAYMENT_CLAUSES_ADDED_DATE}에 신설되었습니다.</p>
       </LegalSection>
     </LegalPageLayout>
   );

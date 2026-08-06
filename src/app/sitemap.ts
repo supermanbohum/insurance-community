@@ -32,6 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/planner-market/search`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${SITE_URL}/refund-policy`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/contact`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/delete-account`, changeFrequency: 'yearly', priority: 0.3 },
   ];
