@@ -21,6 +21,7 @@ import {
   Footprints,
   MessageSquareText,
   History,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,8 @@ export interface AdminNavBadges {
   ga: number;
   branchCreate: number;
   planner: number;
+  topDesigner: number;
+  salaryRanking: number;
 }
 
 const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: keyof AdminNavBadges }[] = [
@@ -39,6 +42,8 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/planners', label: '고소득 설계사 (Legacy)', icon: Award },
   { href: '/admin/planner-market', label: '설계사 마켓', icon: Users2, badgeKey: 'planner' },
   { href: '/admin/planner-market/credits', label: '열람권 관리', icon: Ticket },
+  { href: '/admin/top-designer', label: 'TOP 설계사 인증', icon: Award, badgeKey: 'topDesigner' },
+  { href: '/admin/salary-ranking', label: '연봉 랭킹', icon: TrendingUp, badgeKey: 'salaryRanking' },
   { href: '/admin/ad-products', label: '광고 관리', icon: Megaphone },
   { href: '/admin/ga-change-requests', label: 'GA 변경 요청', icon: UserCog },
   { href: '/admin/billing', label: '결제 관리', icon: CreditCard },

@@ -19,6 +19,8 @@ export interface PendingApprovalCounts {
   ga: number;
   branchCreate: number;
   planner: number;
+  topDesigner: number;
+  salaryRanking: number;
 }
 
 export interface RecentBranchItem {
@@ -111,7 +113,7 @@ function regionLabel(region: { sido_name: string; sigungu_name: string | null } 
 export async function getPendingApprovalCounts(): Promise<PendingApprovalCounts> {
   const supabase = createAdminClient();
 
-  const [ga, branchCreate, planner] = await Promise.all([
+  const [ga, branchCreate, planner, topDesigner, salaryRanking] = await Promise.all([
     supabase.from('ga_company').select('id', { count: 'exact', head: true }).eq('approval_status', 'pending'),
     supabase
       .from('branch_registrations')
@@ -123,12 +125,16 @@ export async function getPendingApprovalCounts(): Promise<PendingApprovalCounts>
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending_review')
       .is('withdrawn_at', null),
+    supabase.from('top_designer_certifications').select('id', { count: 'exact', head: true }).eq('status', 'pending_review'),
+    supabase.from('salary_ranking_submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending_review'),
   ]);
 
   return {
     ga: ga.count ?? 0,
     branchCreate: branchCreate.count ?? 0,
     planner: planner.count ?? 0,
+    topDesigner: topDesigner.count ?? 0,
+    salaryRanking: salaryRanking.count ?? 0,
   };
 }
 

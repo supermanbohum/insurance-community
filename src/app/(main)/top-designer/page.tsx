@@ -1,0 +1,56 @@
+import type { Metadata } from 'next';
+import { listPublicTopDesigners, type TopDesignerSort } from '@/lib/public/top-designer.supabase';
+import { listRegions } from '@/lib/admin/branch';
+import { TopDesignerFilters } from '@/components/top-designer/TopDesignerFilters';
+import { TopDesignerCard } from '@/components/top-designer/TopDesignerCard';
+import { TopDesignerLoadMoreButton } from '@/components/top-designer/TopDesignerLoadMoreButton';
+import type { StarTier } from '@/lib/top-designer/labels';
+
+// /planner-market/search와 동일한 이유(그 페이지 주석 참고)로 force-dynamic +
+// loading.tsx를 함께 둔다 - 이 페이지 자체는 쿠키를 읽지 않는 공개 조회 전용이다.
+export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'TOP 설계사',
+  description: '원천징수영수증으로 연봉을 인증받은 보험맵 공식 TOP 설계사를 만나보세요.',
+  alternates: { canonical: '/top-designer' },
+};
+
+export default async function TopDesignerPage({
+  searchParams,
+}: {
+  searchParams: { region?: string; starTier?: string; sort?: string };
+}) {
+  const starTier = (searchParams.starTier as StarTier | undefined) ?? undefined;
+  const sort = (searchParams.sort as TopDesignerSort | undefined) ?? 'newest';
+
+  const [regions, designers] = await Promise.all([
+    listRegions(),
+    listPublicTopDesigners({ regionId: searchParams.region, starTier, sort, limit: 24 }),
+  ]);
+
+  return (
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <div>
+        <h1 className="text-xl font-bold">🏆 TOP 설계사</h1>
+        <p className="mt-1 text-sm text-muted-foreground">원천징수영수증으로 연봉을 인증받은 보험맵 공식 TOP 설계사입니다.</p>
+      </div>
+
+      <TopDesignerFilters regions={regions} initial={{ regionId: searchParams.region ?? null, starTier: starTier ?? null, sort }} />
+
+      {designers.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-line py-12 text-center text-sm text-muted-foreground">
+          조건에 맞는 TOP 설계사가 없습니다.
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {designers.map((designer) => (
+            <TopDesignerCard key={designer.id} designer={designer} />
+          ))}
+        </div>
+      )}
+
+      <TopDesignerLoadMoreButton initialCount={designers.length} filters={{ regionId: searchParams.region, starTier, sort }} />
+    </div>
+  );
+}

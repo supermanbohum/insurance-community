@@ -20,6 +20,8 @@ import {
   UserPlus,
   Ticket,
   Edit3,
+  Award,
+  TrendingUp,
 } from 'lucide-react';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { BrandMark } from '@/components/brand/BrandMark';
@@ -64,6 +66,15 @@ const MENU_GROUPS = [
       { href: '/partner/branches', label: '지점 수정', icon: Edit3, tile: 'bg-blue-50 text-blue-600' },
       { href: '/partner/ad-products', label: '광고상품', icon: Megaphone, tile: 'bg-rose-50 text-rose-600' },
       { href: '/planner-market/purchase', label: '구매센터', icon: Ticket, tile: 'bg-amber-50 text-amber-600' },
+    ],
+  },
+  {
+    // top_designer_*/salary_ranking_* 완전 신규 시스템 - "리크루팅" 그룹(설계사마켓)이나
+    // planner_certifications(고소득 설계사, Legacy)와 무관하다.
+    label: 'TOP 설계사 · 연봉랭킹',
+    items: [
+      { href: '/top-designer', label: 'TOP 설계사', icon: Award, tile: 'bg-amber-50 text-amber-600' },
+      { href: '/salary-ranking', label: '전국 설계사 연봉 랭킹', icon: TrendingUp, tile: 'bg-rose-50 text-rose-600' },
     ],
   },
   {

@@ -15,13 +15,14 @@ const ACTIONS = [
   // 같은 순수 브라우저 전체 페이지 이동은 매번 정확하게 동작했다 - 그래서 이 링크만
   // Next 클라이언트 라우터를 완전히 우회해 항상 전체 페이지 이동을 강제한다.
   { href: '/planner-market/search', emoji: '🧑‍💼', label: '설계사 찾기', tile: 'bg-violet-50', hardNavigate: true },
+  { href: '/top-designer', emoji: '🏆', label: 'TOP 설계사', tile: 'bg-amber-50', hardNavigate: true },
 ];
 
-/** 홈 화면 진입점을 이 5개로 단순화한다 - 지도 미리보기/지역별·회사별/설계사
+/** 홈 화면 진입점을 이 6개로 단순화한다 - 지도 미리보기/지역별·회사별/설계사
  * 바로가기 섹션은 없애고, 그 진입 기능을 전부 여기로 모았다. */
 export function QuickMenuGrid() {
   return (
-    <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
       {ACTIONS.map((action) => (
         <Link
           key={action.label}

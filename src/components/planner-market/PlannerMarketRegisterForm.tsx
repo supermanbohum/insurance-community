@@ -15,6 +15,9 @@ import type { GaFilterOption } from '@/lib/public/ga-directory';
 import { RegionSelect } from '@/components/admin/RegionSelect';
 import { GaSearchSelect } from '@/components/auth/GaSearchSelect';
 import { PlannerMarketConsentCheckboxes, EMPTY_CONSENTS, type PlannerMarketConsents } from '@/components/planner-market/PlannerMarketConsentCheckboxes';
+import { TopDesignerApplyFields, EMPTY_TOP_DESIGNER_APPLY_STATE, type TopDesignerApplyState } from '@/components/top-designer/TopDesignerApplyFields';
+import { submitTopDesignerCertificationAction } from '@/lib/actions/top-designer';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +29,15 @@ import { cn } from '@/lib/utils';
 import { JOB_SEARCH_STATUS_LABEL, DESIRED_START_TIMING_LABEL, CONTACTABLE_TIME_LABEL } from '@/lib/planner-market/labels';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+/** 신규 등록 직후에는 방금 만들어진 planner_profiles.id를 액션 반환값으로 알 수
+ * 없어(submitPlannerMarketProfileAction은 성공 여부만 반환) 클라이언트에서
+ * get_my_planner_market_profile()로 직접 조회한다. */
+async function fetchMyPlannerProfileId(): Promise<string | null> {
+  const supabase = createClient();
+  const { data } = await supabase.rpc('get_my_planner_market_profile');
+  return data?.[0]?.id ?? null;
+}
 
 type JobSearchStatus = keyof typeof JOB_SEARCH_STATUS_LABEL;
 type DesiredStartTiming = keyof typeof DESIRED_START_TIMING_LABEL;
@@ -128,6 +140,7 @@ export function PlannerMarketRegisterForm({
   const [desiredGaCompanyId, setDesiredGaCompanyId] = useState<string | null>(initialProfile?.desiredGaCompanyId ?? null);
   const [desiredConditions, setDesiredConditions] = useState(initialProfile?.desiredConditions ?? '');
   const [consents, setConsents] = useState<PlannerMarketConsents>(EMPTY_CONSENTS);
+  const [topDesignerApply, setTopDesignerApply] = useState<TopDesignerApplyState>(EMPTY_TOP_DESIGNER_APPLY_STATE);
 
   const allConsented = isEditMode || Object.values(consents).every(Boolean);
   const canSubmit =
@@ -193,6 +206,25 @@ export function PlannerMarketRegisterForm({
       if (!result.success) {
         toast.error(result.error);
         return;
+      }
+
+      if (topDesignerApply.enabled && topDesignerApply.file) {
+        const plannerProfileId = isEditMode ? initialProfile!.id : await fetchMyPlannerProfileId();
+        if (plannerProfileId) {
+          const fd = new FormData();
+          fd.set('file', topDesignerApply.file);
+          const tdResult = await submitTopDesignerCertificationAction(
+            plannerProfileId,
+            {
+              jobTitle: topDesignerApply.jobTitle,
+              declaredAnnualIncomeKrw: topDesignerApply.declaredIncome ? Number(topDesignerApply.declaredIncome) : undefined,
+            },
+            fd
+          );
+          if (!tdResult.success) {
+            toast.error(`TOP 설계사 인증 신청 실패: ${tdResult.error}`);
+          }
+        }
       }
 
       toast.success(isEditMode ? '수정되었습니다. 활동지역/경력/희망GA 변경은 관리자 승인 후 반영됩니다.' : '설계사 등록 신청이 접수되었습니다. 관리자 승인 후 공개됩니다.');
@@ -356,6 +388,15 @@ export function PlannerMarketRegisterForm({
             <Label htmlFor="pm-conditions">희망 조건</Label>
             <Textarea id="pm-conditions" value={desiredConditions} onChange={(e) => setDesiredConditions(e.target.value)} rows={3} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">TOP 설계사 인증 (선택)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TopDesignerApplyFields value={topDesignerApply} onChange={setTopDesignerApply} />
         </CardContent>
       </Card>
 

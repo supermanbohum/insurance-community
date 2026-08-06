@@ -1176,6 +1176,87 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['banners']['Row']>;
         Relationships: [];
       };
+      top_designer_certifications: {
+        Row: {
+          id: string;
+          planner_profile_id: string;
+          job_title: string;
+          income_doc_storage_path: string;
+          declared_annual_income_krw: number | null;
+          confirmed_annual_income_krw: number | null;
+          star_tier: 'star_1' | 'star_2' | 'star_3' | 'star_4' | 'star_5' | null;
+          status: 'pending_review' | 'on_hold' | 'approved' | 'rejected';
+          review_reason: string | null;
+          reviewed_by_admin_id: string | null;
+          reviewed_at: string | null;
+          ocr_status: 'not_run' | 'pending' | 'completed' | 'failed';
+          ocr_extracted_income_krw: number | null;
+          ocr_raw_response: unknown;
+          ocr_confidence: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['top_designer_certifications']['Row']>;
+        Update: Partial<Database['public']['Tables']['top_designer_certifications']['Row']>;
+        Relationships: [];
+      };
+      top_designer_likes: {
+        Row: {
+          id: string;
+          top_designer_certification_id: string;
+          liker_user_id: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['top_designer_likes']['Row']>;
+        Update: Partial<Database['public']['Tables']['top_designer_likes']['Row']>;
+        Relationships: [];
+      };
+      top_designer_views: {
+        Row: {
+          id: string;
+          top_designer_certification_id: string;
+          viewed_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['top_designer_views']['Row']>;
+        Update: Partial<Database['public']['Tables']['top_designer_views']['Row']>;
+        Relationships: [];
+      };
+      salary_ranking_submissions: {
+        Row: {
+          id: string;
+          planner_profile_id: string;
+          ranking_year: number;
+          job_title: string;
+          display_name: string;
+          income_doc_storage_path: string;
+          declared_annual_income_krw: number;
+          confirmed_annual_income_krw: number | null;
+          consent_public_display: boolean;
+          status: 'pending_review' | 'on_hold' | 'approved' | 'rejected';
+          review_reason: string | null;
+          reviewed_by_admin_id: string | null;
+          reviewed_at: string | null;
+          ocr_status: 'not_run' | 'pending' | 'completed' | 'failed';
+          ocr_extracted_income_krw: number | null;
+          ocr_raw_response: unknown;
+          ocr_confidence: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['salary_ranking_submissions']['Row']>;
+        Update: Partial<Database['public']['Tables']['salary_ranking_submissions']['Row']>;
+        Relationships: [];
+      };
+      salary_ranking_views: {
+        Row: {
+          id: string;
+          submission_id: string;
+          viewed_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['salary_ranking_views']['Row']>;
+        Update: Partial<Database['public']['Tables']['salary_ranking_views']['Row']>;
+        Relationships: [];
+      };
     };
     Views: {
       public_banners: {
@@ -1208,6 +1289,40 @@ export interface Database {
           badges: PlannerBadgeSummary[];
           has_income_verified: boolean;
           has_top_planner: boolean;
+        };
+        Relationships: [];
+      };
+      public_top_designer_certifications: {
+        Row: {
+          id: string;
+          planner_profile_id: string;
+          job_title: string;
+          star_tier: 'star_1' | 'star_2' | 'star_3' | 'star_4' | 'star_5' | null;
+          certified_at: string | null;
+          created_at: string;
+          profile_photo_path: string | null;
+          active_region_id: string;
+          career_years: number;
+          specialties: string[];
+          self_introduction: string | null;
+          view_count: number;
+          like_count: number;
+        };
+        Relationships: [];
+      };
+      public_salary_ranking_submissions: {
+        Row: {
+          id: string;
+          planner_profile_id: string;
+          ranking_year: number;
+          job_title: string;
+          display_name: string;
+          annual_income_krw: number | null;
+          ranked_at: string | null;
+          created_at: string;
+          profile_photo_path: string | null;
+          active_region_id: string;
+          view_count: number;
         };
         Relationships: [];
       };
@@ -1777,6 +1892,60 @@ export interface Database {
       get_username_by_verified_email: {
         Args: Record<PropertyKey, never>;
         Returns: string;
+      };
+      submit_top_designer_certification: {
+        Args: { p_planner_profile_id: string; p_job_title: string; p_income_doc_path: string; p_declared_annual_income_krw?: number };
+        Returns: string;
+      };
+      admin_review_top_designer_certification: {
+        Args: {
+          p_certification_id: string;
+          p_decision: string;
+          p_star_tier?: string;
+          p_confirmed_income_krw?: number;
+          p_reason?: string;
+        };
+        Returns: undefined;
+      };
+      toggle_top_designer_like: {
+        Args: { p_certification_id: string };
+        Returns: boolean;
+      };
+      record_top_designer_view: {
+        Args: { p_certification_id: string };
+        Returns: undefined;
+      };
+      submit_salary_ranking: {
+        Args: {
+          p_planner_profile_id: string;
+          p_ranking_year: number;
+          p_job_title: string;
+          p_display_name: string;
+          p_income_doc_path: string;
+          p_declared_annual_income_krw: number;
+          p_consent_public_display: boolean;
+        };
+        Returns: string;
+      };
+      admin_review_salary_ranking: {
+        Args: { p_submission_id: string; p_decision: string; p_confirmed_income_krw?: number; p_reason?: string };
+        Returns: undefined;
+      };
+      record_salary_ranking_view: {
+        Args: { p_submission_id: string };
+        Returns: undefined;
+      };
+      get_salary_ranking_hall_of_fame: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          ranking_year: number;
+          submission_id: string;
+          display_name: string;
+          job_title: string;
+          annual_income_krw: number;
+          profile_photo_path: string | null;
+          active_region_id: string;
+        }[];
       };
       confirm_email_signup: {
         Args: Record<string, never>;
