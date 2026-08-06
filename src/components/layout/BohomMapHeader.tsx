@@ -8,7 +8,6 @@ import {
   X,
   MapPin,
   Building2,
-  Briefcase,
   Flame,
   Sparkles,
   CalendarDays,
@@ -47,10 +46,7 @@ const MENU_GROUPS = [
   },
   {
     label: '채용 · 이벤트',
-    items: [
-      { href: '/jobs', label: '우리회사자랑', icon: Briefcase, tile: 'bg-emerald-50 text-emerald-600' },
-      { href: '/events', label: '이벤트', icon: CalendarDays, tile: 'bg-violet-50 text-violet-600' },
-    ],
+    items: [{ href: '/events', label: '이벤트', icon: CalendarDays, tile: 'bg-violet-50 text-violet-600' }],
   },
   {
     // 설계사 마켓(열람권)/지점 광고 - TOP설계사(아래 "인증" 그룹)와는 완전히 별개 시스템이다.
