@@ -68,7 +68,7 @@ export default async function HomePage() {
     getPageLayoutConfig('home'),
   ]);
 
-  const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '지점 등록하기';
+  const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '우리 지점 등록하기';
 
   const nodesByKey: Record<(typeof HOME_SECTIONS)[number]['key'], React.ReactNode> = {
     hero: <HomeRegisterHero stats={stats} ctaLabel={ctaLabel} />,

@@ -1774,6 +1774,10 @@ export interface Database {
         Args: { p_username: string };
         Returns: string;
       };
+      get_username_by_verified_email: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
       confirm_email_signup: {
         Args: Record<string, never>;
         Returns: Database['public']['Tables']['users']['Row'];

@@ -14,7 +14,6 @@ import {
   CalendarDays,
   Users,
   Megaphone,
-  Award,
   ExternalLink,
   MessageCircle,
   Search,
@@ -28,6 +27,10 @@ import { AnimatedHeaderBrandMark } from '@/components/brand/AnimatedHeaderBrandM
 import { useAuth } from '@/lib/auth/AuthContext';
 import { cn } from '@/lib/utils';
 
+// 기존 "인증" 그룹(우리동네 TOP설계사, planner_certifications 기반)은 메뉴에서 제거했다 -
+// DB/RPC/구독(/admin/planners, /partner/planners)은 전혀 건드리지 않았고 URL 직접 접근은
+// 계속 가능하다. 완전히 새로운 TOP 설계사 인증 시스템(top_designer_*)이 별도 그룹으로
+// 추가될 예정이다.
 const MENU_GROUPS = [
   {
     label: '자주 찾는 메뉴',
@@ -62,12 +65,6 @@ const MENU_GROUPS = [
       { href: '/partner/ad-products', label: '광고상품', icon: Megaphone, tile: 'bg-rose-50 text-rose-600' },
       { href: '/planner-market/purchase', label: '구매센터', icon: Ticket, tile: 'bg-amber-50 text-amber-600' },
     ],
-  },
-  {
-    // 기존 TOP설계사(우수설계사 인증) 기능 - DB/API/관리자 모두 그대로이며, 위 "리크루팅"
-    // 그룹(설계사 마켓/열람권)과는 절대 혼용하지 않는다. 노출 위치만 메인 화면에서 여기로 옮겼다.
-    label: '인증',
-    items: [{ href: '/search?highIncome=1', label: '우리동네 TOP설계사', icon: Award, tile: 'bg-amber-50 text-amber-600' }],
   },
   {
     label: '커뮤니티',

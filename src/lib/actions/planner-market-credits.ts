@@ -51,7 +51,7 @@ export async function purchasePlannerMarketCreditsAction(
 
 export type UnlockContactResult =
   | { success: true; contact: { name: string; phone: string; email: string; kakaoId: string | null } }
-  | { success: false; error: string };
+  | { success: false; error: string; code?: 'INSUFFICIENT_CREDITS' };
 
 /** 설계사 연락처 열람 - 동일 GA사가 같은 설계사를 재조회해도 크레딧이 다시 차감되지
  * 않는다(get_planner_contact RPC의 원자적 언락 로직, 0036 참고). */
@@ -62,13 +62,14 @@ export async function unlockPlannerContactAction(plannerProfileId: string): Prom
   const { data, error } = await supabase.rpc('get_planner_contact', { p_planner_profile_id: plannerProfileId }).single();
 
   if (error || !data) {
-    const message = error?.message.includes('INSUFFICIENT_CREDITS')
-      ? '보유한 열람권이 부족합니다. 열람권을 구매해주세요.'
-      : error?.message.includes('CONTACT_SHARING_REVOKED')
-        ? '설계사가 연락처 제공을 철회했습니다.'
-        : error?.message.includes('PROFILE_NOT_AVAILABLE')
-          ? '더 이상 열람할 수 없는 설계사입니다.'
-          : '연락처를 불러오지 못했습니다.';
+    if (error?.message.includes('INSUFFICIENT_CREDITS')) {
+      return { success: false, error: '보유한 열람권이 부족합니다. 열람권을 구매해주세요.', code: 'INSUFFICIENT_CREDITS' };
+    }
+    const message = error?.message.includes('CONTACT_SHARING_REVOKED')
+      ? '설계사가 연락처 제공을 철회했습니다.'
+      : error?.message.includes('PROFILE_NOT_AVAILABLE')
+        ? '더 이상 열람할 수 없는 설계사입니다.'
+        : '연락처를 불러오지 못했습니다.';
     return { success: false, error: message };
   }
 

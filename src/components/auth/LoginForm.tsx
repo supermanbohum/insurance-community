@@ -11,17 +11,9 @@ import { Label } from '@/components/ui/label';
 
 export function LoginForm({ next = '/my' }: { next?: string }) {
   const router = useRouter();
-  const { login, loginWithEmail, isPending } = useAuth();
+  const { loginWithEmail, isPending } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-
-  async function handleGoogleLogin() {
-    const result = await login('google', next);
-    if (!result.success) {
-      toast.error(result.error ?? '로그인하지 못했습니다.');
-    }
-    // 성공 시에는 provider 로그인 화면으로 리다이렉트되므로 여기서 할 일이 없다.
-  }
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -51,29 +43,22 @@ export function LoginForm({ next = '/my' }: { next?: string }) {
         </Button>
       </form>
 
+      <p className="flex items-center justify-center gap-2 text-xs text-ink-faint">
+        <Link href="/find-id" className="hover:underline">
+          아이디 찾기
+        </Link>
+        <span className="h-3 w-px bg-line" />
+        <Link href="/reset-password" className="hover:underline">
+          비밀번호 찾기
+        </Link>
+      </p>
+
       <p className="text-center text-xs text-ink-faint">
         아직 계정이 없으신가요?{' '}
         <Link href={`/signup?next=${encodeURIComponent(next)}`} className="font-semibold text-brand-600 hover:underline">
           일반 회원가입
         </Link>
       </p>
-
-      <div className="flex items-center gap-3 text-xs text-ink-faint">
-        <span className="h-px flex-1 bg-line" />
-        또는
-        <span className="h-px flex-1 bg-line" />
-      </div>
-
-      <button
-        type="button"
-        onClick={handleGoogleLogin}
-        disabled={isPending}
-        className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-white px-4 py-3.5 text-sm font-bold text-ink shadow-card transition-colors hover:bg-surface-sunken disabled:opacity-60"
-      >
-        <span className="text-base font-black text-brand-600">G</span>
-        Google로 간편 시작하기
-      </button>
-      <p className="text-center text-[11px] text-ink-faint">구글 로그인은 탐색 전용이며, 채팅·지점등록 등은 일반 회원가입이 필요합니다.</p>
     </div>
   );
 }

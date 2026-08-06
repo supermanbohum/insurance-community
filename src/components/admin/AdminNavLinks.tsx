@@ -36,7 +36,7 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/ga', label: 'GA 관리', icon: Building2, badgeKey: 'ga' },
   { href: '/admin/branches', label: '지점 관리', icon: MapPin },
   { href: '/admin/change-requests', label: '변경 요청', icon: ClipboardCheck, badgeKey: 'branchCreate' },
-  { href: '/admin/planners', label: '고소득 설계사', icon: Award },
+  { href: '/admin/planners', label: '고소득 설계사 (Legacy)', icon: Award },
   { href: '/admin/planner-market', label: '설계사 마켓', icon: Users2, badgeKey: 'planner' },
   { href: '/admin/planner-market/credits', label: '열람권 관리', icon: Ticket },
   { href: '/admin/ad-products', label: '광고 관리', icon: Megaphone },

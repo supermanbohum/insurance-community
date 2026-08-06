@@ -14,7 +14,7 @@ import { HeroCtaButton } from '@/components/home/HeroCtaButton';
  * 이동, BohomMapHeader.tsx 참고) - TOP설계사 기능 자체(DB/API/관리자)는 그대로
  * 유지되며 이 설계사 등록(리크루팅) 시스템과는 절대 혼용하지 않는다.
  */
-export function HomeRegisterHero({ stats, ctaLabel = '지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
+export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

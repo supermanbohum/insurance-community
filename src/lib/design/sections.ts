@@ -31,7 +31,7 @@ export const HOME_SECTIONS: SectionDef[] = [
   {
     key: 'hero',
     label: '등록 CTA + 통계',
-    textFields: [{ key: 'ctaLabel', label: 'CTA 버튼 문구', default: '지점 등록하기' }],
+    textFields: [{ key: 'ctaLabel', label: 'CTA 버튼 문구', default: '우리 지점 등록하기' }],
   },
   { key: 'quickMenu', label: '빠른 메뉴 (내 주변/지도/지역별/회사별)' },
   { key: 'popularGa', label: '인기 GA' },
