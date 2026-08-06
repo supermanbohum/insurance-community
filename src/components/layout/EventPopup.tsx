@@ -4,16 +4,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import type { EventPopupRow } from '@/lib/admin/event-popup';
-import { cn } from '@/lib/utils';
 
 const SHOW_DELAY_MS = 700;
-const DAY_MS = 24 * 60 * 60 * 1000;
 const FOREVER = 'forever';
 
-type SnoozeChoice = 'none' | 'today' | 'week' | 'forever';
-
 /** 팝업 인스턴스(=DB 행 id)별로 키를 분리한다 - 관리자가 새 이벤트로 내용을 바꾸면
- * id가 바뀌므로, 이전 이벤트를 "다시 보지 않기"로 닫았던 사람에게도 새 이벤트는 다시 뜬다. */
+ * id가 바뀌므로, 이전 이벤트를 "다시 보지 않기"로 닫았던 사람에게도 새 이벤트는 다시 뜬다.
+ * "다시 보지 않기"/스누즈 체크박스 UI는 제거했지만, 과거에 이미 그 선택을 저장한
+ * 사용자의 localStorage 값은 계속 존중한다(isCurrentlyHidden이 그대로 읽음) - 새
+ * 선택지는 없고 닫기(X)를 누르면 항상 이번 세션에서만 숨긴다. */
 function storageKeys(id: string) {
   return {
     session: `bohummap-event-popup-${id}-hidden`,
@@ -43,7 +42,6 @@ function isCurrentlyHidden(id: string): boolean {
 export function EventPopup({ config }: { config: EventPopupRow | null }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [snoozeChoice, setSnoozeChoice] = useState<SnoozeChoice>('none');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -57,19 +55,11 @@ export function EventPopup({ config }: { config: EventPopupRow | null }) {
     if (!config) return;
     const keys = storageKeys(config.id);
     try {
-      if (snoozeChoice === 'forever') {
-        localStorage.setItem(keys.snooze, FOREVER);
-      } else if (snoozeChoice === 'week') {
-        localStorage.setItem(keys.snooze, String(Date.now() + 7 * DAY_MS));
-      } else if (snoozeChoice === 'today') {
-        localStorage.setItem(keys.snooze, String(Date.now() + DAY_MS));
-      } else {
-        sessionStorage.setItem(keys.session, '1');
-      }
+      sessionStorage.setItem(keys.session, '1');
     } catch {
       // storage 접근 실패는 무시 - 다음 방문에 다시 뜨는 정도의 영향만 있다.
     }
-  }, [config, snoozeChoice]);
+  }, [config]);
 
   const close = useCallback(() => {
     persistDismissal();
@@ -222,7 +212,7 @@ export function EventPopup({ config }: { config: EventPopupRow | null }) {
 
         {footnote && <p className="px-8 pb-5 pt-4 text-center text-[11px] leading-relaxed text-ink-faint">{footnote}</p>}
 
-        <div className="px-6 pb-4">
+        <div className="px-6 pb-7">
           <button
             type="button"
             onClick={handleCta}
@@ -231,34 +221,7 @@ export function EventPopup({ config }: { config: EventPopupRow | null }) {
             {ctaLabel}
           </button>
         </div>
-
-        <div className="flex items-center justify-center gap-4 px-6 pb-6 pt-1 text-[11px] text-ink-faint">
-          <SnoozeCheckbox label="오늘 하루 보지 않기" active={snoozeChoice === 'today'} onToggle={(v) => setSnoozeChoice(v ? 'today' : 'none')} />
-          <SnoozeCheckbox label="7일간 보지 않기" active={snoozeChoice === 'week'} onToggle={(v) => setSnoozeChoice(v ? 'week' : 'none')} />
-          <SnoozeCheckbox label="다시 보지 않기" active={snoozeChoice === 'forever'} onToggle={(v) => setSnoozeChoice(v ? 'forever' : 'none')} />
-        </div>
       </div>
     </div>
-  );
-}
-
-function SnoozeCheckbox({ label, active, onToggle }: { label: string; active: boolean; onToggle: (checked: boolean) => void }) {
-  return (
-    <label className="flex cursor-pointer items-center gap-1.5 select-none">
-      <span
-        className={cn(
-          'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-colors',
-          active ? 'border-ink bg-ink' : 'border-line bg-white'
-        )}
-      >
-        {active && (
-          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none">
-            <path d="M2.5 6.2 5 8.7 9.5 3.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </span>
-      <input type="checkbox" checked={active} onChange={(e) => onToggle(e.target.checked)} className="sr-only" />
-      {label}
-    </label>
   );
 }
