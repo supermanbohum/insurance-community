@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { BadgeCheck, Eye, Megaphone, MessageCircle, MapPinned } from 'lucide-react';
+import { BadgeCheck, Eye, Megaphone, MapPinned } from 'lucide-react';
 import { getPublicBranchDetail } from '@/lib/public/branch';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { SITE_CONFIG } from '@/lib/config/site';
@@ -10,14 +10,16 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: '우리 지점 무료 등록 — 6개월 무료, 선착순 100개',
-  description: '보험맵에 지점을 등록하면 지점 상세 페이지, 조회수, 문의, 채용공고까지 한 번에 노출됩니다. 지금 신청하면 6개월 무료(선착순 100개).',
+  description: '보험맵에 지점을 등록하면 지점 상세 페이지, 조회수, 채용공고까지 한 번에 노출됩니다. 지금 신청하면 6개월 무료(선착순 100개).',
   alternates: { canonical: '/register' },
 };
 
+// W-059(비로그인 문의 폼)가 배포되기 전까지는 "문의 수신" 혜택을 넣지 않는다 - 아직
+// 없는 기능을 약속하면 등록한 지점장이 문의를 기다리다 아무것도 못 받는 첫인상을
+// 남긴다(CTO 검수 지적). W-059가 나가면 이 배열에 다시 추가한다.
 const BENEFITS = [
   { icon: MapPinned, label: '전용 지점 상세 페이지', desc: '지도·연락처·채용정보가 담긴 소개 페이지가 생깁니다' },
   { icon: Eye, label: '조회수 집계', desc: '설계사님들이 지점을 얼마나 찾아봤는지 그대로 보여드립니다' },
-  { icon: MessageCircle, label: '문의 수신', desc: '관심 있는 설계사님의 문의를 지점에서 직접 받습니다' },
   { icon: Megaphone, label: '채용공고 등록', desc: '지점 페이지에 채용공고를 무료로 올릴 수 있습니다' },
 ];
 
@@ -60,16 +62,18 @@ export default async function RegisterIntroPage() {
           <p className="text-sm leading-relaxed text-ink-soft">
             보험맵은 전국 GA 지점 정보를 모으는 플랫폼입니다.
             <br />
-            지금 등록하면 정착지원금 없이도 곧바로 노출을 시작할 수 있어요.
+            지금 등록하면 정착지원금 없이도 노출을 시작할 수 있어요.
           </p>
         </section>
 
-        <section className="grid grid-cols-2 gap-3">
+        <section className="flex flex-col gap-3">
           {BENEFITS.map(({ icon: Icon, label, desc }) => (
-            <div key={label} className="flex flex-col gap-1.5 rounded-2xl border border-line bg-white p-4 shadow-card">
-              <Icon className="h-5 w-5 text-brand-500" />
-              <p className="text-sm font-bold text-ink">{label}</p>
-              <p className="text-xs leading-relaxed text-ink-faint">{desc}</p>
+            <div key={label} className="flex items-start gap-3 rounded-2xl border border-line bg-white p-4 shadow-card">
+              <Icon className="h-5 w-5 shrink-0 text-brand-500" />
+              <div>
+                <p className="text-sm font-bold text-ink">{label}</p>
+                <p className="text-xs leading-relaxed text-ink-faint">{desc}</p>
+              </div>
             </div>
           ))}
         </section>
@@ -91,9 +95,6 @@ export default async function RegisterIntroPage() {
                 <p className="text-base font-bold text-ink">{branch.name}</p>
                 <p className="text-xs text-ink-faint">
                   {branch.sidoName} {branch.sigunguName}
-                </p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-ink-faint">
-                  <Eye className="h-3.5 w-3.5" /> 조회 {branch.viewCount}
                 </p>
               </div>
             </div>
