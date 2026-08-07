@@ -7,8 +7,8 @@ import { BrandMark } from '@/components/brand/BrandMark';
 // "왜 로그인해야 하는지" 이탈 없이 이해시킬 수 있다. 접두사가 가장 구체적인(긴) 것부터
 // 매칭되도록 순서를 유지한다.
 const NEXT_COPY: { prefix: string; message: string }[] = [
-  { prefix: '/partner/register', message: '지점을 등록하려면 로그인이 필요합니다.' },
-  { prefix: '/planner-market/register', message: '설계사 등록을 위해 로그인이 필요합니다.' },
+  { prefix: '/partner/register', message: '지점 등록을 계속하려면 로그인해 주세요.' },
+  { prefix: '/planner-market/register', message: '프로필 등록을 계속하려면 로그인해 주세요.' },
   { prefix: '/planner-market', message: '설계사마켓 이용을 위해 로그인이 필요합니다.' },
   { prefix: '/top-designer', message: 'TOP 설계사 인증 신청을 위해 로그인이 필요합니다.' },
   { prefix: '/salary-ranking', message: '연봉 랭킹 등록을 위해 로그인이 필요합니다.' },

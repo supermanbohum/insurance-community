@@ -120,8 +120,20 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
     );
   }
 
+  // W-067 - /planner-register가 "이직 생각, 아무도 모르게"를 약속하는데 이 폼에서
+  // 실명·연락처를 요구하면 그 약속이 방금 읽고 온 사람 눈에 의심스러워 보인다. next로
+  // 이 경로에서 왔을 때만 사실을 한 줄 짚어준다(공개되지 않는다는 건 실제로 사실 -
+  // public_planner_profiles 뷰에 name/phone 컬럼 자체가 없다, W-064 v2로 사진도 동일).
+  const isPlannerFunnel = next.startsWith('/planner-market/register');
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-5 shadow-card">
+      {isPlannerFunnel && (
+        <p className="rounded-xl bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700">
+          입력하신 정보는 프로필에 공개되지 않습니다.
+        </p>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="su-username">아이디</Label>
         <Input id="su-username" value={username} onChange={(e) => setUsername(e.target.value)} minLength={3} required />
