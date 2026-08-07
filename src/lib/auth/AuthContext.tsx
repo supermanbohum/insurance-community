@@ -4,6 +4,15 @@ import { createContext, useCallback, useContext, useEffect, useState, useTransit
 import { createClient } from '@/lib/supabase/client';
 import type { UserSession } from './types';
 
+type OAuthProvider = 'kakao';
+
+const APP_OAUTH_RETURN_URL = 'boheommap://auth-callback';
+
+/** react-native-webview가 페이지에 주입하는 전역 - 앱(APK) 내부 WebView에서 열렸는지 판별. */
+function isInsideAppWebView(): boolean {
+  return typeof window !== 'undefined' && Boolean((window as unknown as { ReactNativeWebView?: unknown }).ReactNativeWebView);
+}
+
 /** Error 인스턴스는 JSON.stringify하면 {}가 되므로 own property를 직접 뽑아 안전하게 직렬화한다. */
 function safeStringify(value: unknown): string {
   if (value === null || value === undefined) return String(value);
@@ -51,6 +60,9 @@ interface AuthContextValue {
   user: UserSession | null;
   /** 로그인 요청이 진행 중인지 (버튼 로딩 상태 표시용). */
   isPending: boolean;
+  /** 카카오 소셜 로그인(W-033) - 성공 시 카카오 로그인 화면으로 리다이렉트되므로 이
+   * Promise는 보통 resolve되지 않는다(페이지 이탈). */
+  login: (provider: OAuthProvider, next?: string) => Promise<{ success: boolean; error?: string }>;
   /** 일반 회원가입 - 이메일 인증 전이라 세션이 없을 수 있다. 성공해도 로그인 상태가
    * 되는 게 아니라 "이메일을 확인해주세요" 안내로 이어진다. */
   signUpWithEmail: (input: SignUpInput) => Promise<{ success: boolean; error?: string }>;
@@ -74,6 +86,28 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
   useEffect(() => {
     setUser(initialUser);
   }, [initialUser]);
+
+  const login = useCallback((provider: OAuthProvider, next?: string) => {
+    return new Promise<{ success: boolean; error?: string }>((resolve) => {
+      startTransition(async () => {
+        const supabase = createClient();
+        // 앱(APK) WebView 안에서는 https 콜백으로 보내면 카카오 로그인이 외부 브라우저에서
+        // 끝나고 앱으로 돌아오지 못한다. 커스텀 스킴으로 보내면 네이티브 쪽(App.tsx)이 그
+        // 리다이렉트를 가로채 WebBrowser.openAuthSessionAsync로 처리한 뒤 앱 내부로 결과를
+        // 되돌려준다.
+        const nextParam = next ? `?next=${encodeURIComponent(next)}` : '';
+        const redirectTo = isInsideAppWebView() ? APP_OAUTH_RETURN_URL : `${window.location.origin}/auth/callback${nextParam}`;
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo },
+        });
+        if (error) {
+          resolve({ success: false, error: error.message });
+        }
+        // 성공 시 즉시 provider 로그인 화면으로 리다이렉트되므로 이 Promise는 resolve되지 않는다.
+      });
+    });
+  }, []);
 
   const signUpWithEmail = useCallback((input: SignUpInput) => {
     return new Promise<{ success: boolean; error?: string }>((resolve) => {
@@ -172,7 +206,7 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, isPending, signUpWithEmail, loginWithEmail, resendVerificationEmail }}>
+    <UserContext.Provider value={{ user, isPending, login, signUpWithEmail, loginWithEmail, resendVerificationEmail }}>
       {children}
     </UserContext.Provider>
   );

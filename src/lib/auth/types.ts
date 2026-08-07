@@ -10,9 +10,10 @@ export interface UserSession {
   username: string | null;
   contact: string | null;
   gaCompanyId: string | null;
-  /** 일반 회원가입 + 이메일 인증까지 완료한 회원인지 - 채팅/지점등록/TOP설계사등록 등
-   * 회원 전용 기능의 접근 기준이다. 구글 로그인 회원은 항상 false(DB의 is_full_member()와
-   * 동일한 조건을 여기서도 유지한다 - 한쪽만 바뀌지 않도록 주의). */
+  /** 정회원 여부 - 채팅/지점등록/TOP설계사등록 등 회원 전용 기능의 접근 기준이다(W-033).
+   * 이메일 인증 완료 회원, 또는 카카오 로그인 + 카카오가 검증한 연락처 보유 회원이 정회원이다.
+   * 구글 로그인 회원은 항상 false(탐색 전용 유지). DB의 is_full_member()(0061)와 동일한
+   * 조건을 여기서도 유지한다 - 한쪽만 바뀌지 않도록 주의. */
   isFullMember: boolean;
 }
 

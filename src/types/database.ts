@@ -669,6 +669,7 @@ export interface Database {
           contact: string | null;
           ga_company_id: string | null;
           email_verified_at: string | null;
+          kakao_verified_contact: string | null;
           created_at: string;
           updated_at: string;
         };

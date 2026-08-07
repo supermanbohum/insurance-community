@@ -58,6 +58,9 @@ export async function GET(request: NextRequest) {
         nickname,
         profile_image: profileImage,
         provider,
+        // 카카오는 정회원으로 인정한다(W-033, 0061) - 카카오가 이미 검증해 넘긴 연락처를
+        // 그대로 저장한다(우리 쪽 별도 인증 절차 없음). 구글은 여전히 탐색 전용이라 null 유지.
+        kakao_verified_contact: provider === 'kakao' ? authUser.email ?? meta.phone_number ?? null : null,
       });
     }
   }
