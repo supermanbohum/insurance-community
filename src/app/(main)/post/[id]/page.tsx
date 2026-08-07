@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
+import { BadgeCheck } from 'lucide-react';
 import { getPostDetail } from '@/lib/posts/query';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { DeletePostButton } from '@/components/post/DeletePostButton';
@@ -83,7 +84,13 @@ export default async function PostDetailPage({ params }: { params: { id: string 
         <h1 className="mt-1 break-words text-lg font-extrabold leading-snug text-ink">{post.title}</h1>
 
         <div className="mt-2 flex flex-wrap items-center gap-2 border-b border-line pb-3 text-xs text-ink-faint">
-          <span className="max-w-[10rem] truncate font-medium text-ink-soft">{post.author_display_name}</span>
+          {post.author_name_type === 'admin' ? (
+            <span className="flex max-w-[10rem] items-center gap-0.5 truncate font-bold text-brand-600">
+              <BadgeCheck className="h-3.5 w-3.5 shrink-0" /> {post.author_display_name}
+            </span>
+          ) : (
+            <span className="max-w-[10rem] truncate font-medium text-ink-soft">{post.author_display_name}</span>
+          )}
           <span>{format(new Date(post.created_at), 'yyyy.MM.dd HH:mm')}</span>
           <span>조회 {viewCount}</span>
           <span>추천 {upvoteCount}</span>
@@ -92,6 +99,23 @@ export default async function PostDetailPage({ params }: { params: { id: string 
         <div className="whitespace-pre-wrap break-words py-4 text-[15px] leading-7 text-ink-soft">
           {post.content}
         </div>
+
+        {post.author_name_type === 'admin' && post.source_url && (
+          <a
+            href={post.source_url}
+            target="_blank"
+            rel="noreferrer"
+            className="mb-2 block truncate text-xs font-medium text-brand-600 hover:underline"
+          >
+            출처: {post.source_url}
+          </a>
+        )}
+
+        {post.author_name_type === 'admin' && (
+          <p className="mb-2 rounded-xl bg-surface-sunken px-3.5 py-3 text-xs leading-relaxed text-ink-faint">
+            이 글은 보험맵 운영팀이 작성했습니다. 보험맵은 보험상품을 판매·중개하지 않습니다.
+          </p>
+        )}
 
         {imageUrls.length > 0 && (
           <div className="space-y-3 pb-2">

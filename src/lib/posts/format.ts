@@ -19,6 +19,7 @@ export function toPublicPostSummary(post: PostListRow): PublicPostSummary {
     categoryName: post.categories?.name ?? '',
     title: post.title,
     authorDisplayName: post.author_display_name,
+    authorNameType: post.author_name_type,
     viewCount: post.organic_view_count + post.imported_view_count + post.correction_view_count,
     upvoteCount: post.organic_upvote_count + post.imported_upvote_count + post.correction_upvote_count,
     downvoteCount:

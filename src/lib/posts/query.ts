@@ -13,7 +13,7 @@ const LIST_SELECT = `
   is_notice, is_pinned, created_at, category_id, author_id, author_admin_id, content,
   author_name_type, auto_best_score, best_rank_override, editor_pick_rank, editor_pick_reason,
   editor_pick_start_at, editor_pick_end_at, pinned_rank, status, is_seo_indexable, report_count,
-  updated_at, deleted_at,
+  updated_at, deleted_at, source_url,
   categories ( slug, name ),
   post_images ( id )
 `;

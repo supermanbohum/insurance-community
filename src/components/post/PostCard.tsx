@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import clsx from 'clsx';
 import { format } from 'date-fns';
-import { ImageIcon, MessageCircle, Pin, Sparkles, Megaphone } from 'lucide-react';
+import { ImageIcon, MessageCircle, Pin, Sparkles, Megaphone, BadgeCheck } from 'lucide-react';
 import type { PublicPostSummary } from '@/types/database';
 
 export function PostCard({ post }: { post: PublicPostSummary }) {
@@ -47,7 +47,13 @@ export function PostCard({ post }: { post: PublicPostSummary }) {
       </h3>
 
       <div className="flex items-center gap-2 text-[11px] text-ink-faint">
-        <span className="font-medium text-ink-soft">{post.authorDisplayName}</span>
+        {post.authorNameType === 'admin' ? (
+          <span className="flex items-center gap-0.5 font-bold text-brand-600">
+            <BadgeCheck className="h-3 w-3" /> {post.authorDisplayName}
+          </span>
+        ) : (
+          <span className="font-medium text-ink-soft">{post.authorDisplayName}</span>
+        )}
         <span>{format(new Date(post.createdAt), 'MM.dd HH:mm')}</span>
         <span>조회 {post.viewCount}</span>
         <span>추천 {post.upvoteCount}</span>

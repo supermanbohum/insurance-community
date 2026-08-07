@@ -162,6 +162,7 @@ export interface Database {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          source_url: string | null;
         };
         Insert: Partial<Database['public']['Tables']['posts']['Row']>;
         Update: Partial<Database['public']['Tables']['posts']['Row']>;
@@ -2164,6 +2165,10 @@ export interface Database {
         Args: Record<string, never>;
         Returns: { real_count: number; adjustment: number; display_count: number }[];
       };
+      admin_create_post: {
+        Args: { p_category_id: string; p_title: string; p_content: string; p_source_url?: string | null };
+        Returns: string;
+      };
       admin_set_post_status: {
         Args: { p_post_id: string; p_status: string; p_reason?: string | null };
         Returns: void;
@@ -2226,6 +2231,8 @@ export interface PublicPostSummary {
   categoryName: string;
   title: string;
   authorDisplayName: string;
+  /** 'admin'이면 운영팀 공식 게시물(W-027) - 목록/상세에서 공식 배지로 구분해 보여준다. */
+  authorNameType: string;
   viewCount: number;
   upvoteCount: number;
   downvoteCount: number;

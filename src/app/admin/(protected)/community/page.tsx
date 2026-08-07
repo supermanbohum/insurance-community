@@ -19,9 +19,17 @@ export default async function AdminCommunityPostsPage({ searchParams }: { search
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">커뮤니티 관리</h1>
-        <p className="text-sm text-muted-foreground">게시글 상태/공지/베스트를 관리하고 작성자를 차단합니다.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">커뮤니티 관리</h1>
+          <p className="text-sm text-muted-foreground">게시글 상태/공지/베스트를 관리하고 작성자를 차단합니다.</p>
+        </div>
+        <Link
+          href="/admin/community/new"
+          className="shrink-0 rounded-md bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          운영팀 글 발행
+        </Link>
       </div>
 
       <CommunityAdminTabs active="posts" />
