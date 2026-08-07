@@ -71,7 +71,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <HeroCtaButton
-          href="/partner/register"
+          href="/register"
           label={ctaLabel}
           icon={<Plus className="h-6 w-6" strokeWidth={2.5} />}
           gradientClassName="from-brand-500 via-brand-600 to-brand-800"
@@ -110,7 +110,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           </div>
         ) : (
           <ReplacementCard
-            href="/partner/register"
+            href="/register"
             longLines={[
               '지점장님의 지역은 아직 비어 있습니다',
               // "6개월 무료(선착순 100개)"는 진행 중인 실제 이벤트(event_popups, 상시 노출)에

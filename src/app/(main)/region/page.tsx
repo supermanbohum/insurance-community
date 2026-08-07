@@ -40,7 +40,7 @@ export default async function RegionListPage() {
             // 바로 등록 CTA로 전환한다 - 목적지가 비어 있는 링크는 사용자에게 막다른 길이다.
             <Link
               key={sido.sidoCode}
-              href="/partner/register"
+              href="/register"
               className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-brand-200 bg-brand-50/40 py-4 text-center text-sm text-ink-soft hover:bg-brand-50"
             >
               <MapPin className="h-4 w-4 text-brand-400" />
