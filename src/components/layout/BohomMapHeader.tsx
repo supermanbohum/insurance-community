@@ -36,9 +36,12 @@ const MENU_GROUPS = [
     label: '자주 찾는 메뉴',
     items: [
       { href: '/region', label: '지역별', icon: MapPin, tile: 'bg-blue-50 text-blue-600' },
-      { href: '/ga', label: 'GA별', icon: Building2, tile: 'bg-indigo-50 text-indigo-600' },
-      { href: '/ga', label: '인기 GA', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
-      { href: '/ga', label: '신규 GA', icon: Sparkles, tile: 'bg-amber-50 text-amber-600' },
+      // 세 항목이 전부 /ga(→/search 리다이렉트)로 가서 동일한 화면이었다(W-041) - 홈
+      // 캐러셀이 이미 쓰는 정렬 파라미터(/search?sort=views·newest)에 맞춰 실제로
+      // 다른 결과를 보여주도록 분리한다.
+      { href: '/search', label: 'GA별', icon: Building2, tile: 'bg-indigo-50 text-indigo-600' },
+      { href: '/search?sort=views', label: '인기 GA', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
+      { href: '/search?sort=newest', label: '신규 GA', icon: Sparkles, tile: 'bg-amber-50 text-amber-600' },
       // PC(lg 이상)에서는 우측에 채팅 패널이 항상 떠 있어 이 메뉴 항목이 중복이라 숨긴다.
       { href: '/chat', label: '실시간 채팅', icon: MessageCircle, tile: 'bg-brand-50 text-brand-600', hideOnDesktop: true },
     ],

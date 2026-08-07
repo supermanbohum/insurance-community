@@ -18,7 +18,7 @@ export const AD_PRODUCT_CATALOG: AdProductCatalogItem[] = [
   { type: 'main_banner', label: '메인 배너', description: '홈 화면 상단 배너에 노출됩니다.', priceKrw: 300000, isLive: false },
   { type: 'region_top_pin', label: '지역 상단 고정', description: '선택 지역 검색 결과 최상단에 고정됩니다.', priceKrw: 150000, isLive: false },
   { type: 'search_top', label: '검색결과 상단', description: '전체 검색 결과 상단에 노출됩니다.', priceKrw: 150000, isLive: false },
-  { type: 'new_open_badge', label: '신규 오픈 배지', description: '지점 카드에 신규 오픈 배지가 표시됩니다.', priceKrw: 50000, isLive: false },
+  { type: 'new_open_badge', label: '신규 오픈 배지', description: '지점 카드에 신규 오픈 배지가 표시됩니다.', priceKrw: 50000, isLive: true },
   { type: 'top_exposure', label: 'TOP 노출', description: '카테고리 내 최상위 노출 슬롯입니다.', priceKrw: 200000, isLive: false },
   { type: 'event_banner', label: '이벤트 배너', description: '이벤트/프로모션 전용 배너에 노출됩니다.', priceKrw: 100000, isLive: false },
 ];

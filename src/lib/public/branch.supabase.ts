@@ -558,6 +558,11 @@ export async function recordBranchContactClick(contactId: string): Promise<void>
 export interface HomeStats {
   branchCount: number;
   plannerTotal: number;
+  /** 승인된 GA 법인 수 - 큐레이션된 마스터 데이터라 지점/설계사 시드 정리 같은 이벤트와
+   * 무관하게 유지된다. 홈 화면 통계 라벨(W-031)이 지점/설계사 수 대신 이 값을 우선
+   * 노출하는 이유: 저 두 값은 시드 정리 직후처럼 실데이터가 적을 때 "1개/0명" 같은
+   * 초라한 숫자로 첫인상을 해칠 수 있지만, GA 법인 수는 그런 변동에 흔들리지 않는다. */
+  gaCount: number;
   todayCount: number;
   todayVisitorCount: number;
 }
@@ -586,6 +591,7 @@ export async function getHomeStats(): Promise<HomeStats> {
   return {
     branchCount: core?.approved_branch_count ?? 0,
     plannerTotal: core?.registered_planner_count ?? 0,
+    gaCount: core?.approved_ga_count ?? 0,
     todayCount: (core?.today_new_ga_count ?? 0) + (core?.today_new_branch_count ?? 0) + (core?.today_new_planner_count ?? 0),
     todayVisitorCount: traffic?.visitor_count ?? 0,
   };

@@ -51,13 +51,11 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
         </Link>
       </div>
 
+      {/* 지점/설계사 수 대신 GA 법인 수를 노출한다(W-031) - 큐레이션된 마스터 데이터라
+          시드 정리 같은 이벤트로 "1개/0명"처럼 초라해지지 않는 안정적인 지표다. */}
       <div className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3 sm:flex sm:items-center sm:justify-between">
         <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-          📍 등록 지점 <span className="text-brand-600"><StatCountUp value={stats.branchCount} /></span>개
-        </span>
-        <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
-        <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-          👨‍💼 등록 설계사 <span className="text-brand-600"><StatCountUp value={stats.plannerTotal} /></span>명
+          🏢 전국 GA 법인 <span className="text-brand-600"><StatCountUp value={stats.gaCount} /></span>개
         </span>
         <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
         <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
