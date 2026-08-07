@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requirePartner } from '@/lib/partner/session';
 import { getPaymentProvider } from '@/lib/payments/provider';
 import { AD_PRODUCT_CATALOG } from '@/lib/ad-products/catalog';
+import { PAYMENTS_LIVE } from '@/lib/config/payments';
 import type { AdProductType } from '@/types/database';
 
 export type ActionResult = { success: true } | { success: false; error: string };
@@ -18,6 +19,10 @@ export async function purchaseBranchAdProductAction(
   endAt: string,
   paymentMethod: 'card' | 'bank_transfer' | 'naver_pay' | 'kakao_pay' | 'google_pay'
 ): Promise<ActionResult> {
+  if (!PAYMENTS_LIVE) {
+    return { success: false, error: '현재 광고 상품 구매는 열려있지 않습니다.' };
+  }
+
   const catalogItem = AD_PRODUCT_CATALOG.find((item) => item.type === productType);
   if (!catalogItem) {
     return { success: false, error: '알 수 없는 광고 상품입니다.' };

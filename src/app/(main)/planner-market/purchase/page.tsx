@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { CreditTierCard, type CreditTier } from '@/components/planner-market/CreditTierCard';
 import { CreditPurchaseHistoryTable } from '@/components/planner-market/CreditPurchaseHistoryTable';
 import { BackButton } from '@/components/shared/BackButton';
+import { PAYMENTS_LIVE } from '@/lib/config/payments';
 
 const TIERS: CreditTier[] = [
   { tierCode: 'credits_10', creditCount: 10, amountKrw: 330000, unitPriceKrw: 33000 },
@@ -44,11 +45,15 @@ export default async function PlannerMarketPurchasePage() {
         <p className="text-3xl font-extrabold text-brand-800">[ {(balance ?? 0).toLocaleString()}건 ]</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {TIERS.map((tier) => (
-          <CreditTierCard key={tier.tierCode} tier={tier} />
-        ))}
-      </div>
+      {PAYMENTS_LIVE ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {TIERS.map((tier) => (
+            <CreditTierCard key={tier.tierCode} tier={tier} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">현재 열람권 구매는 열려있지 않습니다. 문의는 고객센터로 연락해주세요.</p>
+      )}
 
       <div>
         <h2 className="mb-2 text-sm font-bold">구매내역</h2>

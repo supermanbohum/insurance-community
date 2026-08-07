@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePartner } from '@/lib/partner/session';
 import { getPaymentProvider } from '@/lib/payments/provider';
+import { PAYMENTS_LIVE } from '@/lib/config/payments';
 import type { CreditPurchaseTierCode } from '@/types/database';
 
 const PLANNER_PHOTO_BUCKET = 'planner-market-profile-photos';
@@ -27,6 +28,10 @@ export async function purchasePlannerMarketCreditsAction(
   tierCode: CreditPurchaseTierCode,
   paymentMethod: 'card' | 'bank_transfer' | 'naver_pay' | 'kakao_pay' | 'google_pay'
 ): Promise<ActionResult> {
+  if (!PAYMENTS_LIVE) {
+    return { success: false, error: '현재 열람권 구매는 열려있지 않습니다.' };
+  }
+
   await requirePartner();
 
   const charge = await getPaymentProvider().chargeOnce({
