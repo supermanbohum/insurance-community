@@ -22,8 +22,9 @@ import { getActiveEventPopup } from '@/lib/admin/event-popup';
  * PC(lg 이상)에서는 우측에 채팅 패널이 항상 고정 노출된다 - 이 레이아웃이 (main) 그룹의
  * 모든 페이지(홈 포함)를 감싸므로, 페이지 이동 시에도 리마운트되지 않고 그대로 유지된다.
  * 태블릿/모바일(lg 미만)에서는 패널이 숨고 헤더 햄버거 메뉴의 "실시간 채팅" → /chat 페이지로
- * 대체된다. 좌측 광고 배너도 같은 lg 기준으로 노출한다(원래 2xl 초광폭 전용이었으나 테스트가
- * 너무 어려워 PC 일반 화면부터 보이도록 낮췄다 - 반응형 폭 조정은 추후 별도 진행).
+ * 대체된다. 좌측 광고 배너도 같은 lg 기준으로 노출한다. 컨테이너 좌우 패딩도 lg부터 함께
+ * 적용해야 한다 - 패딩이 2xl부터만 붙던 이전 버전에서는 lg~2xl 구간(예: 1280px)에서
+ * 배너/채팅 패널이 화면 가장자리에 여백 없이 붙어 스타일 미적용처럼 보이는 버그가 있었다(W-019).
  */
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const [user, leftBanners, , eventPopup] = await Promise.all([
@@ -43,7 +44,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     <AuthProvider initialUser={user}>
       <BohomMapHeader />
       <EventPopup config={eventPopup} />
-      <div className="mx-auto flex w-full max-w-[1440px] items-start gap-6 2xl:px-6">
+      <div className="mx-auto flex w-full max-w-[1440px] items-start gap-6 lg:px-6">
         <aside className="hidden w-[240px] shrink-0 lg:block">
           <div className="sticky top-[76px]">
             {leftBanner?.pcImageUrl ? (

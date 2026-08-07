@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import type { EventPopupRow } from '@/lib/admin/event-popup';
 import { cn } from '@/lib/utils';
@@ -37,23 +37,41 @@ function isCurrentlyHidden(id: string): boolean {
 }
 
 /**
- * 출시 이벤트 안내 팝업 - Root Layout(src/app/layout.tsx)에서 사이트 전체에 한 번만
- * 렌더링된다. 내용/노출기간/on-off는 코드가 아니라 DB(event_popups, 관리자 화면
+ * 출시 이벤트 안내 팝업 - src/app/(main)/layout.tsx에서 마운트되며, 홈(/)에서만
+ * 노출된다(W-004). 내용/노출기간/on-off는 코드가 아니라 DB(event_popups, 관리자 화면
  * /admin/event-popup에서 편집)에서 오므로, 이 컴포넌트는 서버에서 이미 계산된
  * config만 받아 그린다 - config가 null이면(비활성/기간 밖) 아무것도 렌더링하지 않는다.
  */
 export function EventPopup({ config }: { config: EventPopupRow | null }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [snoozeChoice, setSnoozeChoice] = useState<SnoozeChoice>('none');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // 홈(/)에서만 노출한다(W-004) - 로그인/가입/약관/지점·설계사 등록 폼 등
+  // (main) 그룹의 다른 모든 페이지에서는 뜨지 않아야 하므로, 그 페이지들을
+  // 하나씩 예외 처리하는 대신 "허용 경로는 /뿐"으로 단순화한다.
   useEffect(() => {
+    if (pathname !== '/') {
+      setOpen(false);
+      return;
+    }
     if (!config) return;
     if (isCurrentlyHidden(config.id)) return;
-    const timer = setTimeout(() => setOpen(true), SHOW_DELAY_MS);
+    const timer = setTimeout(() => {
+      setOpen(true);
+      // 세션당 1회만 노출(W-004) - 닫기/CTA 선택과 무관하게 "보여준 시점"에
+      // 세션 플래그를 세워야, 스누즈를 고르지 않고 페이지를 이탈해도 같은
+      // 세션 안에서 홈에 재진입 시 다시 뜨지 않는다.
+      try {
+        sessionStorage.setItem(storageKeys(config.id).session, '1');
+      } catch {
+        // 프라이빗 모드 등 - 무시
+      }
+    }, SHOW_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [config]);
+  }, [config, pathname]);
 
   const persistDismissal = useCallback(() => {
     if (!config) return;
