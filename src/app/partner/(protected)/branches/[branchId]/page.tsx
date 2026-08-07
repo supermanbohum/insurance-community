@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { BarChart3 } from 'lucide-react';
 import { requirePartner } from '@/lib/partner/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
@@ -39,15 +41,23 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-bold">{branch.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {branch.registration_status === 'pending'
-            ? '신규 등록 후 관리자 승인 대기 중입니다.'
-            : branch.registration_status === 'rejected'
-              ? '등록이 반려되었습니다. 정보를 수정해 다시 제출해주세요.'
-              : '공개 중인 지점입니다.'}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold">{branch.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {branch.registration_status === 'pending'
+              ? '신규 등록 후 관리자 승인 대기 중입니다.'
+              : branch.registration_status === 'rejected'
+                ? '등록이 반려되었습니다. 정보를 수정해 다시 제출해주세요.'
+                : '공개 중인 지점입니다.'}
+          </p>
+        </div>
+        <Link
+          href={`/partner/branches/${branch.id}/performance`}
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-soft"
+        >
+          <BarChart3 className="h-3.5 w-3.5" /> 성과 보기
+        </Link>
       </div>
 
       <Card className="border-amber-300 bg-amber-50">
