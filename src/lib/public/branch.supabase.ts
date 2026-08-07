@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { unstable_noStore as noStore } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createPublicSupabaseClient } from '@/lib/supabase/public';
 import type { PublicBranchSummary, GaOperationType, PlannerIncomeTier } from '@/types/database';
@@ -578,6 +579,12 @@ export interface HomeStats {
  * - todayVisitorCount = 오늘 사이트를 방문한 고유 방문자 수
  */
 export async function getHomeStats(): Promise<HomeStats> {
+  // createPublicSupabaseClient()는 다른 ISR 페이지의 캐시를 위해 일부러 cookies()를
+  // 안 건드리는데, 그 부작용으로 supabase-js의 내부 fetch가 Next.js 데이터 캐시에
+  // 걸려 DB가 바뀌어도 재검증 전까지 오래된 값을 계속 반환했다(W-050 후속 - RPC는
+  // 고쳤는데 화면이 계속 이전 캐시값을 보여준 원인). 이 통계만큼은 항상 최신이어야
+  // 하므로 noStore()로 이 호출 범위만 캐시에서 명시적으로 뺀다.
+  noStore();
   const supabase = createPublicSupabaseClient();
 
   const [coreRes, trafficRes] = await Promise.all([

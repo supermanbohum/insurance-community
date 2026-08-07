@@ -14,7 +14,36 @@ import { HeroCtaButton } from '@/components/home/HeroCtaButton';
  * 이동, BohomMapHeader.tsx 참고) - TOP설계사 기능 자체(DB/API/관리자)는 그대로
  * 유지되며 이 설계사 등록(리크루팅) 시스템과는 절대 혼용하지 않는다.
  */
+
+/** 홈 통계 표시 임계값(W-031, SPEC-016 ⑧) - "작은 진짜 숫자도 큰 가짜 숫자만큼
+ * 해롭다"는 디자인팀 판단에 따라, 지표가 이 값 미만이면 아예 노출하지 않는다.
+ * 운영 중 조정할 수 있도록 상수로 분리해뒀다. */
+const STAT_MIN_BRANCH_COUNT = 10;
+const STAT_MIN_PLANNER_COUNT = 30;
+const STAT_MIN_TODAY_COUNT = 1;
+
+/** 생명보험협회·손해보험협회 공시 기준 전국 GA 지점 시장 규모(우리 DB 수치가
+ * 아니다) - 표시 가능한 통계가 2개 미만일 때 쓰는 "오픈 배너"용 문구 재료.
+ * 우리 데이터가 0이든 1,000이든 항상 참인 문장이라 신뢰도 있는 대체 지표다. */
+const MARKET_WIDE_GA_BRANCH_COUNT = 4288;
+
 export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
+  const statChips = [
+    stats.branchCount >= STAT_MIN_BRANCH_COUNT
+      ? { key: 'branch', emoji: '📍', label: '등록 지점', value: stats.branchCount, unit: '개' }
+      : null,
+    stats.plannerTotal >= STAT_MIN_PLANNER_COUNT
+      ? { key: 'planner', emoji: '👨‍💼', label: '등록 설계사', value: stats.plannerTotal, unit: '명' }
+      : null,
+    stats.todayCount >= STAT_MIN_TODAY_COUNT
+      ? { key: 'todayNew', emoji: '🔥', label: '오늘 신규', value: stats.todayCount, unit: '건' }
+      : null,
+    { key: 'visitor', emoji: '👣', label: '오늘 방문자', value: stats.todayVisitorCount, unit: '명' },
+  ].filter((chip): chip is { key: string; emoji: string; label: string; value: number; unit: string } => chip !== null);
+
+  // 표시 가능한 지표가 2개 미만이면 통계 바 대신 "오픈 배너"로 대체한다(SPEC-016 ⑧).
+  const showOpenBanner = statChips.length < 2;
+
   return (
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -51,21 +80,33 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
         </Link>
       </div>
 
-      {/* 지점/설계사 수 대신 GA 법인 수를 노출한다(W-031) - 큐레이션된 마스터 데이터라
-          시드 정리 같은 이벤트로 "1개/0명"처럼 초라해지지 않는 안정적인 지표다. */}
-      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3 sm:flex sm:items-center sm:justify-between">
-        <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-          🏢 전국 GA 법인 <span className="text-brand-600"><StatCountUp value={stats.gaCount} /></span>개
-        </span>
-        <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
-        <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-          🔥 오늘 신규 <span className="text-brand-600"><StatCountUp value={stats.todayCount} /></span>건
-        </span>
-        <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
-        <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-          👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={stats.todayVisitorCount} /></span>명
-        </span>
-      </div>
+      {showOpenBanner ? (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-4 text-center">
+          <p className="text-[13px] font-bold text-ink-soft">
+            전국 <span className="text-brand-600">{MARKET_WIDE_GA_BRANCH_COUNT.toLocaleString()}</span>개 GA의 지점이 지금 등록되고 있습니다
+          </p>
+          <p className="flex items-center gap-1 text-[12px] font-semibold text-ink-faint">
+            👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={stats.todayVisitorCount} /></span>명
+          </p>
+          <Link
+            href="/partner/register"
+            className="mt-1 rounded-full bg-brand-600 px-5 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-700"
+          >
+            {ctaLabel}
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3 sm:flex sm:items-center sm:justify-between">
+          {statChips.map((chip, i) => (
+            <span key={chip.key} className="contents">
+              {i > 0 && <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />}
+              <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
+                {chip.emoji} {chip.label} <span className="text-brand-600"><StatCountUp value={chip.value} /></span>{chip.unit}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
