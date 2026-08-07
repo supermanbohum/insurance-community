@@ -147,10 +147,6 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           </div>
         )}
 
-        <div className="mt-4 rounded-2xl border border-dashed border-line py-6 text-center text-sm text-ink-faint">
-          댓글 기능은 준비 중입니다.
-        </div>
-
         <div className="mt-4 border-t border-line pt-3">
           <Link href={backHref} className="text-sm font-medium text-ink-faint hover:text-brand-600">
             ← 목록으로 돌아가기

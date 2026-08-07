@@ -63,7 +63,7 @@ function ReplacementCard({
 
 export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
   const showBranchNumber = stats.branchCount >= HOME_STAT_THRESHOLDS.branch;
-  const showPlannerNumber = stats.plannerTotal >= HOME_STAT_THRESHOLDS.planner;
+  const showPlannerNumber = stats.publicPlannerProfileCount >= HOME_STAT_THRESHOLDS.planner;
   const showVisitorNumber = stats.todayVisitorCount >= HOME_STAT_THRESHOLDS.visitor;
   const showTodayChip = stats.todayCount >= STAT_MIN_TODAY_COUNT;
 
@@ -125,7 +125,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
 
         {showPlannerNumber ? (
           <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
-            <StatChip emoji="👨‍💼" label="등록 설계사" value={stats.plannerTotal} unit="명" />
+            <StatChip emoji="👨‍💼" label="등록 설계사" value={stats.publicPlannerProfileCount} unit="명" />
           </div>
         ) : (
           <ReplacementCard

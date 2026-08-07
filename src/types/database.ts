@@ -1590,6 +1590,7 @@ export interface Database {
           today_new_branch_count: number;
           today_new_planner_count: number;
           region_count: number;
+          approved_planner_profile_count: number;
         }[];
       };
       record_branch_contact_click: {

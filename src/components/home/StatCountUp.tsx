@@ -1,30 +1,11 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-
-/** 절제된 count-up - ease-out 곡선으로 0.9초 안에 목표값에 도달한다.
- * prefers-reduced-motion이면 애니메이션 없이 바로 목표값을 보여준다. */
-export function StatCountUp({ value, durationMs = 900 }: { value: number; durationMs?: number }) {
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setDisplay(value);
-      return;
-    }
-    let raf: number;
-    let start: number | null = null;
-
-    function step(ts: number) {
-      if (start == null) start = ts;
-      const progress = Math.min(1, (ts - start) / durationMs);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(value * eased));
-      if (progress < 1) raf = requestAnimationFrame(step);
-    }
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [value, durationMs]);
-
-  return <>{display.toLocaleString('ko-KR')}</>;
+/**
+ * W-054 보강 - 예전엔 0에서 시작해 requestAnimationFrame으로 카운트업하는 클라이언트
+ * 컴포넌트였다. 문제는 SSR 결과(크롤러·카카오톡 OG 미리보기가 보는 값)와 헤드리스
+ * 자동화 도구가 항상 애니메이션의 시작 프레임인 "0"만 보고, 실제 값은 하이드레이션
+ * 후 애니메이션이 끝나야만 보였다는 점 - 두 값이 다른 게 아니라 같은 값을 표시하는
+ * 시점이 갈렸을 뿐인데도 "숫자가 다르다"는 혼선을 계속 만들었다. 서버가 계산한 값을
+ * 그대로, 지연 없이 보여주는 게 맞다(단일 소스, 플리커 제거).
+ */
+export function StatCountUp({ value }: { value: number }) {
+  return <>{value.toLocaleString('ko-KR')}</>;
 }

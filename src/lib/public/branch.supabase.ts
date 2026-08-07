@@ -559,6 +559,11 @@ export async function recordBranchContactClick(contactId: string): Promise<void>
 export interface HomeStats {
   branchCount: number;
   plannerTotal: number;
+  /** 홈 카운터 전용(W-054 보강) - plannerTotal은 GA 지점의 자체 신고 예상 인원까지
+   * 합친 넓은 정의라 /planner-market/search가 실제로 보여주는 인원과 어긋난다.
+   * 홈에서 이 숫자를 눌러 이동하는 곳이 검색 페이지이므로, 거기와 같은 좁은 정의
+   * (public_planner_profiles 뷰 기준)를 홈 표시에는 이 필드로 따로 쓴다. */
+  publicPlannerProfileCount: number;
   /** 승인된 GA 법인 수 - 큐레이션된 마스터 데이터라 지점/설계사 시드 정리 같은 이벤트와
    * 무관하게 유지된다. 홈 화면 통계 라벨(W-031)이 지점/설계사 수 대신 이 값을 우선
    * 노출하는 이유: 저 두 값은 시드 정리 직후처럼 실데이터가 적을 때 "1개/0명" 같은
@@ -605,6 +610,7 @@ export async function getHomeStats(): Promise<HomeStats> {
     todayCount: (core?.today_new_ga_count ?? 0) + (core?.today_new_branch_count ?? 0) + (core?.today_new_planner_count ?? 0),
     todayVisitorCount: traffic?.visitor_count ?? 0,
     regionCount: core?.region_count ?? 0,
+    publicPlannerProfileCount: core?.approved_planner_profile_count ?? 0,
   };
 }
 
