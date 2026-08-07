@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowRight, FileText, ScanFace } from 'lucide-react';
+import { ArrowRight, AlertTriangle, FileText, ScanFace } from 'lucide-react';
 import { getChangeRequestDetail } from '@/lib/change-requests';
+import { detectSuperlativeClaims } from '@/lib/moderation/superlative';
 import { ChangeRequestReviewActions } from '@/components/admin/ChangeRequestReviewActions';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -97,26 +98,36 @@ export default async function AdminChangeRequestDetailPage({ params }: { params:
           <CardTitle className="text-base">변경 내용 ({request.fieldChanges.length}건)</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {request.fieldChanges.map((f) => (
-            <div key={f.field} className="rounded-md border p-3">
-              <p className="mb-1.5 text-xs font-semibold text-muted-foreground">{f.label}</p>
-              {f.kind === 'image' ? (
-                <div className="flex flex-wrap items-center gap-3">
-                  <ImageThumb label="기존" value={f.oldValue} />
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <ImageThumb label="변경 후" value={f.newValue} />
-                </div>
-              ) : f.field === '_create' ? (
-                <p className="text-sm font-medium">{f.newValue}</p>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="rounded bg-destructive/10 px-2 py-1 text-destructive line-through">{f.oldValue}</span>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="rounded bg-emerald-100 px-2 py-1 font-medium text-emerald-800">{f.newValue}</span>
-                </div>
-              )}
-            </div>
-          ))}
+          {request.fieldChanges.map((f) => {
+            // W-060 - 승인 심사 화면이 원래 목적지다. 편집 화면(BranchInfoTab)에만
+            // 있으면 파트너가 처음 제출한 문구가 승인되는 그 순간에는 안 걸린다.
+            const superlativeMatches = f.kind !== 'image' ? detectSuperlativeClaims(f.newValue) : [];
+            return (
+              <div key={f.field} className="rounded-md border p-3">
+                <p className="mb-1.5 text-xs font-semibold text-muted-foreground">{f.label}</p>
+                {f.kind === 'image' ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <ImageThumb label="기존" value={f.oldValue} />
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <ImageThumb label="변경 후" value={f.newValue} />
+                  </div>
+                ) : f.field === '_create' ? (
+                  <p className="text-sm font-medium">{f.newValue}</p>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="rounded bg-destructive/10 px-2 py-1 text-destructive line-through">{f.oldValue}</span>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="rounded bg-emerald-100 px-2 py-1 font-medium text-emerald-800">{f.newValue}</span>
+                  </div>
+                )}
+                {superlativeMatches.length > 0 && (
+                  <p className="mt-2 flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-900">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> 최상급 표현 포함: {superlativeMatches.join(', ')} — 표시광고법 검토 필요
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
