@@ -10,7 +10,6 @@ import {
   Building2,
   Flame,
   Sparkles,
-  CalendarDays,
   Users,
   Megaphone,
   ExternalLink,
@@ -43,10 +42,6 @@ const MENU_GROUPS = [
       // PC(lg 이상)에서는 우측에 채팅 패널이 항상 떠 있어 이 메뉴 항목이 중복이라 숨긴다.
       { href: '/chat', label: '실시간 채팅', icon: MessageCircle, tile: 'bg-brand-50 text-brand-600', hideOnDesktop: true },
     ],
-  },
-  {
-    label: '채용 · 이벤트',
-    items: [{ href: '/events', label: '이벤트', icon: CalendarDays, tile: 'bg-violet-50 text-violet-600' }],
   },
   {
     // 설계사 마켓(열람권)/지점 광고 - TOP설계사(아래 "인증" 그룹)와는 완전히 별개 시스템이다.
