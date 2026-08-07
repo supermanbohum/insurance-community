@@ -3,6 +3,7 @@
 import 'server-only';
 import { headers } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { notifyBranchOwnerOfInquiry } from '@/lib/push/branch-inquiry-push';
 
 export interface SubmitBranchInquiryInput {
   branchId: string;
@@ -64,9 +65,8 @@ export async function submitBranchInquiryAction(input: SubmitBranchInquiryInput)
     return { success: false, error: parseErrorCode(error.message) };
   }
 
-  // W-059 - FCM 키 확보 전까지는 여기가 "문의 수신 → 푸시 발송" 인터페이스 자리다.
-  // 실제 발송은 키가 생긴 뒤 이 지점에 붙인다(문의 id만 있으면 충분하다).
-  // await notifyBranchOwnerOfInquiry({ inquiryId: data as string, branchId: input.branchId });
+  // W-040 - FCM 키가 확보되어(오너 등록 완료) 실제 발송이 가능해진 지점.
+  await notifyBranchOwnerOfInquiry(input.branchId);
 
   return { success: true, id: data as string };
 }
