@@ -7,6 +7,10 @@ function regionLabel(region: { sido_name: string; sigungu_name: string | null } 
   return region.sigungu_name ? `${region.sido_name} ${region.sigungu_name}` : region.sido_name;
 }
 
+function getPhotoBaseUrl(): string {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/planner-market-profile-photos`;
+}
+
 export interface PlannerMarketProfileListItem {
   id: string;
   name: string;
@@ -97,6 +101,12 @@ export interface PlannerMarketProfileDetail extends PlannerMarketProfileListItem
   /** 상태 무관 전체 배지 - 관리자의 수동 부여/회수 UI(PlannerBadgeManagementCard)에서 사용. */
   allBadges: { id: string; code: string; label: string; icon: string; status: PlannerBadgeStatus }[];
   reviewReason: string | null;
+  /** W-064 - 관리자는 심사 플래그와 무관하게 항상 실제 사진을 본다(RLS 우회하는 service
+   * role 조회라 photo_flagged로 인한 공개 뷰의 URL 억제가 여기엔 적용되지 않는다 - 판단
+   * 자체를 위해 필요한 동작). */
+  profilePhotoUrl: string | null;
+  photoFlagged: boolean;
+  photoFlagReason: string | null;
   consents: {
     contactPaidView: boolean;
     recruitContact: boolean;
@@ -152,6 +162,9 @@ export async function getPlannerMarketProfileDetail(id: string): Promise<Planner
     badges,
     allBadges: allBadges.map(({ id, code, label, icon, status }) => ({ id, code, label, icon, status })),
     reviewReason: row.review_reason,
+    profilePhotoUrl: row.profile_photo_path ? `${getPhotoBaseUrl()}/${row.profile_photo_path}` : null,
+    photoFlagged: row.photo_flagged,
+    photoFlagReason: row.photo_flag_reason,
     consents: {
       contactPaidView: row.consent_contact_paid_view,
       recruitContact: row.consent_recruit_contact,

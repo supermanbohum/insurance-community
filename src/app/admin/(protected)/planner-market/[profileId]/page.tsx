@@ -5,6 +5,7 @@ import { JOB_SEARCH_STATUS_LABEL, DESIRED_START_TIMING_LABEL, CONTACTABLE_TIME_L
 import { listPlannerBadgeTypes } from '@/lib/admin/planner-badges';
 import { PlannerMarketProfileReviewActions } from '@/components/admin/PlannerMarketProfileReviewActions';
 import { PlannerTrustUpdateReviewActions } from '@/components/admin/PlannerTrustUpdateReviewActions';
+import { PlannerPhotoFlagControl } from '@/components/admin/PlannerPhotoFlagControl';
 import { ArrowRight } from 'lucide-react';
 import { PlannerBadgeManagementCard } from '@/components/admin/PlannerBadgeManagementCard';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +49,20 @@ export default async function AdminPlannerMarketProfileDetailPage({ params }: { 
         </div>
         {canReview && <PlannerMarketProfileReviewActions profileId={detail.id} plannerName={detail.name} />}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">프로필 사진 심사</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PlannerPhotoFlagControl
+            profileId={detail.id}
+            photoUrl={detail.profilePhotoUrl}
+            photoFlagged={detail.photoFlagged}
+            photoFlagReason={detail.photoFlagReason}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

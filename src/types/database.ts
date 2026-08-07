@@ -973,6 +973,8 @@ export interface Database {
           id: string;
           user_id: string;
           profile_photo_path: string | null;
+          photo_flagged: boolean;
+          photo_flag_reason: string | null;
           active_region_id: string;
           career_years: number;
           specialties: string[];
@@ -1673,6 +1675,10 @@ export interface Database {
       };
       mark_branch_inquiry_read: {
         Args: { p_inquiry_id: string };
+        Returns: void;
+      };
+      admin_set_planner_photo_flag: {
+        Args: { p_profile_id: string; p_flagged: boolean; p_reason: string | null };
         Returns: void;
       };
       get_branch_stats: {
