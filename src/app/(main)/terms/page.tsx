@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 
 const EFFECTIVE_DATE = '2026년 7월 29일';
 const PAYMENT_CLAUSES_ADDED_DATE = '2026년 8월 6일';
+const PAYMENT_SUSPENSION_CLAUSE_ADDED_DATE = '2026년 8월 8일';
 
 export default function TermsPage() {
   return (
@@ -164,6 +165,11 @@ export default function TermsPage() {
 
       <LegalSection title="제14조 (유료서비스 이용 및 결제)">
         <p>
+          본 조의 유료서비스 결제 기능은 전자결제대행(PG) 서비스 계약 완료 후 시행되며, 구체적인 시행일은 서비스 내
+          공지사항으로 안내합니다. 시행 전까지 유료서비스는 오픈 이벤트에 따라 무료로 제공되며, 이 기간 동안
+          이용자에게 어떠한 결제도 청구되지 않습니다.
+        </p>
+        <p>
           회사는 서비스 내에서 다음과 같은 유료서비스를 제공하며, 유료서비스의 종류·가격·이용조건은 각 서비스
           화면에서 이용자에게 별도로 고지합니다.
         </p>
@@ -198,9 +204,9 @@ export default function TermsPage() {
       <LegalSection title="제15조 (해지, 결제실패 및 환불)">
         <p className="font-semibold text-[var(--lp-ink)]">① 해지 방법</p>
         <p>
-          정기결제 상품은 파트너센터 내 구독 관리 메뉴 또는 고객센터(카카오톡·이메일)를 통해 언제든지 해지를 신청할
-          수 있습니다. 해지를 신청하면 다음 결제일부터 청구가 중단되며, 이미 결제가 완료된 당월 이용 기간 동안은
-          서비스를 계속 이용할 수 있습니다.
+          정기결제 상품은 고객센터를 통해 언제든지 해지를 신청할 수 있으며, 회사는 해지 신청을 접수한 후 지체 없이
+          처리하고 그 결과를 안내합니다. 해지를 신청하면 다음 결제일부터 청구가 중단되며, 이미 결제가 완료된 당월
+          이용 기간 동안은 서비스를 계속 이용할 수 있습니다.
         </p>
         <p className="font-semibold text-[var(--lp-ink)]">② 결제실패 처리</p>
         <p>
@@ -264,6 +270,10 @@ export default function TermsPage() {
       <LegalSection title="부칙">
         <p>이 약관은 {EFFECTIVE_DATE}부터 적용됩니다.</p>
         <p>제14조·제15조(유료서비스 이용 및 결제, 해지·결제실패·환불)는 {PAYMENT_CLAUSES_ADDED_DATE}에 신설되었습니다.</p>
+        <p>
+          제14조의 결제 시행 유보 문구 및 제15조①의 해지 경로 정정은 {PAYMENT_SUSPENSION_CLAUSE_ADDED_DATE}에
+          반영되었습니다.
+        </p>
       </LegalSection>
     </LegalPageLayout>
   );

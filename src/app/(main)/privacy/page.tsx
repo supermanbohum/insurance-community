@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 const EFFECTIVE_DATE = '2026년 7월 29일';
 const PG_ENTRUSTEE_ADDED_DATE = '2026년 8월 6일';
 const INQUIRY_CLAUSE_ADDED_DATE = '2026년 8월 7일';
+const LOGIN_METHOD_CORRECTED_DATE = '2026년 8월 8일';
 
 export default function PrivacyPage() {
   return (
@@ -29,7 +30,7 @@ export default function PrivacyPage() {
         <LegalTable
           head={['구분', '수집 항목', '수집 방법']}
           rows={[
-            ['일반 회원가입', '이메일, 비밀번호, 닉네임', '홈페이지 회원가입 양식 / 소셜 로그인(구글 등)'],
+            ['일반 회원가입', '이메일, 비밀번호, 닉네임', '홈페이지 회원가입 양식 / 카카오 로그인(제공 예정)'],
             [
               '파트너(GA·지점 관리자) 가입',
               '담당자 성명, 연락처, 이메일, 사업자등록번호, GA·지점 주소',
@@ -207,6 +208,10 @@ export default function PrivacyPage() {
         <p>제5조 위탁업체 표의 결제서비스 제공업체 항목은 {PG_ENTRUSTEE_ADDED_DATE}에 추가되었으며, 결제대행사 계약 체결 후 구체적인 업체명으로 갱신될 예정입니다.</p>
         <p>지점 문의 서비스와 관련된 제1조·제2조·제3조·제4조·제8조의 조항은 {INQUIRY_CLAUSE_ADDED_DATE}에 추가되었습니다.</p>
         <p>제4조의 설계사 정보 열람 서비스 관련 제공 항목(프로필 사진 포함)은 {INQUIRY_CLAUSE_ADDED_DATE}에 추가되었습니다.</p>
+        <p>
+          제1조 표의 일반 회원가입 수집방법 항목은 {LOGIN_METHOD_CORRECTED_DATE}에 실제 제공 중인 가입 수단에 맞게
+          정정되었습니다(구글 로그인 기능 종료 반영, 카카오 로그인은 제공 예정으로 표기).
+        </p>
       </LegalSection>
     </LegalPageLayout>
   );

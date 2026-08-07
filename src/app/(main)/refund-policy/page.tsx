@@ -29,6 +29,10 @@ export default function RefundPolicyPage() {
           </Link>{' '}
           제14조·제15조와 함께 적용됩니다.
         </p>
+        <p>
+          본 환불정책은 결제 기능 시행일(PG 계약 완료 후 공지)부터 적용됩니다. 현재 오픈 이벤트 기간에는 모든
+          유료서비스가 무료로 제공되어 결제 및 환불이 발생하지 않습니다.
+        </p>
       </LegalSection>
 
       <LegalSection title="1. 청약철회권">
