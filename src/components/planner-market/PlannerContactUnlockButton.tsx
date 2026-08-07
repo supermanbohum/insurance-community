@@ -3,11 +3,11 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Lock, Phone, Mail, MessageCircle, User } from 'lucide-react';
+import { Lock, Phone, Mail, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { unlockPlannerContactAction } from '@/lib/actions/planner-market-credits';
 import { Button } from '@/components/ui/button';
-import { avatarGradient, cn } from '@/lib/utils';
+import { initialsAvatarBg, initialsOf } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,9 +60,12 @@ export function PlannerContactUnlockButton({ plannerProfileId }: { plannerProfil
   return (
     <div className="flex items-start gap-4">
       <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-surface-sunken">
-        {showRealPhoto ? (
+        {!contact ? (
+          // SPEC-021 §1 - 열람 전에는 사진 유무와 무관하게 항상 이 플레이스홀더 하나뿐이다.
+          <Image src="/images/photo-private-1x1.png" alt="사진 비공개 — 열람 시 공개" fill sizes="96px" className="object-cover" />
+        ) : showRealPhoto ? (
           <Image
-            src={contact!.photoUrl!}
+            src={contact.photoUrl!}
             alt="프로필 사진"
             fill
             sizes="96px"
@@ -70,15 +73,19 @@ export function PlannerContactUnlockButton({ plannerProfileId }: { plannerProfil
             onError={() => setPhotoLoadFailed(true)}
           />
         ) : (
-          <div className={cn('flex h-full w-full items-center justify-center bg-gradient-to-br text-white/85', avatarGradient(plannerProfileId))}>
-            <User className="h-9 w-9" strokeWidth={1.5} />
+          // SPEC-021 §3 - 이니셜 아바타는 "열람 후 사진 부재 시에만" 등장한다.
+          <div
+            className="flex h-full w-full items-center justify-center text-[28px] font-extrabold text-brand-700"
+            style={{ backgroundColor: initialsAvatarBg(contact.name) }}
+          >
+            {initialsOf(contact.name)}
           </div>
         )}
       </div>
 
       <div className="flex-1">
         {!contact && (
-          <p className="mb-2 text-xs text-ink-faint">설계사님 보호를 위해 사진은 비공개입니다 — 열람하시면 확인할 수 있습니다.</p>
+          <p className="mb-2 text-xs text-ink-faint">설계사 보호를 위해 사진과 연락처는 열람 승인 후 공개됩니다.</p>
         )}
 
         {contact ? (

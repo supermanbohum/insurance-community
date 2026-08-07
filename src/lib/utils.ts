@@ -21,6 +21,21 @@ export function avatarGradient(seed: string): string {
   return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
 }
 
+// SPEC-016 ⑩의 브랜드 파스텔 4색 - 같은 이름은 항상 같은 색이 나오도록 해시로 고른다
+// (지점 카드 회사명 이니셜과 동일 팔레트/원칙을 설계사 이니셜 아바타에도 그대로 적용).
+const INITIALS_PASTEL_BG = ['#eef5ff', '#eef7f0', '#fdf6e8', '#f3f0fb'];
+
+/** 사진이 없는 설계사의 열람 후 아바타(SPEC-021 §3) - 닉네임/이름 앞 2글자 + 해시 파스텔 배경. */
+export function initialsAvatarBg(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return INITIALS_PASTEL_BG[hash % INITIALS_PASTEL_BG.length];
+}
+
+export function initialsOf(name: string): string {
+  return name.trim().slice(0, 2);
+}
+
 /** GA/지점 slug 자동 생성 - 한글/영문/숫자만 남기고 나머지는 하이픈으로 치환한다. */
 export function slugify(name: string): string {
   return name

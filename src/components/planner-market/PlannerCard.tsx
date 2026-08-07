@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { User } from 'lucide-react';
 import type { PublicPlannerProfileSummary } from '@/types/database';
-import { avatarGradient, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { PlannerBadgeList } from '@/components/planner-market/PlannerBadgeList';
 import { JOB_SEARCH_STATUS_LABEL } from '@/lib/planner-market/labels';
 
@@ -27,20 +26,17 @@ export function PlannerCard({ planner, className }: { planner: PublicPlannerProf
       )}
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-sunken">
-        {planner.profilePhotoUrl ? (
-          <Image
-            src={planner.profilePhotoUrl}
-            alt="설계사 프로필 사진"
-            fill
-            loading="lazy"
-            sizes="(min-width: 1024px) 220px, 45vw"
-            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
-          />
-        ) : (
-          <div className={cn('flex h-full w-full items-center justify-center bg-gradient-to-br text-white/85', avatarGradient(planner.id))}>
-            <User className="h-8 w-8" strokeWidth={1.5} />
-          </div>
-        )}
+        {/* SPEC-021 - 목록에서는 열람 여부와 무관하게 항상 이 플레이스홀더 하나뿐이다(연락처
+            열람은 상세 페이지에서만 일어난다). 사진 유무를 구분하지 않는 이유는 §3 참고 -
+            구분하면 사진 없는 설계사가 목록에서 식별·불리해진다. */}
+        <Image
+          src="/images/photo-private-4x3.png"
+          alt="사진 비공개 — 열람 시 공개"
+          fill
+          loading="lazy"
+          sizes="(min-width: 1024px) 220px, 45vw"
+          className="object-cover"
+        />
         {planner.badges.length > 0 && (
           <PlannerBadgeList badges={planner.badges} size="sm" className="absolute left-2 top-2" />
         )}
