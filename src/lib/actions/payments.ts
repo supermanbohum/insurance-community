@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPaymentProvider } from '@/lib/payments/provider';
+import { PAYMENTS_LIVE } from '@/lib/config/payments';
 
 /**
  * 구독 생성 직후 첫 결제를 즉시 시도한다. 지금은 스텁 프로바이더라 항상 성공하고
@@ -33,6 +34,10 @@ async function chargeSubscription(subscriptionId: string, amountKrw: number): Pr
 export async function createBranchSubscriptionAction(
   branchId: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (!PAYMENTS_LIVE) {
+    return { success: false, error: '현재 지점 등록비 결제는 열려있지 않습니다.' };
+  }
+
   const supabase = createServerSupabaseClient();
   const { data: subscriptionId, error } = await supabase.rpc('create_branch_subscription', {
     p_branch_id: branchId,
@@ -61,6 +66,10 @@ export async function createBranchSubscriptionAction(
 export async function createPlannerAddonSubscriptionAction(
   certificationId: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (!PAYMENTS_LIVE) {
+    return { success: false, error: '현재 고소득 설계사 부가서비스 결제는 열려있지 않습니다.' };
+  }
+
   const supabase = createServerSupabaseClient();
   const { data: subscriptionId, error } = await supabase.rpc('create_planner_addon_subscription', {
     p_certification_id: certificationId,
