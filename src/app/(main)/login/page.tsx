@@ -25,7 +25,10 @@ export default async function LoginPage({ searchParams }: { searchParams: { next
   // next는 "/"로 시작하는 내부 경로만 허용한다 - 외부 URL을 넘기는 오픈 리다이렉트를 막기 위함.
   const next = searchParams.next && searchParams.next.startsWith('/') ? searchParams.next : '/my';
   if (user) {
-    redirect(next);
+    // 로그인은 됐지만 정회원이 아닌 경우(이메일 미인증 등) next로 그대로 보내면, next가
+    // requireFullMember 가드가 걸린 페이지일 때 그 페이지가 다시 /login으로 돌려보내
+    // 무한 루프가 된다(W-034, 오너 계정에서 실제로 재현됨) - /verify-email을 거치게 한다.
+    redirect(user.isFullMember ? next : `/verify-email?next=${encodeURIComponent(next)}`);
   }
 
   return (

@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { Eye, Building2 } from 'lucide-react';
-import { getCurrentUser } from '@/lib/auth/session';
+import { requireFullMember } from '@/lib/auth/session';
 import { listMyPlannerContactNotifications } from '@/lib/public/planner-notifications.supabase';
 import { markPlannerContactNotificationsReadAction } from '@/lib/actions/planner-market';
 import { BackButton } from '@/components/shared/BackButton';
@@ -10,10 +9,7 @@ import { formatMessengerTime } from '@/lib/utils';
 /** 설계사 열람 알림 - GA가 연락처를 최초 열람할 때마다 쌓인다(item 18). 지점 소속
  * 열람이면 지점명 노출 + 클릭 시 지점 상세로, 아니면 "리쿠르터"로만 익명 표시된다. */
 export default async function PlannerMarketNotificationsPage() {
-  const user = await getCurrentUser();
-  if (!user?.isFullMember) {
-    redirect('/login?next=/planner-market/notifications');
-  }
+  await requireFullMember('/planner-market/notifications');
 
   const notifications = await listMyPlannerContactNotifications();
   await markPlannerContactNotificationsReadAction();

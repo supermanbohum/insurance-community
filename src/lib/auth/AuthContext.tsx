@@ -56,6 +56,9 @@ interface AuthContextValue {
   signUpWithEmail: (input: SignUpInput) => Promise<{ success: boolean; error?: string }>;
   /** 아이디 로그인 - Supabase Auth 자체는 이메일 기반이라 아이디→이메일 변환을 먼저 한다. */
   loginWithEmail: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  /** 인증 메일 재발송(W-034) - /verify-email에서 "로그인은 됐지만 이메일 미인증" 상태인
+   * 사용자에게 다음 행동을 준다. */
+  resendVerificationEmail: (email: string, next: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const UserContext = createContext<AuthContextValue | null>(null);
@@ -142,8 +145,36 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
     });
   }, []);
 
+  const resendVerificationEmail = useCallback((email: string, next: string) => {
+    return new Promise<{ success: boolean; error?: string }>((resolve) => {
+      startTransition(async () => {
+        try {
+          const supabase = createClient();
+          const { error } = await supabase.auth.resend({
+            type: 'signup',
+            email,
+            options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+          });
+          if (error) {
+            const detail = describeError(error);
+            console.error('[resendVerificationEmail] resend 실패:', error, detail);
+            resolve({ success: false, error: `[auth.resend] ${detail}` });
+            return;
+          }
+          resolve({ success: true });
+        } catch (err) {
+          const detail = describeError(err);
+          console.error('[resendVerificationEmail] 예상치 못한 예외:', err, detail);
+          resolve({ success: false, error: `[예외] ${detail}` });
+        }
+      });
+    });
+  }, []);
+
   return (
-    <UserContext.Provider value={{ user, isPending, signUpWithEmail, loginWithEmail }}>{children}</UserContext.Provider>
+    <UserContext.Provider value={{ user, isPending, signUpWithEmail, loginWithEmail, resendVerificationEmail }}>
+      {children}
+    </UserContext.Provider>
   );
 }
 

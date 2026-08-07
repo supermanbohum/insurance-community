@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/session';
+import { requireFullMember } from '@/lib/auth/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { SalaryRankingApplyForm } from '@/components/salary-ranking/SalaryRankingApplyForm';
 import { BackButton } from '@/components/shared/BackButton';
@@ -8,10 +8,7 @@ import { BackButton } from '@/components/shared/BackButton';
  * 있어야 하지만, "완전 별도 메뉴"라는 요구사항대로 등록 폼(PlannerMarketRegisterForm)에는
  * 연결하지 않고 이 독립 페이지로만 신청받는다. */
 export default async function SalaryRankingApplyPage() {
-  const user = await getCurrentUser();
-  if (!user?.isFullMember) {
-    redirect('/login?next=/salary-ranking/apply');
-  }
+  const user = await requireFullMember('/salary-ranking/apply');
 
   const supabase = createServerSupabaseClient();
   const { data } = await supabase.rpc('get_my_planner_market_profile');

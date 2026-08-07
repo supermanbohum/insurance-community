@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { Bell } from 'lucide-react';
-import { getCurrentUser } from '@/lib/auth/session';
+import { requireFullMember } from '@/lib/auth/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { countMyUnreadPlannerContactNotifications } from '@/lib/public/planner-notifications.supabase';
 import { PlannerMyProfileCard } from '@/components/planner-market/PlannerMyProfileCard';
@@ -13,10 +12,7 @@ import type { PlannerBadgeSummary } from '@/types/database';
 
 /** 내가 등록한 설계사 정보 - 자가서비스(비공개/해지/철회) + 배지 신청 진입점 + 조회수 통계. */
 export default async function PlannerMarketMyPage() {
-  const user = await getCurrentUser();
-  if (!user?.isFullMember) {
-    redirect('/login?next=/planner-market/my');
-  }
+  const user = await requireFullMember('/planner-market/my');
 
   const supabase = createServerSupabaseClient();
   const { data: profiles } = await supabase.rpc('get_my_planner_market_profile');

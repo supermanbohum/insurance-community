@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/session';
+import { requireFullMember } from '@/lib/auth/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { listRegions } from '@/lib/admin/branch';
 import { listGaFilterOptions } from '@/lib/public/ga-directory';
@@ -13,10 +13,7 @@ function photoUrl(path: string | null): string | null {
 
 /** 설계사 정보 수정 - 소유자만. 저장 즉시 재심사 대기 상태로 돌아간다(RPC 참고). */
 export default async function PlannerMarketEditPage() {
-  const user = await getCurrentUser();
-  if (!user?.isFullMember) {
-    redirect('/login?next=/planner-market/edit');
-  }
+  const user = await requireFullMember('/planner-market/edit');
 
   const supabase = createServerSupabaseClient();
   const [{ data: profiles }, regions, gaOptions] = await Promise.all([

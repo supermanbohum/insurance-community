@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/session';
+import { requireFullMember } from '@/lib/auth/session';
 import { TopPlannerApplicationForm } from '@/components/planners/TopPlannerApplicationForm';
 
 export const metadata: Metadata = {
@@ -10,10 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TopRegisterPage() {
-  const user = await getCurrentUser();
-  if (!user?.isFullMember) {
-    redirect('/login?next=/top-register');
-  }
+  await requireFullMember('/top-register');
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">

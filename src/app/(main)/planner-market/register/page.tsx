@@ -1,5 +1,4 @@
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/session';
+import { requireFullMember } from '@/lib/auth/session';
 import { listRegions } from '@/lib/admin/branch';
 import { listGaFilterOptions } from '@/lib/public/ga-directory';
 import { PlannerMarketRegisterForm } from '@/components/planner-market/PlannerMarketRegisterForm';
@@ -8,10 +7,7 @@ import { BackButton } from '@/components/shared/BackButton';
 /** 설계사 등록 - 보험맵 일반회원(이메일 인증 완료)만 가능. TOP설계사 공개신청(/top-register)과
  * 동일한 게이트 패턴이되, 완전히 별개 데이터/RPC로 저장된다. */
 export default async function PlannerMarketRegisterPage() {
-  const user = await getCurrentUser();
-  if (!user?.isFullMember) {
-    redirect('/login?next=/planner-market/register');
-  }
+  await requireFullMember('/planner-market/register');
 
   const [regions, gaOptions] = await Promise.all([listRegions(), listGaFilterOptions()]);
 

@@ -1,3 +1,3 @@
 export type { UserSession, AuthSessionProvider } from './types';
 
-export { getCurrentUser, requireUser } from './session.supabase';
+export { getCurrentUser, requireUser, requireFullMember } from './session.supabase';

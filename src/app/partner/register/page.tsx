@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/session';
+import { requireFullMember } from '@/lib/auth/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requirePartner } from '@/lib/partner/session';
 import { listRegions } from '@/lib/admin/branch';
@@ -19,10 +19,7 @@ import { BackButton } from '@/components/shared/BackButton';
  * 그대로 연결한다.
  */
 export default async function PartnerRegisterPage() {
-  const user = await getCurrentUser();
-  if (!user?.isFullMember) {
-    redirect('/login?next=/partner/register');
-  }
+  const user = await requireFullMember('/partner/register');
 
   const supabase = createServerSupabaseClient();
   await supabase.rpc('signup_ga_admin', { p_display_name: user.nickname });

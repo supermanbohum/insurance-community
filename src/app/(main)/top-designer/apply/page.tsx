@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth/session';
+import { requireFullMember } from '@/lib/auth/session';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { TopDesignerApplyPageForm } from '@/components/top-designer/TopDesignerApplyPageForm';
 import { BackButton } from '@/components/shared/BackButton';
@@ -8,10 +8,7 @@ import { BackButton } from '@/components/shared/BackButton';
  * 프로필이 없으면 먼저 설계사 등록부터 하도록 안내한다(등록 폼 자체에도 동일한
  * 신청 토글이 있으므로, 굳이 여기서 프로필까지 새로 만들게 하지 않는다). */
 export default async function TopDesignerApplyPage() {
-  const user = await getCurrentUser();
-  if (!user?.isFullMember) {
-    redirect('/login?next=/top-designer/apply');
-  }
+  const user = await requireFullMember('/top-designer/apply');
 
   const supabase = createServerSupabaseClient();
   const { data } = await supabase.rpc('get_my_planner_market_profile');
