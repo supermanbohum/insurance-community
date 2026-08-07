@@ -78,7 +78,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           glowColor="rgba(37,99,235,0.45)"
         />
         <HeroCtaButton
-          href="/planner-market/register"
+          href="/planner-register"
           label="설계사 등록하기"
           icon={<UserPlus className="h-6 w-6" strokeWidth={2.5} />}
           gradientClassName="from-indigo-500 via-violet-600 to-violet-800"
@@ -129,15 +129,14 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           </div>
         ) : (
           <ReplacementCard
-            href="/planner-market/register"
+            href="/planner-register"
             longLines={[
-              '',
+              '지점장님이 설계사님을 찾고 있어요',
               <>
-                <strong className="text-brand-600">첫 번째 인증 설계사가 되어보세요</strong>
-                <span className="mt-0.5 block text-[11px] font-normal text-ink-faint">원천징수영수증 1장이면 시작됩니다</span>
+                <strong className="text-brand-600">첫 번째로 등록해보세요</strong> — 완전 무료
               </>,
             ]}
-            shortLine={<strong className="text-brand-600">첫 번째 인증 설계사가 되어보세요</strong>}
+            shortLine={<strong className="text-brand-600">설계사 등록, 완전 무료</strong>}
           />
         )}
 
