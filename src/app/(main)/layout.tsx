@@ -5,7 +5,7 @@ import { AuthProvider } from '@/lib/auth/AuthContext';
 import { BohomMapHeader } from '@/components/layout/BohomMapHeader';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { SiteFooter } from '@/components/layout/SiteFooter';
-import { ChatPanel } from '@/components/chat/ChatPanel';
+import { ChatSidebarSlot } from '@/components/chat/ChatSidebarSlot';
 import { listActiveBanners } from '@/lib/public/banners';
 import { recordSiteVisit } from '@/lib/public/site-traffic.supabase';
 import { EventPopup } from '@/components/layout/EventPopup';
@@ -21,6 +21,8 @@ import { getActiveEventPopup } from '@/lib/admin/event-popup';
  *
  * PC(lg 이상)에서는 우측에 채팅 패널이 항상 고정 노출된다 - 이 레이아웃이 (main) 그룹의
  * 모든 페이지(홈 포함)를 감싸므로, 페이지 이동 시에도 리마운트되지 않고 그대로 유지된다.
+ * 단 /chat 페이지 자체는 같은 ChatPanel을 variant="page"로 이미 전체화면 렌더링하므로,
+ * ChatSidebarSlot이 그 경로에서는 사이드바를 숨겨 중복 렌더링을 막는다(W-035).
  * 태블릿/모바일(lg 미만)에서는 패널이 숨고 헤더 햄버거 메뉴의 "실시간 채팅" → /chat 페이지로
  * 대체된다. 좌측 광고 배너도 같은 lg 기준으로 노출한다. 컨테이너 좌우 패딩도 lg부터 함께
  * 적용해야 한다 - 패딩이 2xl부터만 붙던 이전 버전에서는 lg~2xl 구간(예: 1280px)에서
@@ -63,11 +65,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
         <main className="min-w-0 flex-1">
           <PageTransition>{children}</PageTransition>
         </main>
-        <aside className="hidden w-[340px] shrink-0 lg:block">
-          <div className="sticky top-[76px] h-[calc(100vh-96px)] py-3">
-            <ChatPanel currentUser={user} variant="sidebar" />
-          </div>
-        </aside>
+        <ChatSidebarSlot currentUser={user} />
       </div>
       <SiteFooter />
     </AuthProvider>
