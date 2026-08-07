@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { AlertTriangle } from 'lucide-react';
 import { updateBranchAction } from '@/lib/actions/branch-admin';
+import { detectSuperlativeClaims } from '@/lib/moderation/superlative';
 import type { BranchRow, RegionRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
 import { AddressSearchField, type AddressValue } from '@/components/admin/AddressSearchField';
@@ -67,6 +69,21 @@ export function BranchInfoTab({
   const [businessHours, setBusinessHours] = useState(branch.business_hours ?? '');
   const [operationType, setOperationType] = useState<'direct' | 'branch'>(branch.operation_type);
   const [isHeadquarters, setIsHeadquarters] = useState(branch.is_headquarters);
+
+  // W-060 - "최강" 같은 최상급 표현이 승인 화면에서 눈에 띄지 않고 그대로 통과되던
+  // 문제. 하드 블록이 아니라 저장 전에 관리자 눈에 띄게 하는 용도라 회사소개뿐 아니라
+  // 마케팅 문구가 들어갈 수 있는 자유 텍스트 필드 전부를 훑는다.
+  const superlativeFields: { label: string; value: string }[] = [
+    { label: '회사소개', value: introText },
+    { label: '교육 안내', value: educationInfo },
+    { label: '복지 안내', value: welfareInfo },
+    { label: 'DB지원 안내', value: dbSupportInfo },
+    { label: '정착지원 안내', value: settlementSupportInfo },
+    { label: '분위기', value: atmosphereInfo },
+  ];
+  const superlativeWarnings = superlativeFields
+    .map(({ label, value }) => ({ label, matches: detectSuperlativeClaims(value) }))
+    .filter((entry) => entry.matches.length > 0);
 
   useEffect(() => {
     onDraftChange?.({
@@ -254,6 +271,21 @@ export function BranchInfoTab({
           </Select>
         </div>
       </div>
+
+      {superlativeWarnings.length > 0 && (
+        <div className="flex flex-col gap-1.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="flex items-center gap-1.5 font-semibold">
+            <AlertTriangle className="h-4 w-4" /> 최상급 표현이 포함되어 있습니다 - 표시광고법 검토가 필요할 수 있어요
+          </p>
+          <ul className="list-disc pl-5">
+            {superlativeWarnings.map(({ label, matches }) => (
+              <li key={label}>
+                {label}: {matches.join(', ')}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <Button type="submit" disabled={isPending} className="self-start">
         {isPending ? '저장 중...' : '저장'}
