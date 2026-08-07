@@ -29,6 +29,65 @@ body {
   display: none;
 }
 
+/* W-058: 관리자(admin) 글 본문 마크다운 렌더링 - 태그가 화이트리스트로 제한돼 있어
+   Tailwind typography 플러그인 없이 최소 스타일만 직접 준다. */
+.prose-admin-post h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: theme('colors.ink.DEFAULT');
+}
+.prose-admin-post h3 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.4rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: theme('colors.ink.DEFAULT');
+}
+.prose-admin-post p {
+  margin-bottom: 0.9rem;
+}
+.prose-admin-post strong {
+  font-weight: 800;
+  color: theme('colors.ink.DEFAULT');
+}
+.prose-admin-post ul,
+.prose-admin-post ol {
+  margin-bottom: 0.9rem;
+  padding-left: 1.25rem;
+}
+.prose-admin-post ul {
+  list-style: disc;
+}
+.prose-admin-post ol {
+  list-style: decimal;
+}
+.prose-admin-post li {
+  margin-bottom: 0.3rem;
+}
+.prose-admin-post a {
+  color: theme('colors.brand.600');
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-admin-post blockquote {
+  margin: 0.9rem 0;
+  border-left: 3px solid theme('colors.line.DEFAULT');
+  padding-left: 0.9rem;
+  color: theme('colors.ink.faint');
+}
+.prose-admin-post hr {
+  margin: 1.5rem 0;
+  border-color: theme('colors.line.DEFAULT');
+}
+.prose-admin-post code {
+  background-color: theme('colors.surface.sunken');
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.9em;
+}
+
 /* 카드 그리드 진입 애니메이션 stagger용 */
 .stagger-item {
   animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;

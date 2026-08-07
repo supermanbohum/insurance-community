@@ -566,6 +566,9 @@ export interface HomeStats {
   gaCount: number;
   todayCount: number;
   todayVisitorCount: number;
+  /** regions 테이블 전체 행 수(시/도+시군구, 현재 229) - W-054 방문자 카운터 대체 문구가
+   * "50곳 · 229개 지역" 숫자를 하드코딩하지 않고 여기서 읽는다. */
+  regionCount: number;
 }
 
 /**
@@ -601,6 +604,7 @@ export async function getHomeStats(): Promise<HomeStats> {
     gaCount: core?.approved_ga_count ?? 0,
     todayCount: (core?.today_new_ga_count ?? 0) + (core?.today_new_branch_count ?? 0) + (core?.today_new_planner_count ?? 0),
     todayVisitorCount: traffic?.visitor_count ?? 0,
+    regionCount: core?.region_count ?? 0,
   };
 }
 

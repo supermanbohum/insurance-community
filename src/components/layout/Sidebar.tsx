@@ -10,10 +10,6 @@ function SidebarBox({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-function ComingSoon({ label }: { label: string }) {
-  return <p className="py-3 text-center text-xs text-ink-faint">{label} 기능은 준비 중입니다.</p>;
-}
-
 export async function Sidebar() {
   const { summaries: noticePosts } = await getPostListPage({ categorySlug: 'notice', page: 1 });
   const topNotices = noticePosts.slice(0, 3);
@@ -35,22 +31,6 @@ export async function Sidebar() {
           </ul>
         )}
       </SidebarBox>
-
-      <SidebarBox title="실시간 인기글">
-        <ComingSoon label="실시간 인기글" />
-      </SidebarBox>
-
-      <SidebarBox title="인기 검색어">
-        <ComingSoon label="인기 검색어" />
-      </SidebarBox>
-
-      <SidebarBox title="최근 댓글">
-        <ComingSoon label="최근 댓글" />
-      </SidebarBox>
-
-      <div className="flex min-h-[200px] items-center justify-center rounded-2xl border border-dashed border-line text-xs text-ink-faint">
-        광고 영역
-      </div>
     </aside>
   );
 }

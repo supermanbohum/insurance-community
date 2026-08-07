@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { BadgeCheck } from 'lucide-react';
 import { getPostDetail } from '@/lib/posts/query';
+import { renderAdminPostContent } from '@/lib/posts/render-admin-markdown';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { DeletePostButton } from '@/components/post/DeletePostButton';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -96,9 +97,16 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           <span>추천 {upvoteCount}</span>
         </div>
 
-        <div className="whitespace-pre-wrap break-words py-4 text-[15px] leading-7 text-ink-soft">
-          {post.content}
-        </div>
+        {post.author_name_type === 'admin' ? (
+          <div
+            className="prose-admin-post break-words py-4 text-[15px] leading-7 text-ink-soft"
+            dangerouslySetInnerHTML={{ __html: renderAdminPostContent(post.content) }}
+          />
+        ) : (
+          <div className="whitespace-pre-wrap break-words py-4 text-[15px] leading-7 text-ink-soft">
+            {post.content}
+          </div>
+        )}
 
         {post.author_name_type === 'admin' && post.source_url && (
           <a

@@ -5,6 +5,9 @@ import { createPublicSupabaseClient } from '@/lib/supabase/public';
 export interface SidoGroup {
   sidoCode: string;
   sidoName: string;
+  /** 승인된 GA 소속의 공개(visible) 지점 수 - get_platform_core_stats()의 지점 카운트
+   * 조건(status/registration_status/deleted_at, GA 승인 상태)과 동일 기준(W-056). */
+  branchCount: number;
 }
 
 export interface SigunguItem {
@@ -16,15 +19,49 @@ export interface SigunguItem {
 export async function listSidoGroups(): Promise<SidoGroup[]> {
   // 홈 화면에서 쓰이므로 cookies()를 건드리지 않는 공개 클라이언트를 쓴다(ISR 캐시 유지).
   const supabase = createPublicSupabaseClient();
-  const { data, error } = await supabase.from('regions').select('sido_code, sido_name').order('sort_order');
+  const [{ data, error }, { data: branchRows, error: branchError }] = await Promise.all([
+    supabase.from('regions').select('sido_code, sido_name').order('sort_order'),
+    // ga_company 승인 상태는 조인 필터 문법이 아니라(fragile) 기존 코드베이스 관례대로
+    // 별도 승인 GA id 집합을 구해 JS에서 걸러낸다(branch.supabase.ts의 검색 매칭과 동일 패턴).
+    supabase
+      .from('ga_branch')
+      .select('ga_company_id, region:region_id(sido_code)')
+      .eq('status', 'visible')
+      .eq('registration_status', 'approved')
+      .is('deleted_at', null),
+  ]);
   if (error) throw error;
+  if (branchError) throw branchError;
+
+  const branchRowsTyped = (branchRows ?? []) as unknown as {
+    ga_company_id: string;
+    region: { sido_code: string } | null;
+  }[];
+  const companyIds = Array.from(new Set(branchRowsTyped.map((r) => r.ga_company_id)));
+  const approvedCompanyIds = new Set<string>();
+  if (companyIds.length > 0) {
+    const { data: companies, error: companyError } = await supabase
+      .from('ga_company')
+      .select('id')
+      .in('id', companyIds)
+      .eq('approval_status', 'approved')
+      .is('deleted_at', null);
+    if (companyError) throw companyError;
+    for (const c of companies ?? []) approvedCompanyIds.add(c.id);
+  }
+
+  const branchCountBySido = new Map<string, number>();
+  for (const row of branchRowsTyped) {
+    if (!row.region || !approvedCompanyIds.has(row.ga_company_id)) continue;
+    branchCountBySido.set(row.region.sido_code, (branchCountBySido.get(row.region.sido_code) ?? 0) + 1);
+  }
 
   const seen = new Map<string, string>();
   for (const row of data ?? []) {
     if (!seen.has(row.sido_code)) seen.set(row.sido_code, row.sido_name);
   }
   return Array.from(seen.entries())
-    .map(([sidoCode, sidoName]) => ({ sidoCode, sidoName }))
+    .map(([sidoCode, sidoName]) => ({ sidoCode, sidoName, branchCount: branchCountBySido.get(sidoCode) ?? 0 }))
     .sort((a, b) => a.sidoName.localeCompare(b.sidoName, 'ko'));
 }
 

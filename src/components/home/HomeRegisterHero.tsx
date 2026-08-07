@@ -15,34 +15,57 @@ import { HeroCtaButton } from '@/components/home/HeroCtaButton';
  * 유지되며 이 설계사 등록(리크루팅) 시스템과는 절대 혼용하지 않는다.
  */
 
-/** 홈 통계 표시 임계값(W-031, SPEC-016 ⑧) - "작은 진짜 숫자도 큰 가짜 숫자만큼
- * 해롭다"는 디자인팀 판단에 따라, 지표가 이 값 미만이면 아예 노출하지 않는다.
- * 운영 중 조정할 수 있도록 상수로 분리해뒀다. */
-const STAT_MIN_BRANCH_COUNT = 10;
-const STAT_MIN_PLANNER_COUNT = 30;
+/** 홈 통계 표시 임계값(W-054, CTO 확정) - 지표별로 독립 판정한다: 지점이 임계값
+ * 미만이어도 설계사가 넘으면 설계사는 그대로 실제 숫자를 보여준다("전부 아니면
+ * 전무" 방식 금지). 미만인 지표만 숫자 대신 CTA성 대체 문구로 바뀐다 - "설계사
+ * 2명"처럼 자랑이 안 되는 한 자릿수는 "0명"보다 나을 게 없다는 판단. 데이터가
+ * 늘면서 계속 조정할 값이라 상수로 모아둔다. */
+const HOME_STAT_THRESHOLDS = {
+  branch: 10,
+  planner: 10,
+  visitor: 100,
+} as const;
+
 const STAT_MIN_TODAY_COUNT = 1;
 
-/** 생명보험협회·손해보험협회 공시 기준 전국 GA 지점 시장 규모(우리 DB 수치가
- * 아니다) - 표시 가능한 통계가 2개 미만일 때 쓰는 "오픈 배너"용 문구 재료.
- * 우리 데이터가 0이든 1,000이든 항상 참인 문장이라 신뢰도 있는 대체 지표다. */
-const MARKET_WIDE_GA_BRANCH_COUNT = 4288;
+function StatChip({ emoji, label, value, unit }: { emoji: string; label: string; value: number; unit: string }) {
+  return (
+    <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
+      {emoji} {label} <span className="text-brand-600"><StatCountUp value={value} /></span>{unit}
+    </span>
+  );
+}
+
+/** 임계값 미만일 때 숫자 대신 보여주는 CTA 카드 - 긴 판(2줄)/짧은 판(1줄)을 둘 다
+ * 렌더링해두고 뷰포트 폭으로 전환한다(별도 클라이언트 JS 없이 반응형 처리). */
+function ReplacementCard({
+  href,
+  longLines,
+  shortLine,
+}: {
+  href: string;
+  longLines: [string, React.ReactNode];
+  shortLine: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col gap-0.5 rounded-xl border border-dashed border-brand-200 bg-brand-50/50 px-3 py-2 text-center transition-colors hover:bg-brand-50"
+    >
+      <span className="hidden sm:block">
+        <span className="block text-[11px] text-ink-faint">{longLines[0]}</span>
+        <span className="block text-[13px] font-bold text-ink-soft">{longLines[1]}</span>
+      </span>
+      <span className="text-[13px] font-bold text-ink-soft sm:hidden">{shortLine}</span>
+    </Link>
+  );
+}
 
 export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
-  const statChips = [
-    stats.branchCount >= STAT_MIN_BRANCH_COUNT
-      ? { key: 'branch', emoji: '📍', label: '등록 지점', value: stats.branchCount, unit: '개' }
-      : null,
-    stats.plannerTotal >= STAT_MIN_PLANNER_COUNT
-      ? { key: 'planner', emoji: '👨‍💼', label: '등록 설계사', value: stats.plannerTotal, unit: '명' }
-      : null,
-    stats.todayCount >= STAT_MIN_TODAY_COUNT
-      ? { key: 'todayNew', emoji: '🔥', label: '오늘 신규', value: stats.todayCount, unit: '건' }
-      : null,
-    { key: 'visitor', emoji: '👣', label: '오늘 방문자', value: stats.todayVisitorCount, unit: '명' },
-  ].filter((chip): chip is { key: string; emoji: string; label: string; value: number; unit: string } => chip !== null);
-
-  // 표시 가능한 지표가 2개 미만이면 통계 바 대신 "오픈 배너"로 대체한다(SPEC-016 ⑧).
-  const showOpenBanner = statChips.length < 2;
+  const showBranchNumber = stats.branchCount >= HOME_STAT_THRESHOLDS.branch;
+  const showPlannerNumber = stats.plannerTotal >= HOME_STAT_THRESHOLDS.planner;
+  const showVisitorNumber = stats.todayVisitorCount >= HOME_STAT_THRESHOLDS.visitor;
+  const showTodayChip = stats.todayCount >= STAT_MIN_TODAY_COUNT;
 
   return (
     <div className="flex flex-col gap-3">
@@ -80,33 +103,70 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
         </Link>
       </div>
 
-      {showOpenBanner ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-4 text-center">
-          <p className="text-[13px] font-bold text-ink-soft">
-            전국 <span className="text-brand-600">{MARKET_WIDE_GA_BRANCH_COUNT.toLocaleString()}</span>개 GA의 지점이 지금 등록되고 있습니다
-          </p>
-          <p className="flex items-center gap-1 text-[12px] font-semibold text-ink-faint">
-            👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={stats.todayVisitorCount} /></span>명
-          </p>
-          <Link
+      <div className="flex flex-col gap-1.5">
+        {showBranchNumber ? (
+          <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
+            <StatChip emoji="📍" label="등록 지점" value={stats.branchCount} unit="개" />
+          </div>
+        ) : (
+          <ReplacementCard
             href="/partner/register"
-            className="mt-1 rounded-full bg-brand-600 px-5 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-700"
-          >
-            {ctaLabel}
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3 sm:flex sm:items-center sm:justify-between">
-          {statChips.map((chip, i) => (
-            <span key={chip.key} className="contents">
-              {i > 0 && <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />}
-              <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
-                {chip.emoji} {chip.label} <span className="text-brand-600"><StatCountUp value={chip.value} /></span>{chip.unit}
-              </span>
+            longLines={[
+              '지점장님의 지역은 아직 비어 있습니다',
+              // "6개월 무료(선착순 100개)"는 진행 중인 실제 이벤트(event_popups, 상시 노출)에
+              // 맞춘 문구다 - 해당 프로모션이 종료되면 이 문구도 함께 걷어내야 한다.
+              <>
+                <strong className="text-brand-600">지역 1호 지점으로 등록하세요</strong> — 6개월 무료(선착순 100개)
+              </>,
+            ]}
+            shortLine={<strong className="text-brand-600">지역 1호 지점을 선점하세요</strong>}
+          />
+        )}
+
+        {showPlannerNumber ? (
+          <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
+            <StatChip emoji="👨‍💼" label="등록 설계사" value={stats.plannerTotal} unit="명" />
+          </div>
+        ) : (
+          <ReplacementCard
+            href="/planner-market/register"
+            longLines={[
+              '',
+              <>
+                <strong className="text-brand-600">첫 번째 인증 설계사가 되어보세요</strong>
+                <span className="mt-0.5 block text-[11px] font-normal text-ink-faint">원천징수영수증 1장이면 시작됩니다</span>
+              </>,
+            ]}
+            shortLine={<strong className="text-brand-600">첫 번째 인증 설계사가 되어보세요</strong>}
+          />
+        )}
+
+        {showVisitorNumber ? (
+          <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
+            <span className="flex items-center gap-1 text-[12px] font-bold text-ink-soft">
+              👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={stats.todayVisitorCount} /></span>명
+              {showTodayChip && (
+                <>
+                  <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
+                  🔥 오늘 신규 <span className="text-brand-600"><StatCountUp value={stats.todayCount} /></span>건
+                </>
+              )}
             </span>
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-line bg-surface-sunken px-3 py-2 text-center">
+            <span className="hidden sm:block">
+              <span className="block text-[13px] font-bold text-ink-soft">
+                전국 GA <span className="text-brand-600">{stats.gaCount}</span>곳 · <span className="text-brand-600">{stats.regionCount}</span>개 지역을 정리하고 있습니다
+              </span>
+              <span className="block text-[11px] text-ink-faint">내 지역부터 확인해 보세요</span>
+            </span>
+            <span className="text-[13px] font-bold text-ink-soft sm:hidden">
+              전국 GA {stats.gaCount}곳 · {stats.regionCount}개 지역 정리 중
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
