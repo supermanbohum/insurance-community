@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { BadgeCheck } from 'lucide-react';
 import { getPostDetail } from '@/lib/posts/query';
 import { renderAdminPostContent } from '@/lib/posts/render-admin-markdown';
+import { markdownToPlainText } from '@/lib/posts/markdown-to-plaintext';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { DeletePostButton } from '@/components/post/DeletePostButton';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   const { post } = result;
   const title = post.title;
-  const description = truncate(post.content, 120);
+  const description = truncate(post.author_name_type === 'admin' ? markdownToPlainText(post.content) : post.content, 120);
 
   return {
     title,
@@ -68,7 +69,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           data={discussionPostJsonLd({
             id: post.id,
             title: post.title,
-            content: post.content,
+            content: post.author_name_type === 'admin' ? markdownToPlainText(post.content) : post.content,
             authorDisplayName: post.author_display_name,
             createdAt: post.created_at,
             updatedAt: post.updated_at,
