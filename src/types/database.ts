@@ -511,6 +511,34 @@ export interface Database {
           },
         ];
       };
+      branch_inquiries: {
+        Row: {
+          id: string;
+          branch_id: string;
+          inquirer_name: string;
+          contact_type: string;
+          contact_value: string;
+          career: string | null;
+          message: string;
+          consent_collection: boolean;
+          consent_third_party: boolean;
+          consent_agreed_at: string;
+          ip_address: string | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['branch_inquiries']['Row']>;
+        Update: Partial<Database['public']['Tables']['branch_inquiries']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'branch_inquiries_branch_id_fkey';
+            columns: ['branch_id'];
+            isOneToOne: false;
+            referencedRelation: 'ga_branch';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       branch_links: {
         Row: {
           id: string;
@@ -1595,6 +1623,56 @@ export interface Database {
       };
       record_branch_contact_click: {
         Args: { p_contact_id: string };
+        Returns: void;
+      };
+      submit_branch_inquiry: {
+        Args: {
+          p_branch_id: string;
+          p_inquirer_name: string;
+          p_contact_type: string;
+          p_contact_value: string;
+          p_career: string | null;
+          p_message: string;
+          p_consent_collection: boolean;
+          p_consent_third_party: boolean;
+          p_ip_address: string | null;
+          p_form_rendered_at: string | null;
+        };
+        Returns: string;
+      };
+      list_my_branch_inquiries: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          branch_id: string;
+          branch_name: string;
+          inquirer_name: string;
+          contact_type: string;
+          contact_value: string;
+          career: string | null;
+          message: string;
+          read_at: string | null;
+          created_at: string;
+        }[];
+      };
+      admin_list_branch_inquiries: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          branch_id: string;
+          branch_name: string;
+          ga_company_name: string;
+          inquirer_name: string;
+          contact_type: string;
+          contact_value: string;
+          career: string | null;
+          message: string;
+          read_at: string | null;
+          created_at: string;
+        }[];
+      };
+      mark_branch_inquiry_read: {
+        Args: { p_inquiry_id: string };
         Returns: void;
       };
       get_branch_stats: {

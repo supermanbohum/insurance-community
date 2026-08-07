@@ -1,6 +1,8 @@
 import { PhoneCall, CalendarDays, TrendingUp } from 'lucide-react';
 import { getInquirySummary, listRecentContactClicks } from '@/lib/admin/inquiries';
+import { listAdminBranchInquiries } from '@/lib/admin/branch-inquiries';
 import { StatCard } from '@/components/admin/StatCard';
+import { BranchInquiryList } from '@/components/admin/BranchInquiryList';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,9 +18,10 @@ const CONTACT_TYPE_LABEL: Record<string, string> = {
 };
 
 export default async function AdminInquiriesPage() {
-  const [summary, recentClicks] = await Promise.all([
+  const [summary, recentClicks, branchInquiries] = await Promise.all([
     getInquirySummary(),
     listRecentContactClicks({ limit: 50 }),
+    listAdminBranchInquiries(),
   ]);
 
   return (
@@ -26,9 +29,18 @@ export default async function AdminInquiriesPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">문의 관리</h1>
         <p className="text-sm text-muted-foreground">
-          전화·카카오·홈페이지 등 연락 채널 클릭 현황입니다. (branch_contact_clicks 집계)
+          지점에 접수된 문의와 연락 채널 클릭 현황입니다.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">지점 문의 (W-059)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <BranchInquiryList inquiries={branchInquiries} />
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label="누적 문의 클릭수" value={summary.totalCount} icon={PhoneCall} />

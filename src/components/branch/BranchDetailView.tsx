@@ -90,12 +90,15 @@ export function BranchDetailView({
   data,
   variant,
   favorite,
+  inquiry,
   layoutConfig,
 }: {
   data: BranchPreviewData;
   variant: 'public' | 'preview';
   /** 공개 페이지에서만 넘겨준다 - 관리자 미리보기에는 "지금 보는 사람의 즐겨찾기"라는 개념이 없다. */
   favorite?: { branchId: string; initialFavorited: boolean };
+  /** 공개 페이지에서만 넘겨준다(W-059) - 등록된 연락처가 없을 때 비로그인 문의 폼에 쓴다. */
+  inquiry?: { branchId: string; branchName: string };
   /** 디자인 편집모드에서 저장한 값 - 콘텐츠 미리보기(관리자 지점 편집 폼의 "미리보기" 탭)처럼
    * 레이아웃 자체는 관심사가 아닌 곳에서는 생략하면 기본값(지금 순서 그대로)으로 렌더링된다. */
   layoutConfig?: Record<Device, SectionConfig[]>;
@@ -360,7 +363,7 @@ export function BranchDetailView({
 
       <ResponsiveSection sectionKey="contacts" config={section('contacts')}>
         <Section title="연락처">
-          <BranchContactList contacts={data.contacts} variant={variant} />
+          <BranchContactList contacts={data.contacts} variant={variant} inquiry={inquiry} />
         </Section>
       </ResponsiveSection>
 

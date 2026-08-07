@@ -4,17 +4,36 @@ import Link from 'next/link';
 import { MessageCircle, Megaphone } from 'lucide-react';
 import { contactHref, contactTypeIcon, contactTypeLabel } from '@/lib/branch/contact-types';
 import { recordBranchContactClickAction } from '@/lib/actions/public';
+import { BranchInquiryForm } from '@/components/branch/BranchInquiryForm';
 import type { BranchContactItem } from '@/components/branch/types';
 
 export function BranchContactList({
   contacts,
   variant,
+  inquiry,
 }: {
   contacts: BranchContactItem[];
   variant: 'public' | 'preview';
+  /** 공개 페이지에서만 넘겨준다(W-059) - 등록된 연락처가 없을 때 비로그인 문의 폼을 보여준다. */
+  inquiry?: { branchId: string; branchName: string };
 }) {
   if (contacts.length === 0) {
     // 연락처가 없으면 막다른 길이 되지 않도록 대체 문의 경로를 제시한다(W-003).
+    if (variant === 'public' && inquiry) {
+      return (
+        <div className="flex flex-col gap-3">
+          <BranchInquiryForm branchId={inquiry.branchId} branchName={inquiry.branchName} />
+          {/* 채팅은 문의 폼으로 대체하지 않는다 - 실시간/비동기로 공존한다(W-059). */}
+          <Link
+            href="/chat"
+            className="flex items-center justify-center gap-1.5 rounded-full border border-line bg-white px-4 py-2.5 text-xs font-bold text-ink-soft transition-colors hover:border-brand-200 hover:text-brand-600"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            실시간 채팅으로 문의하기
+          </Link>
+        </div>
+      );
+    }
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-surface-sunken py-6 text-center">
         <p className="text-sm font-semibold text-ink">이 지점에 관심이 있으신가요?</p>

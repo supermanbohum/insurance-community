@@ -128,6 +128,7 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
         data={data}
         variant="public"
         favorite={{ branchId: branch.id, initialFavorited }}
+        inquiry={{ branchId: branch.id, branchName: branch.name }}
         layoutConfig={layoutConfig}
       />
     </div>
