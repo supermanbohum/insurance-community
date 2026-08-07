@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { MessageCircle, Megaphone } from 'lucide-react';
 import { contactHref, contactTypeIcon, contactTypeLabel } from '@/lib/branch/contact-types';
 import { recordBranchContactClickAction } from '@/lib/actions/public';
 import type { BranchContactItem } from '@/components/branch/types';
@@ -12,7 +14,31 @@ export function BranchContactList({
   variant: 'public' | 'preview';
 }) {
   if (contacts.length === 0) {
-    return <p className="text-sm text-ink-faint">등록된 연락처가 없습니다.</p>;
+    // 연락처가 없으면 막다른 길이 되지 않도록 대체 문의 경로를 제시한다(W-003).
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-surface-sunken py-6 text-center">
+        <p className="text-sm font-semibold text-ink">이 지점에 관심이 있으신가요?</p>
+        <p className="text-xs text-ink-faint">등록된 연락처가 없어 아래 방법으로 문의하실 수 있습니다.</p>
+        {variant === 'public' ? (
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Link
+              href="/chat"
+              className="flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-700"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              실시간 채팅 문의
+            </Link>
+            <Link
+              href="/contact"
+              className="flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-xs font-bold text-ink-soft transition-colors hover:border-brand-200 hover:text-brand-600"
+            >
+              <Megaphone className="h-3.5 w-3.5" />
+              정보 제보
+            </Link>
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return (

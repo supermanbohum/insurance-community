@@ -24,11 +24,23 @@ interface PostFormProps {
     title: string;
     content: string;
   };
+  /** 작성 모드 전용 프리필(W-003) - 지점 상세의 "이 지점 후기 쓰기"처럼 카테고리/제목을
+   * 미리 채워서 진입시킬 때 쓴다. initialValues(수정 모드 전용)와는 별개다. */
+  initialCategoryId?: string;
+  initialTitle?: string;
   existingImages?: ExistingImage[];
   action: (formData: FormData) => Promise<PostActionResult>;
 }
 
-export function PostForm({ mode, categories = [], initialValues, existingImages = [], action }: PostFormProps) {
+export function PostForm({
+  mode,
+  categories = [],
+  initialValues,
+  initialCategoryId,
+  initialTitle,
+  existingImages = [],
+  action,
+}: PostFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +80,7 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
           <select
             name="categoryId"
             required
+            defaultValue={initialCategoryId}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
           >
             {categories.map((category) => (
@@ -134,7 +147,7 @@ export function PostForm({ mode, categories = [], initialValues, existingImages 
           type="text"
           required
           maxLength={POST_TITLE_MAX_LENGTH}
-          defaultValue={initialValues?.title}
+          defaultValue={initialTitle ?? initialValues?.title}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
         />
       </div>

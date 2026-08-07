@@ -344,11 +344,15 @@ export function BranchDetailView({
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line py-8 text-center">
             <p className="text-[13px] text-ink-faint">아직 등록된 후기가 없습니다.</p>
             <Link
-              href={variant === 'preview' ? '#' : '/board/review'}
+              href={
+                variant === 'preview'
+                  ? '#'
+                  : `/write?category=review&title=${encodeURIComponent(`${data.gaCompanyName} ${data.name} 후기`)}`
+              }
               onClick={variant === 'preview' ? (e) => e.preventDefault() : undefined}
               className="rounded-full bg-brand-50 px-3.5 py-1.5 text-xs font-bold text-brand-600 transition-colors hover:bg-brand-100"
             >
-              이용후기 게시판에서 후기 남기기
+              이 지점 후기 쓰기
             </Link>
           </div>
         </Section>
