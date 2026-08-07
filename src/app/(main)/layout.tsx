@@ -8,6 +8,8 @@ import { SiteFooter } from '@/components/layout/SiteFooter';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { listActiveBanners } from '@/lib/public/banners';
 import { recordSiteVisit } from '@/lib/public/site-traffic.supabase';
+import { EventPopup } from '@/components/layout/EventPopup';
+import { getActiveEventPopup } from '@/lib/admin/event-popup';
 
 /**
  * 공개(비관리자) 페이지 전용 레이아웃 - 보험맵 헤더 + 공통 푸터를 담당한다.
@@ -24,19 +26,23 @@ import { recordSiteVisit } from '@/lib/public/site-traffic.supabase';
  * 너무 어려워 PC 일반 화면부터 보이도록 낮췄다 - 반응형 폭 조정은 추후 별도 진행).
  */
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const [user, leftBanners] = await Promise.all([
+  const [user, leftBanners, , eventPopup] = await Promise.all([
     getCurrentUser(),
     listActiveBanners('pc_left'),
     // 관리자 대시보드 "오늘 방문자/오늘 조회수" 집계용 - (main) 그룹 전체(홈 포함
     // 모든 공개 페이지) 로드마다 기록된다. /admin, /partner는 이 레이아웃 밖이라
     // 관리자·파트너 자신의 방문은 집계되지 않는다.
     recordSiteVisit(),
+    // 원래 루트 레이아웃에 있었으나 /admin, /partner 로그인 화면에도 함께 떠서
+    // 이 레이아웃(공개 방문자 전용)으로 옮겼다(W-004).
+    getActiveEventPopup(),
   ]);
   const leftBanner = leftBanners[0] ?? null;
 
   return (
     <AuthProvider initialUser={user}>
       <BohomMapHeader />
+      <EventPopup config={eventPopup} />
       <div className="mx-auto flex w-full max-w-[1440px] items-start gap-6 2xl:px-6">
         <aside className="hidden w-[240px] shrink-0 lg:block">
           <div className="sticky top-[76px]">

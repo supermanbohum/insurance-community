@@ -4,8 +4,6 @@ import './globals.css';
 import { SITE_CONFIG } from '@/lib/config/site';
 import { SITE_URL, DEFAULT_META_DESCRIPTION, DEFAULT_KEYWORDS, getVerificationMeta } from '@/lib/seo/config';
 import { Toaster } from '@/components/ui/sonner';
-import { EventPopup } from '@/components/layout/EventPopup';
-import { getActiveEventPopup } from '@/lib/admin/event-popup';
 import { BoheomBridge } from '@/components/bridge/BoheomBridge';
 
 const notoSansKr = Noto_Sans_KR({
@@ -58,11 +56,10 @@ const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.en
  * 미리 연결해 초기 이미지/지도 로딩 지연을 줄인다.
  * Toaster(sonner)는 모든 라우트(공개/파트너/관리자)가 공유하므로 여기 한 곳에만 마운트한다 -
  * 하위 레이아웃에 각자 또 마운트하면 토스트가 중복 렌더링된다.
- * EventPopup도 같은 이유로 여기 한 곳에만 마운트한다(사이트 전체 최초 방문자 대상).
+ * EventPopup은 공개 방문자 전용 프로모션이라 (main)/layout.tsx로 옮겼다 - 여기 있으면
+ * /admin, /partner 로그인 화면에도 함께 떠서 운영자 경험을 해쳤다(W-004).
  */
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const eventPopup = await getActiveEventPopup();
-
   return (
     <html lang="ko" className={notoSansKr.variable}>
       <head>
@@ -82,7 +79,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen bg-surface font-sans text-ink antialiased">
         {children}
         <Toaster position="top-center" />
-        <EventPopup config={eventPopup} />
         <BoheomBridge />
       </body>
     </html>
