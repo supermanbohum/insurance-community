@@ -1,12 +1,9 @@
-import Link from 'next/link';
-import Image from 'next/image';
 import { getCurrentUser } from '@/lib/auth/session';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { BohomMapHeader } from '@/components/layout/BohomMapHeader';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { ChatSidebarSlot } from '@/components/chat/ChatSidebarSlot';
-import { listActiveBanners } from '@/lib/public/banners';
 import { recordSiteVisit } from '@/lib/public/site-traffic.supabase';
 import { EventPopup } from '@/components/layout/EventPopup';
 import { getActiveEventPopup } from '@/lib/admin/event-popup';
@@ -24,14 +21,18 @@ import { getActiveEventPopup } from '@/lib/admin/event-popup';
  * 단 /chat 페이지 자체는 같은 ChatPanel을 variant="page"로 이미 전체화면 렌더링하므로,
  * ChatSidebarSlot이 그 경로에서는 사이드바를 숨겨 중복 렌더링을 막는다(W-035).
  * 태블릿/모바일(lg 미만)에서는 패널이 숨고 헤더 햄버거 메뉴의 "실시간 채팅" → /chat 페이지로
- * 대체된다. 좌측 광고 배너도 같은 lg 기준으로 노출한다. 컨테이너 좌우 패딩도 lg부터 함께
- * 적용해야 한다 - 패딩이 2xl부터만 붙던 이전 버전에서는 lg~2xl 구간(예: 1280px)에서
- * 배너/채팅 패널이 화면 가장자리에 여백 없이 붙어 스타일 미적용처럼 보이는 버그가 있었다(W-019).
+ * 대체된다. 컨테이너 좌우 패딩은 lg부터 함께 적용된다 - 패딩이 2xl부터만 붙던 이전
+ * 버전에서는 lg~2xl 구간(예: 1280px)에서 우측 채팅 패널이 화면 가장자리에 여백 없이
+ * 붙어 스타일 미적용처럼 보이는 버그가 있었다(W-019).
+ *
+ * 좌측 pc_left 배너 슬롯은 폐지했다(W-051, SPEC-004 §3) - 소재가 없을 때 "광고 영역
+ * (준비 중)" 점선 박스를 노출하는 게 디자인 스펙이 금지하는 상태였고, 슬롯 자체가
+ * 읽기 시작 지점을 침해해 살릴 4개 슬롯(pc_right 등)에서도 제외됐다. 빈 상태를
+ * 숨기는 조건부 렌더가 아니라 aside를 통째로 제거하는 게 맞는 처리다.
  */
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const [user, leftBanners, , eventPopup] = await Promise.all([
+  const [user, , eventPopup] = await Promise.all([
     getCurrentUser(),
-    listActiveBanners('pc_left'),
     // 관리자 대시보드 "오늘 방문자/오늘 조회수" 집계용 - (main) 그룹 전체(홈 포함
     // 모든 공개 페이지) 로드마다 기록된다. /admin, /partner는 이 레이아웃 밖이라
     // 관리자·파트너 자신의 방문은 집계되지 않는다.
@@ -40,28 +41,12 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     // 이 레이아웃(공개 방문자 전용)으로 옮겼다(W-004).
     getActiveEventPopup(),
   ]);
-  const leftBanner = leftBanners[0] ?? null;
 
   return (
     <AuthProvider initialUser={user}>
       <BohomMapHeader />
       <EventPopup config={eventPopup} />
       <div className="mx-auto flex w-full max-w-[1440px] items-start gap-6 lg:px-6">
-        <aside className="hidden w-[240px] shrink-0 lg:block">
-          <div className="sticky top-[76px]">
-            {leftBanner?.pcImageUrl ? (
-              <Link href={leftBanner.linkUrl} className="block overflow-hidden rounded-2xl border border-line shadow-card transition-shadow hover:shadow-card-hover">
-                <Image src={leftBanner.pcImageUrl} alt="광고" width={240} height={320} className="h-auto w-full" />
-              </Link>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-line bg-surface-sunken py-10 text-center text-xs text-ink-faint">
-                광고 영역
-                <br />
-                (준비 중)
-              </div>
-            )}
-          </div>
-        </aside>
         <main className="min-w-0 flex-1">
           <PageTransition>{children}</PageTransition>
         </main>
