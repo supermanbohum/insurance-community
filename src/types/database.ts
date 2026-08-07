@@ -1305,7 +1305,6 @@ export interface Database {
       public_planner_profiles: {
         Row: {
           id: string;
-          profile_photo_path: string | null;
           active_region_id: string;
           career_years: number;
           specialties: string[];
@@ -2196,7 +2195,7 @@ export interface Database {
       };
       get_planner_contact: {
         Args: { p_planner_profile_id: string };
-        Returns: { name: string; phone: string; email: string; kakao_id: string | null }[];
+        Returns: { name: string; phone: string; email: string; kakao_id: string | null; profile_photo_path: string | null }[];
       };
       list_my_planner_contact_notifications: {
         Args: Record<string, never>;

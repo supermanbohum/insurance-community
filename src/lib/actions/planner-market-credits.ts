@@ -2,9 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePartner } from '@/lib/partner/session';
 import { getPaymentProvider } from '@/lib/payments/provider';
 import type { CreditPurchaseTierCode } from '@/types/database';
+
+const PLANNER_PHOTO_BUCKET = 'planner-market-profile-photos';
+const PLANNER_PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 60; // 1시간 - 상세 화면 체류 시간에 여유를 둔 값.
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
@@ -50,11 +54,16 @@ export async function purchasePlannerMarketCreditsAction(
 }
 
 export type UnlockContactResult =
-  | { success: true; contact: { name: string; phone: string; email: string; kakaoId: string | null } }
+  | { success: true; contact: { name: string; phone: string; email: string; kakaoId: string | null; photoUrl: string | null } }
   | { success: false; error: string; code?: 'INSUFFICIENT_CREDITS' };
 
-/** 설계사 연락처 열람 - 동일 GA사가 같은 설계사를 재조회해도 크레딧이 다시 차감되지
- * 않는다(get_planner_contact RPC의 원자적 언락 로직, 0036 참고). */
+/** 설계사 연락처(+프로필 사진) 열람 - 동일 GA사가 같은 설계사를 재조회해도 크레딧이
+ * 다시 차감되지 않는다(get_planner_contact RPC의 원자적 언락 로직, 0036 참고).
+ * 사진은 W-064 v2(오너 지시)로 연락처와 같은 열람권 게이팅 대상이 됐다 - 버킷이
+ * 비공개라 RPC가 돌려주는 storage path만으로는 브라우저가 못 열고, 서비스 롤로
+ * signed URL을 새로 발급해야 한다. RPC 자체가 이미 "이 GA사가 이 설계사를 열람할
+ * 권한이 있는지"를 검증한 뒤에만 path를 돌려주므로, 여기서 별도 권한 체크를
+ * 반복하지 않는다(권한 판단의 단일 소스는 RPC 하나로 유지). */
 export async function unlockPlannerContactAction(plannerProfileId: string): Promise<UnlockContactResult> {
   await requirePartner();
 
@@ -73,6 +82,15 @@ export async function unlockPlannerContactAction(plannerProfileId: string): Prom
     return { success: false, error: message };
   }
 
+  let photoUrl: string | null = null;
+  if (data.profile_photo_path) {
+    const admin = createAdminClient();
+    const { data: signed } = await admin.storage
+      .from(PLANNER_PHOTO_BUCKET)
+      .createSignedUrl(data.profile_photo_path, PLANNER_PHOTO_SIGNED_URL_TTL_SECONDS);
+    photoUrl = signed?.signedUrl ?? null;
+  }
+
   revalidatePath('/planner-market/purchase');
-  return { success: true, contact: { name: data.name, phone: data.phone, email: data.email, kakaoId: data.kakao_id } };
+  return { success: true, contact: { name: data.name, phone: data.phone, email: data.email, kakaoId: data.kakao_id, photoUrl } };
 }

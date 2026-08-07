@@ -1,13 +1,10 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { User } from 'lucide-react';
 import { getPublicPlannerProfile } from '@/lib/public/planner-market.supabase';
 import { recordPlannerProfileViewAction } from '@/lib/actions/planner-market';
 import { PlannerContactUnlockButton } from '@/components/planner-market/PlannerContactUnlockButton';
 import { PlannerBadgeList } from '@/components/planner-market/PlannerBadgeList';
 import { BackButton } from '@/components/shared/BackButton';
-import { avatarGradient } from '@/lib/utils';
 import { JOB_SEARCH_STATUS_LABEL, DESIRED_START_TIMING_LABEL, CONTACTABLE_TIME_LABEL } from '@/lib/planner-market/labels';
 import { Breadcrumb } from '@/components/seo/Breadcrumb';
 import { JsonLd } from '@/components/seo/JsonLd';
@@ -63,21 +60,10 @@ export default async function PlannerMarketDetailPage({ params }: { params: { pl
       />
       <BackButton />
 
-      <div className="flex items-start gap-4">
-        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-surface-sunken">
-          {planner.profilePhotoUrl ? (
-            <Image src={planner.profilePhotoUrl} alt="프로필 사진" fill sizes="96px" className="object-cover" />
-          ) : (
-            <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br text-white/85 ${avatarGradient(planner.id)}`}>
-              <User className="h-9 w-9" strokeWidth={1.5} />
-            </div>
-          )}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <PlannerBadgeList badges={planner.badges} />
-          <h1 className="text-lg font-bold">{planner.activeRegionLabel || '지역 미상'} · 경력 {planner.careerYears}년</h1>
-          {planner.specialties.length > 0 && <p className="text-sm text-ink-soft">{planner.specialties.join(', ')}</p>}
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <PlannerBadgeList badges={planner.badges} />
+        <h1 className="text-lg font-bold">{planner.activeRegionLabel || '지역 미상'} · 경력 {planner.careerYears}년</h1>
+        {planner.specialties.length > 0 && <p className="text-sm text-ink-soft">{planner.specialties.join(', ')}</p>}
       </div>
 
       <PlannerContactUnlockButton plannerProfileId={planner.id} />

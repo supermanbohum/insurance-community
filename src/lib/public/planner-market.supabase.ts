@@ -3,12 +3,12 @@ import type { PublicPlannerProfileSummary, PlannerBadgeSummary } from '@/types/d
 
 /** cookies()를 건드리지 않는 공개 클라이언트로 public_planner_profiles 뷰만 읽는다 -
  * "설계사 찾기" 목록/상세는 로그인 여부와 무관하게 누구나 볼 수 있다(공개 필드만).
- * 이름/전화/이메일/카카오톡은 이 파일에서 절대 조회하지 않는다 - 그건
- * src/lib/actions/planner-market-credits.ts의 get_planner_contact RPC 전용이다. */
+ * 이름/전화/이메일/카카오톡/프로필 사진은 이 파일에서 절대 조회하지 않는다 - 그건
+ * src/lib/actions/planner-market-credits.ts의 get_planner_contact RPC 전용이다
+ * (W-064 v2 - 사진도 연락처와 같은 열람권 게이팅 대상). */
 
 interface PublicPlannerProfileRow {
   id: string;
-  profile_photo_path: string | null;
   active_region_id: string;
   career_years: number;
   specialties: string[];
@@ -26,10 +26,6 @@ interface PublicPlannerProfileRow {
   has_top_planner: boolean;
 }
 
-function getPhotoBaseUrl(): string {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/planner-market-profile-photos`;
-}
-
 function regionLabel(region: { sido_name: string; sigungu_name: string | null } | undefined): string {
   if (!region) return '';
   return region.sigungu_name ? `${region.sido_name} ${region.sigungu_name}` : region.sido_name;
@@ -40,7 +36,6 @@ async function toSummaries(
   rows: PublicPlannerProfileRow[]
 ): Promise<PublicPlannerProfileSummary[]> {
   if (rows.length === 0) return [];
-  const photoBaseUrl = getPhotoBaseUrl();
 
   const regionIds = Array.from(
     new Set(rows.flatMap((r) => [r.active_region_id, r.desired_region_id]).filter((id): id is string => Boolean(id)))
@@ -61,7 +56,11 @@ async function toSummaries(
 
   return rows.map((row) => ({
     id: row.id,
-    profilePhotoUrl: row.profile_photo_path ? `${photoBaseUrl}/${row.profile_photo_path}` : null,
+    // W-064 v2(오너 지시) - 프로필 사진은 구조적으로 비공개다. public_planner_profiles
+    // 뷰가 profile_photo_path를 아예 내보내지 않으므로 여기서 만들 URL 자체가 없다.
+    // 실제 사진은 열람권 사용 시 get_planner_contact RPC를 통해서만 얻는다
+    // (unlockPlannerContactAction, PlannerContactUnlockButton).
+    profilePhotoUrl: null,
     activeRegionId: row.active_region_id,
     activeRegionLabel: regionLabel(regionMap.get(row.active_region_id)),
     careerYears: row.career_years,
