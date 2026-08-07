@@ -47,6 +47,9 @@ export function ChatPanel({ currentUser, variant }: { currentUser: UserSession |
         >
           회원가입 하러가기
         </Link>
+        <Link href="/login?next=/chat" className="text-xs font-medium text-ink-faint hover:text-brand-600 hover:underline">
+          이미 계정이 있으신가요? 로그인
+        </Link>
       </div>
     );
   }
