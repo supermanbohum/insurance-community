@@ -100,6 +100,18 @@ export default function PrivacyPage() {
             ],
           ]}
         />
+        <p>회사는 설계사 회원의 사전 동의를 받아, 열람 서비스를 통해 아래와 같이 개인정보를 제공합니다.</p>
+        <LegalTable
+          head={['제공받는 자', '제공 목적', '제공 항목', '제공받는 자의 보유·이용기간']}
+          rows={[
+            [
+              '열람권을 사용한 지점 관리자 회원',
+              '위촉·채용 상담을 위한 설계사 정보 확인 및 연락',
+              '프로필 정보(활동지역, 경력, 전문분야, 희망조건), 프로필 사진, 연락처(설계사가 전달에 동의한 경우에 한함)',
+              '목적 달성 시까지',
+            ],
+          ]}
+        />
       </LegalSection>
 
       <LegalSection title="5. 개인정보 처리의 위탁">
@@ -194,6 +206,7 @@ export default function PrivacyPage() {
         <p>이 방침은 {EFFECTIVE_DATE}부터 시행됩니다.</p>
         <p>제5조 위탁업체 표의 결제서비스 제공업체 항목은 {PG_ENTRUSTEE_ADDED_DATE}에 추가되었으며, 결제대행사 계약 체결 후 구체적인 업체명으로 갱신될 예정입니다.</p>
         <p>지점 문의 서비스와 관련된 제1조·제2조·제3조·제4조·제8조의 조항은 {INQUIRY_CLAUSE_ADDED_DATE}에 추가되었습니다.</p>
+        <p>제4조의 설계사 정보 열람 서비스 관련 제공 항목(프로필 사진 포함)은 {INQUIRY_CLAUSE_ADDED_DATE}에 추가되었습니다.</p>
       </LegalSection>
     </LegalPageLayout>
   );
