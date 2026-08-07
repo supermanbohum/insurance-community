@@ -22,6 +22,7 @@ import {
   MessageSquareText,
   History,
   TrendingUp,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +56,7 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/event-popup', label: '이벤트 팝업', icon: PartyPopper },
   { href: '/admin/banners', label: '배너 관리', icon: GalleryHorizontal },
   { href: '/admin/audit-log', label: '작업 로그', icon: History },
+  { href: '/admin/push-test', label: '푸시 테스트', icon: Bell },
 ];
 
 export function AdminNavLinks({ onNavigate, badges }: { onNavigate?: () => void; badges?: AdminNavBadges }) {

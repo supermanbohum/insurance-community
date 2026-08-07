@@ -1,21 +1,13 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Briefcase } from 'lucide-react';
+import { notFound } from 'next/navigation';
 
-// best/events와 동일한 이유(준비 중 placeholder) - 실제 기능이 나오기 전까지 색인 제외.
-export const metadata: Metadata = {
-  title: '채용정보',
-  robots: { index: false, follow: true },
-};
-
+/**
+ * 지점 단위 채용공고 등록 자체는 실제로 동작한다(BranchRecruitTab → branch_recruit →
+ * 지점 상세 페이지 노출, /register 랜딩의 "채용공고 등록" 카드가 약속하는 게 이거다).
+ * 없는 건 여러 지점의 채용공고를 한 곳에 모아 보여주는 이 집계 페이지뿐이고,
+ * branch_recruit가 아직 0행이라 지금 만들어도 빈 목록이다. "준비 중" 문구 대신
+ * 라우트 자체를 숨긴다(오늘 세운 원칙 - 데이터 없으면 스텁 대신 404).
+ * branch_recruit에 실제 데이터가 쌓이면 이 페이지를 진짜 집계 목록으로 교체한다.
+ */
 export default function JobsPage() {
-  return (
-    <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 px-4 py-20 text-center text-gray-400">
-      <Briefcase className="h-8 w-8" />
-      <p className="text-sm">채용 기능은 준비 중입니다.</p>
-      <Link href="/" className="mt-2 text-sm text-brand-700 underline">
-        홈으로 돌아가기
-      </Link>
-    </div>
-  );
+  notFound();
 }
