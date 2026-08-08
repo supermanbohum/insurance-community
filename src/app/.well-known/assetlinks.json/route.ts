@@ -6,13 +6,12 @@ import { NextResponse } from 'next/server';
  * public/ 정적 파일의 Content-Type을 확장자만으로 추론해서 어긋날 여지가 있어서다
  * (여기서는 명시적으로 고정한다).
  *
- * PACKAGE_NAME/SHA256_CERT_FINGERPRINT는 아직 값이 없다 - 패키지명은 앱팀이,
- * 서명 지문은 CTO가 EAS에서 확보해 채우기로 했다(2026-08-08 CTO 지시). 값이 채워지기
- * 전까지는 Google이 검증에 실패할 뿐이라 무해하지만, 실제 사용자에게 영향을 주는
- * 값이라 임의로 지어내지 않았다.
+ * CTO가 EAS Credentials(com.bohummap.app → Android upload keystore)에서 직접 확인해
+ * 넘겨준 값이다(2026-08-08) - 서명 인증서의 공개 지문이고 이 파일 자체가 공개
+ * 호스팅되는 용도라 비밀값이 아니다.
  */
-const PACKAGE_NAME = 'TODO_APP_TEAM_PACKAGE_NAME';
-const SHA256_CERT_FINGERPRINT = 'TODO_CTO_EAS_SHA256_FINGERPRINT';
+const PACKAGE_NAME = 'com.bohummap.app';
+const SHA256_CERT_FINGERPRINT = '45:49:19:76:1D:C2:DB:B5:BE:F6:B6:BA:5B:C6:45:49:4C:16:DE:C5:B8:88:66:2A:DF:64:71:E7:1E:23:F8:62';
 
 export async function GET() {
   return NextResponse.json(
