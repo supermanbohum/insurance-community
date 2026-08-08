@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { BadgeCheck } from 'lucide-react';
 import { CommentForm } from '@/components/post/CommentForm';
+import { deleteCommentAction } from '@/lib/actions/comments';
 import type { CommentThread, CommentRow } from '@/lib/posts/comments';
 
 interface CommentSectionProps {
@@ -13,9 +14,20 @@ interface CommentSectionProps {
   comments: CommentThread[];
   isFullMember: boolean;
   loginHref: string;
+  currentProfileId: string | null;
 }
 
-function CommentRowView({ comment }: { comment: CommentRow }) {
+function CommentRowView({
+  comment,
+  isOwner,
+  onDelete,
+  isDeleting,
+}: {
+  comment: CommentRow;
+  isOwner: boolean;
+  onDelete: () => void;
+  isDeleting: boolean;
+}) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2 text-xs text-ink-faint">
@@ -29,19 +41,41 @@ function CommentRowView({ comment }: { comment: CommentRow }) {
         <span>{format(new Date(comment.created_at), 'yyyy.MM.dd HH:mm')}</span>
       </div>
       <p className="whitespace-pre-wrap break-words text-sm leading-6 text-ink">{comment.content}</p>
+      {isOwner && (
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={isDeleting}
+          className="self-start text-xs font-medium text-ink-faint hover:text-red-600 disabled:opacity-60"
+        >
+          {isDeleting ? '삭제 중...' : '삭제'}
+        </button>
+      )}
     </div>
   );
 }
 
-export function CommentSection({ postId, comments, isFullMember, loginHref }: CommentSectionProps) {
+export function CommentSection({ postId, comments, isFullMember, loginHref, currentProfileId }: CommentSectionProps) {
   const router = useRouter();
   const [replyTargetId, setReplyTargetId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const totalCount = comments.reduce((sum, comment) => sum + 1 + comment.replies.length, 0);
 
   function refresh() {
     setReplyTargetId(null);
     router.refresh();
+  }
+
+  function handleDelete(commentId: string) {
+    if (!window.confirm('댓글을 삭제하시겠습니까?')) return;
+    setDeletingId(commentId);
+    startTransition(async () => {
+      await deleteCommentAction(commentId);
+      setDeletingId(null);
+      router.refresh();
+    });
   }
 
   return (
@@ -65,7 +99,12 @@ export function CommentSection({ postId, comments, isFullMember, loginHref }: Co
         <div className="mt-5 flex flex-col gap-5">
           {comments.map((comment) => (
             <div key={comment.id} className="flex flex-col gap-3">
-              <CommentRowView comment={comment} />
+              <CommentRowView
+                comment={comment}
+                isOwner={!!currentProfileId && comment.author_id === currentProfileId}
+                onDelete={() => handleDelete(comment.id)}
+                isDeleting={isPending && deletingId === comment.id}
+              />
 
               {isFullMember && (
                 <button
@@ -92,7 +131,13 @@ export function CommentSection({ postId, comments, isFullMember, loginHref }: Co
               {comment.replies.length > 0 && (
                 <div className="ml-4 flex flex-col gap-3 border-l-2 border-line pl-3">
                   {comment.replies.map((reply) => (
-                    <CommentRowView key={reply.id} comment={reply} />
+                    <CommentRowView
+                      key={reply.id}
+                      comment={reply}
+                      isOwner={!!currentProfileId && reply.author_id === currentProfileId}
+                      onDelete={() => handleDelete(reply.id)}
+                      isDeleting={isPending && deletingId === reply.id}
+                    />
                   ))}
                 </div>
               )}

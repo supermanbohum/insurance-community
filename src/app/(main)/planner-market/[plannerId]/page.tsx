@@ -29,7 +29,11 @@ export async function generateMetadata({ params }: { params: { plannerId: string
     title,
     description,
     alternates: { canonical: `/planner-market/${planner.id}` },
-    openGraph: { title, description },
+    // W-071 - 이 세그먼트에는 opengraph-image.tsx가 따로 없어서 루트(app/opengraph-image.tsx)를
+    // 상속받아야 하는데, openGraph를 여기서 재정의하면서 images를 비워두면 그 상속이 끊긴다
+    // (twitter:image는 이 페이지가 twitter를 건드리지 않아 정상 상속됨 - 실측으로 확인).
+    // 루트 이미지 경로를 명시적으로 재사용해 끊긴 상속을 복구한다.
+    openGraph: { title, description, images: ['/opengraph-image'] },
   };
 }
 

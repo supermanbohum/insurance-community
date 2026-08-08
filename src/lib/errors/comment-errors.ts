@@ -14,6 +14,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   RATE_LIMITED: '잠시 후 다시 시도해 주세요. 짧은 시간에 너무 많은 댓글이 등록되어 잠시 제한되었습니다.',
   BURST_LIMITED: '잠시 후 다시 시도해 주세요. 짧은 시간에 너무 많은 댓글이 등록되어 잠시 제한되었습니다.',
   DUPLICATE_CONTENT: '직전에 작성한 댓글과 내용이 같습니다. 내용을 수정해 다시 시도해 주세요.',
+  NOT_COMMENT_OWNER: '본인이 작성한 댓글만 삭제할 수 있습니다.',
 };
 
 const DEFAULT_MESSAGE = '요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.';

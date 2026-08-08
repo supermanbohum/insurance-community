@@ -36,7 +36,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     title,
     description,
     alternates: { canonical: `/post/${post.id}` },
-    openGraph: { title, description },
+    // W-071 - 이 세그먼트에는 opengraph-image.tsx가 따로 없어서 루트(app/opengraph-image.tsx)를
+    // 상속받아야 하는데, openGraph를 여기서 재정의하면서 images를 비워두면 그 상속이 끊긴다
+    // (twitter:image는 이 페이지가 twitter를 건드리지 않아 정상 상속됨 - 실측으로 확인).
+    // 루트 이미지 경로를 명시적으로 재사용해 끊긴 상속을 복구한다.
+    openGraph: { title, description, images: ['/opengraph-image'] },
     // 관리자가 색인 제외 처리한 글(is_seo_indexable=false)은 검색결과에 노출하지 않는다.
     ...(post.is_seo_indexable ? {} : { robots: { index: false, follow: true } }),
   };
@@ -56,7 +60,11 @@ export default async function PostDetailPage({ params }: { params: { id: string 
 
   const { post, images, isOwner } = result;
 
-  const [comments, currentUser] = await Promise.all([getPostComments(post.id), getCurrentUser()]);
+  const [comments, currentUser, { data: currentProfileId }] = await Promise.all([
+    getPostComments(post.id),
+    getCurrentUser(),
+    supabase.rpc('current_profile_id'),
+  ]);
   const loginHref = currentUser
     ? `/verify-email?next=${encodeURIComponent(`/post/${post.id}`)}`
     : `/login?next=${encodeURIComponent(`/post/${post.id}`)}`;
@@ -161,6 +169,7 @@ export default async function PostDetailPage({ params }: { params: { id: string 
           comments={comments}
           isFullMember={currentUser?.isFullMember ?? false}
           loginHref={loginHref}
+          currentProfileId={currentProfileId ?? null}
         />
 
         <div className="mt-4 border-t border-line pt-3">

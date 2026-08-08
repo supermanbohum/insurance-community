@@ -7,6 +7,7 @@ import { commentFormSchema } from '@/lib/validation/comment';
 import { toCommentErrorMessage } from '@/lib/errors/comment-errors';
 
 export type CommentActionResult = { success: true; commentId: string } | { success: false; error: string };
+export type DeleteActionResult = { success: true } | { success: false; error: string };
 
 function validatePersonalInfo(content: string): string | null {
   const result = detectPersonalInfo(content);
@@ -62,4 +63,13 @@ export async function createCommentAction(formData: FormData): Promise<CommentAc
   }
 
   return { success: true, commentId: data as unknown as string };
+}
+
+export async function deleteCommentAction(commentId: string): Promise<DeleteActionResult> {
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('soft_delete_comment', { p_comment_id: commentId });
+  if (error) {
+    return { success: false, error: toCommentErrorMessage(error) };
+  }
+  return { success: true };
 }

@@ -1387,6 +1387,10 @@ export interface Database {
         };
         Returns: string;
       };
+      soft_delete_comment: {
+        Args: { p_comment_id: string };
+        Returns: void;
+      };
       add_post_image: {
         Args: {
           p_post_id: string;
