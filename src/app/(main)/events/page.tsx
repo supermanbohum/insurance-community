@@ -1,21 +1,10 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { CalendarDays } from 'lucide-react';
+import { notFound } from 'next/navigation';
 
-// best/jobs와 동일한 이유(준비 중 placeholder) - 실제 기능이 나오기 전까지 색인 제외.
-export const metadata: Metadata = {
-  title: '이벤트',
-  robots: { index: false, follow: true },
-};
-
+/**
+ * "준비 중" 문구 대신 라우트를 숨긴다(W-070의 /jobs와 동일 원칙, CTO 승인 2026-08-08).
+ * /jobs·/best와 다르게 이건 데이터 모델 자체가 없다 - events 테이블이 마이그레이션
+ * 어디에도 없다. 집계 페이지만 없는 게 아니라 기능 자체가 없는 경우.
+ */
 export default function EventsPage() {
-  return (
-    <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 px-4 py-20 text-center text-gray-400">
-      <CalendarDays className="h-8 w-8" />
-      <p className="text-sm">이벤트 기능은 준비 중입니다.</p>
-      <Link href="/" className="mt-2 text-sm text-brand-700 underline">
-        홈으로 돌아가기
-      </Link>
-    </div>
-  );
+  notFound();
 }

@@ -1,20 +1,13 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
-// 준비 중인 빈 placeholder라 검색결과에 노출되면 얇은 콘텐츠(thin content)로
-// 취급될 수 있다 - 실제 기능이 나오기 전까지는 색인에서 제외한다.
-export const metadata: Metadata = {
-  title: '베스트 게시글',
-  robots: { index: false, follow: true },
-};
-
+/**
+ * "준비 중" 문구 대신 라우트를 숨긴다(W-070의 /jobs와 동일 원칙, CTO 승인 2026-08-08).
+ *
+ * /jobs·/events와 다른 점: posts 테이블에 이미 best_override_status·auto_best_score·
+ * best_rank_override 컬럼이 있다 - "베스트" 랭킹 시스템 자체는 설계돼 있고 이 목록
+ * 페이지만 없는 상태다(단순 추천수 정렬이 아니라 이 스코어링 체계를 따라야 정확한
+ * 구현이라, 그 설계를 확인 없이 지금 임의로 만들지 않았다 - CTO 보고 참고).
+ */
 export default function BestPage() {
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-10 text-center">
-      <p className="text-sm text-ink-faint">베스트 게시글 기능은 준비 중입니다.</p>
-      <Link href="/" className="mt-4 inline-block text-sm font-semibold text-brand-600 underline">
-        홈으로 돌아가기
-      </Link>
-    </div>
-  );
+  notFound();
 }
