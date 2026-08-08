@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
 import { getPageLayoutConfig } from '@/lib/design/layout';
+import { getActiveHomeOpenBanner } from '@/lib/admin/home-banner';
 import { HOME_SECTIONS, type Device } from '@/lib/design/sections';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
+import { HomeOpenBanner } from '@/components/home/HomeOpenBanner';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
@@ -63,11 +65,12 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [popular, latest, stats, layoutConfig] = await Promise.all([
+  const [popular, latest, stats, layoutConfig, openBanner] = await Promise.all([
     listPublicBranches({ sort: 'views', limit: 10 }),
     listPublicBranches({ sort: 'newest', limit: 10 }),
     getHomeStats(),
     getPageLayoutConfig('home'),
+    getActiveHomeOpenBanner(),
   ]);
 
   const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '우리 지점 등록하기';
@@ -123,6 +126,11 @@ export default async function HomePage() {
           주제를 정확히 파악하도록 시각적으로만 숨긴 h1을 둔다. */}
       <h1 className="sr-only">보험맵 - 전국 GA·보험대리점 정보와 보험설계사 리크루팅 플랫폼</h1>
       <JsonLd data={[websiteJsonLd(), organizationJsonLd()]} />
+      {openBanner && (
+        <div className="mb-3">
+          <HomeOpenBanner banner={openBanner} />
+        </div>
+      )}
       {HOME_SECTIONS.map((def) => (
         <ResponsiveSection
           key={def.key}

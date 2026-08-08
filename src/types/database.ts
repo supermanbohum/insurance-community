@@ -303,6 +303,22 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['event_popups']['Row']>;
         Relationships: [];
       };
+      home_open_banner: {
+        Row: {
+          id: string;
+          is_active: boolean;
+          headline: string;
+          subtext: string;
+          cta_label: string;
+          cta_href: string;
+          updated_by_admin_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['home_open_banner']['Row']>;
+        Update: Partial<Database['public']['Tables']['home_open_banner']['Row']>;
+        Relationships: [];
+      };
       post_images: {
         Row: {
           id: string;

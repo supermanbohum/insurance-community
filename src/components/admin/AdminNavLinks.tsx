@@ -54,6 +54,7 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/community', label: '커뮤니티 관리', icon: MessageSquareText },
   { href: '/admin/design/home', label: '디자인 편집', icon: LayoutTemplate },
   { href: '/admin/event-popup', label: '이벤트 팝업', icon: PartyPopper },
+  { href: '/admin/home-banner', label: '홈 오픈 배너', icon: Megaphone },
   { href: '/admin/banners', label: '배너 관리', icon: GalleryHorizontal },
   { href: '/admin/audit-log', label: '작업 로그', icon: History },
   { href: '/admin/push-test', label: '푸시 테스트', icon: Bell },
