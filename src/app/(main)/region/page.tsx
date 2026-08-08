@@ -41,7 +41,7 @@ export default async function RegionListPage() {
             <Link
               key={sido.sidoCode}
               href="/register"
-              className="flex flex-col items-center gap-1.5 rounded-lg border border-dashed border-brand-200 bg-brand-50/40 py-4 text-center text-sm text-ink-soft hover:bg-brand-50"
+              className="flex flex-col items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50/40 py-4 text-center text-sm text-ink-soft hover:bg-brand-50"
             >
               <MapPin className="h-4 w-4 text-brand-400" />
               {sido.sidoName}

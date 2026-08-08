@@ -33,11 +33,13 @@ function Section({
   title,
   subtitle,
   moreHref,
+  moreLabel = '더보기',
   children,
 }: {
   title: string;
   subtitle?: string;
   moreHref: string;
+  moreLabel?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -51,7 +53,7 @@ function Section({
           href={moreHref}
           className="flex items-center gap-0.5 text-xs font-medium text-ink-faint transition-colors hover:text-brand-600"
         >
-          더보기
+          {moreLabel}
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
@@ -74,7 +76,14 @@ export default async function HomePage() {
     hero: <HomeRegisterHero stats={stats} ctaLabel={ctaLabel} />,
     quickMenu: <QuickMenuGrid />,
     popularGa: (
-      <Section title="🔥 인기 GA" subtitle="가장 많이 찾아본 지점" moreHref="/search?sort=views">
+      <Section
+        title="🔥 인기 GA"
+        subtitle="가장 많이 찾아본 지점"
+        // W-086 - 목록이 비어 있을 때 "더보기"가 또 다른 빈 화면(검색결과 0건)으로
+        // 보내는 막다른 길이었다. 비어 있으면 등록 CTA로 대신 보낸다.
+        moreHref={popular.length === 0 ? '/register' : '/search?sort=views'}
+        moreLabel={popular.length === 0 ? '지점 등록하기' : '더보기'}
+      >
         {popular.length === 0 ? (
           <EmptyRow text="아직 조회 데이터가 없습니다." />
         ) : (
@@ -87,7 +96,12 @@ export default async function HomePage() {
       </Section>
     ),
     latest: (
-      <Section title="🆕 신규 등록" subtitle="최근에 새로 올라온 지점" moreHref="/search?sort=newest">
+      <Section
+        title="🆕 신규 등록"
+        subtitle="최근에 새로 올라온 지점"
+        moreHref={latest.length === 0 ? '/register' : '/search?sort=newest'}
+        moreLabel={latest.length === 0 ? '지점 등록하기' : '더보기'}
+      >
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
         ) : (
