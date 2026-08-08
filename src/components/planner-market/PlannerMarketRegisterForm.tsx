@@ -18,6 +18,7 @@ import { PlannerMarketConsentCheckboxes, EMPTY_CONSENTS, type PlannerMarketConse
 import { TopDesignerApplyFields, EMPTY_TOP_DESIGNER_APPLY_STATE, type TopDesignerApplyState } from '@/components/top-designer/TopDesignerApplyFields';
 import { submitTopDesignerCertificationAction } from '@/lib/actions/top-designer';
 import { createClient } from '@/lib/supabase/client';
+import { trackPlannerRegisterComplete } from '@/lib/analytics/track';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -228,6 +229,9 @@ export function PlannerMarketRegisterForm({
       }
 
       toast.success(isEditMode ? '수정되었습니다. 활동지역/경력/희망GA 변경은 운영팀 승인 후 반영됩니다.' : '설계사 등록 신청이 접수되었습니다. 운영팀 승인 후 공개됩니다.');
+      if (!isEditMode) {
+        trackPlannerRegisterComplete();
+      }
       router.push('/planner-market/my');
       router.refresh();
     });

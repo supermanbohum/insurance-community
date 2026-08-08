@@ -5,6 +5,7 @@ import { SITE_CONFIG } from '@/lib/config/site';
 import { SITE_URL, DEFAULT_META_DESCRIPTION, DEFAULT_KEYWORDS, getVerificationMeta } from '@/lib/seo/config';
 import { Toaster } from '@/components/ui/sonner';
 import { BoheomBridge } from '@/components/bridge/BoheomBridge';
+import { AnalyticsScripts } from '@/components/analytics/AnalyticsScripts';
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ['latin'],
@@ -80,6 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {children}
         <Toaster position="top-center" />
         <BoheomBridge />
+        <AnalyticsScripts />
       </body>
     </html>
   );

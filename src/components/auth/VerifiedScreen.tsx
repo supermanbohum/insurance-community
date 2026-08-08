@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { trackSignupComplete } from '@/lib/analytics/track';
 
 const AUTO_REDIRECT_MS = 3000;
 
@@ -12,6 +13,7 @@ export function VerifiedScreen({ next }: { next: string }) {
   const [secondsLeft, setSecondsLeft] = useState(Math.ceil(AUTO_REDIRECT_MS / 1000));
 
   useEffect(() => {
+    trackSignupComplete();
     const timer = setTimeout(() => {
       router.replace(next);
     }, AUTO_REDIRECT_MS);

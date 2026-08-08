@@ -12,6 +12,7 @@ import {
   uploadPartnerBranchVideoAction,
   saveBranchRegistrationDraftAction,
 } from '@/lib/actions/partner';
+import { trackBranchRegisterComplete } from '@/lib/analytics/track';
 import type { RegionRow } from '@/lib/admin/branch';
 import type { GaFilterOption } from '@/lib/public/ga-directory';
 import { RegionSelect } from '@/components/admin/RegionSelect';
@@ -313,6 +314,7 @@ export function OnboardingForm({
       }
 
       triggerHaptic('success');
+      trackBranchRegisterComplete();
       router.push(`/partner/register/complete?branchId=${result.branchId}`);
       router.refresh();
     });
