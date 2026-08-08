@@ -25,7 +25,12 @@ export async function reviewChangeRequestAction(
   });
 
   if (error) {
-    return { success: false, error: error.message.includes('MISSING_') ? '필수 서류 또는 사진이 모두 등록되지 않았습니다.' : '처리하지 못했습니다.' };
+    const message = error.message.includes('MISSING_')
+      ? '필수 서류 또는 사진이 모두 등록되지 않았습니다.'
+      : error.message.includes('INTRO_TEXT_TOO_SHORT')
+        ? '지점 소개글이 최소 50자 미만입니다.'
+        : '처리하지 못했습니다.';
+    return { success: false, error: message };
   }
 
   revalidatePath('/admin/change-requests');
