@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { listChangeRequests } from '@/lib/change-requests';
+import { waitingLabel, isOverdue } from '@/lib/admin/waiting-days';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -102,6 +103,9 @@ export default async function AdminChangeRequestsPage({
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5">
+                  {item.status === 'pending' && (
+                    <Badge variant={isOverdue(item.createdAt) ? 'destructive' : 'outline'}>{waitingLabel(item.createdAt)}</Badge>
+                  )}
                   <Badge variant="outline">{REQUEST_TYPE_LABEL[item.requestType]}</Badge>
                   <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
                 </div>

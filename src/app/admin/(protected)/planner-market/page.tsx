@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { listPlannerMarketProfiles } from '@/lib/admin/planner-market';
+import { waitingLabel, isOverdue } from '@/lib/admin/waiting-days';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -25,7 +26,13 @@ const TABS = [
 export default async function AdminPlannerMarketPage({ searchParams }: { searchParams: { status?: string } }) {
   const tab = searchParams.status ?? 'pending';
   const all = await listPlannerMarketProfiles();
-  const items = tab === 'pending' ? all.filter((i) => i.status === 'pending_review' || i.hasTrustUpdatePending) : all;
+  // W-086 - 대기열은 오래된 순으로 보여준다(최신순으로 두면 며칠 묵은 신청을 놓친다).
+  const items =
+    tab === 'pending'
+      ? all
+          .filter((i) => i.status === 'pending_review' || i.hasTrustUpdatePending)
+          .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      : all;
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,6 +90,9 @@ export default async function AdminPlannerMarketPage({ searchParams }: { searchP
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5">
+                  {item.status === 'pending_review' && (
+                    <Badge variant={isOverdue(item.createdAt) ? 'destructive' : 'outline'}>{waitingLabel(item.createdAt)}</Badge>
+                  )}
                   {item.hasTrustUpdatePending && <Badge variant="warning">변경 요청</Badge>}
                   <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
                 </div>

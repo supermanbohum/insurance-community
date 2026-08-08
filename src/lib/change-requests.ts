@@ -134,7 +134,14 @@ export async function listChangeRequests(
 ): Promise<ChangeRequestListItem[]> {
   const admin = createAdminClient();
   // 관리자 화면은 임시저장(draft)을 절대 보지 않는다 - 파트너가 아직 제출하지 않은 초안이다.
-  let query = admin.from('branch_registrations').select('*').neq('status', 'draft').order('created_at', { ascending: false });
+  // W-086 - 대기열(pending)은 오래된 순으로 보여준다. 최신순으로 두면 며칠 묵은 신청이
+  // 목록 아래로 밀려나 관리자가 놓친다(실제로 5일 방치된 사례가 있었다). 처리 이력을
+  // 훑어보는 다른 상태(approved/rejected/all)는 관례대로 최신순을 유지한다.
+  let query = admin
+    .from('branch_registrations')
+    .select('*')
+    .neq('status', 'draft')
+    .order('created_at', { ascending: options.status === 'pending' });
   if (options.status) query = query.eq('status', options.status);
   if (options.requestType) query = query.eq('request_type', options.requestType);
   if (options.gaCompanyId) query = query.eq('ga_company_id', options.gaCompanyId);
