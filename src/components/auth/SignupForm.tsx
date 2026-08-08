@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { MailCheck } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import { completeKakaoSignupAction } from '@/lib/actions/user-auth';
 import { GaSearchSelect } from '@/components/auth/GaSearchSelect';
 import type { GaFilterOption } from '@/lib/public/ga-directory';
 import { Button } from '@/components/ui/button';
@@ -14,15 +16,31 @@ import { Label } from '@/components/ui/label';
 
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken';
 
-export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOption[]; next?: string }) {
-  const { signUpWithEmail, isPending } = useAuth();
+/** kakaoMode=true면 카카오 인증을 이미 통과한 세션에서 나머지 정보만 받는다(오너 지시,
+ * 2026-08-08) - 비밀번호가 불필요하고(카카오가 유일한 로그인 수단), 제출 즉시
+ * 정회원이 되어 이메일 인증 안내 화면 없이 next로 바로 이동한다. */
+export function SignupForm({
+  gaOptions,
+  next = '/my',
+  kakaoMode = false,
+  kakaoNickname,
+}: {
+  gaOptions: GaFilterOption[];
+  next?: string;
+  kakaoMode?: boolean;
+  kakaoNickname?: string;
+}) {
+  const router = useRouter();
+  const { signUpWithEmail, isPending: isEmailPending } = useAuth();
+  const [isKakaoPending, startKakaoTransition] = useTransition();
+  const isPending = kakaoMode ? isKakaoPending : isEmailPending;
   const [submitted, setSubmitted] = useState(false);
 
   const [username, setUsername] = useState('');
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [name, setName] = useState('');
+  const [name, setName] = useState(kakaoNickname ?? '');
   const [email, setEmail] = useState('');
   const [contact, setContact] = useState('');
   const [gaCompanyId, setGaCompanyId] = useState<string | null>(null);
@@ -51,8 +69,7 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
   const canSubmit =
     username.trim().length >= 3 &&
     usernameStatus === 'available' &&
-    password.length >= 8 &&
-    passwordsMatch &&
+    (kakaoMode || (password.length >= 8 && passwordsMatch)) &&
     name.trim() &&
     email.trim() &&
     contact.trim() &&
@@ -71,9 +88,9 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
             ? '아이디 중복 확인이 끝날 때까지 잠시만 기다려주세요.'
             : usernameStatus === 'taken'
               ? '이미 사용 중인 아이디입니다.'
-              : password.length < 8
+              : !kakaoMode && password.length < 8
                 ? '비밀번호를 8자 이상 입력해주세요.'
-                : !passwordsMatch
+                : !kakaoMode && !passwordsMatch
                   ? '비밀번호가 일치하지 않습니다.'
                   : !name.trim()
                     ? '이름을 입력해주세요.'
@@ -85,6 +102,26 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
                           ? '소속 GA를 검색해서 선택해주세요.'
                           : '입력값을 확인해주세요.';
       toast.error(reason);
+      return;
+    }
+
+    if (kakaoMode) {
+      startKakaoTransition(async () => {
+        const result = await completeKakaoSignupAction({
+          username: username.trim(),
+          name: name.trim(),
+          email: email.trim(),
+          contact: contact.trim(),
+          gaCompanyId: gaCompanyId!,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success('가입이 완료되었습니다.');
+        router.push(next);
+        router.refresh();
+      });
       return;
     }
 
@@ -142,23 +179,27 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
         {usernameStatus === 'taken' && <p className="text-xs text-destructive">이미 사용 중인 아이디입니다.</p>}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="su-password">비밀번호</Label>
-        <Input id="su-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
-        <p className="text-xs text-ink-faint">8자 이상</p>
-      </div>
+      {!kakaoMode && (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="su-password">비밀번호</Label>
+            <Input id="su-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+            <p className="text-xs text-ink-faint">8자 이상</p>
+          </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="su-password-confirm">비밀번호 확인</Label>
-        <Input
-          id="su-password-confirm"
-          type="password"
-          value={passwordConfirm}
-          onChange={(e) => setPasswordConfirm(e.target.value)}
-          required
-        />
-        {passwordConfirm.length > 0 && !passwordsMatch && <p className="text-xs text-destructive">비밀번호가 일치하지 않습니다.</p>}
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="su-password-confirm">비밀번호 확인</Label>
+            <Input
+              id="su-password-confirm"
+              type="password"
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
+              required
+            />
+            {passwordConfirm.length > 0 && !passwordsMatch && <p className="text-xs text-destructive">비밀번호가 일치하지 않습니다.</p>}
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="su-name">이름</Label>
@@ -168,7 +209,7 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="su-email">이메일</Label>
         <Input id="su-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <p className="text-xs text-ink-faint">인증 메일을 받을 주소입니다.</p>
+        {!kakaoMode && <p className="text-xs text-ink-faint">인증 메일을 받을 주소입니다.</p>}
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -184,9 +225,11 @@ export function SignupForm({ gaOptions, next = '/my' }: { gaOptions: GaFilterOpt
       <Button type="submit" disabled={isPending} size="lg">
         {isPending ? '가입 처리 중...' : '회원가입'}
       </Button>
-      <p className="text-center text-xs text-ink-faint">
-        이미 계정이 있으신가요? <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-semibold text-brand-600 hover:underline">로그인</Link>
-      </p>
+      {!kakaoMode && (
+        <p className="text-center text-xs text-ink-faint">
+          이미 계정이 있으신가요? <Link href={`/login?next=${encodeURIComponent(next)}`} className="font-semibold text-brand-600 hover:underline">로그인</Link>
+        </p>
+      )}
     </form>
   );
 }

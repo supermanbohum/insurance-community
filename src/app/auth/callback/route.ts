@@ -39,8 +39,18 @@ export async function GET(request: NextRequest) {
     // 인증 직후 바로 next로 넘기지 않고, "인증 완료" 안내 화면을 한 번 보여준 뒤
     // 그 화면에서 next로 이동시킨다(사용자가 방금 무슨 일이 일어났는지 알 수 있게).
     return NextResponse.redirect(`${origin}/auth/verified?next=${encodeURIComponent(next)}`);
+  } else if (provider === 'kakao') {
+    // 오너 지시(2026-08-08) - 회원가입은 카카오 인증을 통과해야만 열린다. 카카오
+    // 인증만으로는 프로필을 만들지 않는다(이름/이메일/연락처/소속GA는 회원가입 폼에서
+    // 받는다 - complete_kakao_signup, 0077). 이미 프로필이 있으면 재가입 시도이므로
+    // 그대로 로그인 처리(next로 이동)한다.
+    const { data: existing } = await supabase.from('users').select('id').eq('auth_user_id', authUser.id).maybeSingle();
+    if (existing) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+    return NextResponse.redirect(`${origin}/signup?next=${encodeURIComponent(next)}`);
   } else {
-    // 구글/카카오 OAuth 최초 로그인 - 이미 프로필이 있으면(재로그인) 아무 것도 하지 않는다.
+    // 구글 OAuth - 현재 로그인 화면에 진입 버튼이 없는 레거시 경로(A3). 기존 동작 유지.
     const { data: existing } = await supabase
       .from('users')
       .select('id')
@@ -58,9 +68,7 @@ export async function GET(request: NextRequest) {
         nickname,
         profile_image: profileImage,
         provider,
-        // 카카오는 정회원으로 인정한다(W-033, 0061) - 카카오가 이미 검증해 넘긴 연락처를
-        // 그대로 저장한다(우리 쪽 별도 인증 절차 없음). 구글은 여전히 탐색 전용이라 null 유지.
-        kakao_verified_contact: provider === 'kakao' ? authUser.email ?? meta.phone_number ?? null : null,
+        kakao_verified_contact: null,
       });
     }
   }

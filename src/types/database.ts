@@ -2094,6 +2094,10 @@ export interface Database {
         Args: Record<string, never>;
         Returns: Database['public']['Tables']['users']['Row'];
       };
+      complete_kakao_signup: {
+        Args: { p_username: string; p_name: string; p_email: string; p_contact: string; p_ga_company_id: string };
+        Returns: Database['public']['Tables']['users']['Row'];
+      };
       update_my_contact: {
         Args: { p_contact: string };
         Returns: void;
