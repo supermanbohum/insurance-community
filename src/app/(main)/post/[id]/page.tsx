@@ -5,10 +5,13 @@ import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { BadgeCheck } from 'lucide-react';
 import { getPostDetail } from '@/lib/posts/query';
+import { getPostComments } from '@/lib/posts/comments';
 import { renderAdminPostContent } from '@/lib/posts/render-admin-markdown';
 import { markdownToPlainText } from '@/lib/posts/markdown-to-plaintext';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/auth/session';
 import { DeletePostButton } from '@/components/post/DeletePostButton';
+import { CommentSection } from '@/components/post/CommentSection';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Breadcrumb } from '@/components/seo/Breadcrumb';
 import { JsonLd } from '@/components/seo/JsonLd';
@@ -52,6 +55,11 @@ export default async function PostDetailPage({ params }: { params: { id: string 
   }
 
   const { post, images, isOwner } = result;
+
+  const [comments, currentUser] = await Promise.all([getPostComments(post.id), getCurrentUser()]);
+  const loginHref = currentUser
+    ? `/verify-email?next=${encodeURIComponent(`/post/${post.id}`)}`
+    : `/login?next=${encodeURIComponent(`/post/${post.id}`)}`;
 
   const imageUrls = images.map((image) => ({
     id: image.id,
@@ -147,6 +155,13 @@ export default async function PostDetailPage({ params }: { params: { id: string 
             <DeletePostButton postId={post.id} />
           </div>
         )}
+
+        <CommentSection
+          postId={post.id}
+          comments={comments}
+          isFullMember={currentUser?.isFullMember ?? false}
+          loginHref={loginHref}
+        />
 
         <div className="mt-4 border-t border-line pt-3">
           <Link href={backHref} className="text-sm font-medium text-ink-faint hover:text-brand-600">

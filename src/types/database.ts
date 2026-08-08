@@ -1377,6 +1377,16 @@ export interface Database {
         };
         Returns: string;
       };
+      create_comment: {
+        Args: {
+          p_post_id: string;
+          p_content: string;
+          p_author_display_name: string;
+          p_author_name_type?: AuthorNameType;
+          p_parent_comment_id?: string | null;
+        };
+        Returns: string;
+      };
       add_post_image: {
         Args: {
           p_post_id: string;
