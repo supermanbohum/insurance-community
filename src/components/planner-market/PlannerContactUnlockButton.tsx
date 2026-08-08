@@ -85,7 +85,9 @@ export function PlannerContactUnlockButton({ plannerProfileId }: { plannerProfil
 
       <div className="flex-1">
         {!contact && (
-          <p className="mb-2 text-xs text-ink-faint">설계사 보호를 위해 사진과 연락처는 열람 승인 후 공개됩니다.</p>
+          <p className="mb-2 text-xs text-ink-faint">
+            설계사 보호를 위해 연락처는 열람 승인 후 공개됩니다. 등록된 사진이 있는 경우 함께 공개됩니다.
+          </p>
         )}
 
         {contact ? (
@@ -109,7 +111,7 @@ export function PlannerContactUnlockButton({ plannerProfileId }: { plannerProfil
             <AlertDialogTrigger asChild>
               <Button type="button" size="lg" disabled={isPending} className="w-full gap-2">
                 <Lock className="h-4 w-4" />
-                {isPending ? '확인 중...' : '연락처·사진 보기 (열람권 1건 사용)'}
+                {isPending ? '확인 중...' : '연락처 보기 (열람권 1건 사용)'}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
