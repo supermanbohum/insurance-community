@@ -58,16 +58,23 @@ export async function GET(request: Request) {
     weeklyNotified += 1;
   }
 
-  const staleIncomplete = await getStaleIncompleteRegistrations();
+  // 0076 마이그레이션(incomplete_reminder_sent_at) 적용 전에 이 코드가 먼저 배포될 수
+  // 있다 - 실패해도 이미 작동 중인 ①②(overnight/weekly push)는 절대 막히면 안 되므로
+  // 이 구간만 별도로 감싼다.
   let incompleteReminded = 0;
-  for (const reg of staleIncomplete) {
-    await sendExpoPushToUsers([reg.authUserId], {
-      title: `${reg.branchName} 등록을 마무리하세요`,
-      body: '사진만 올리면 승인 요청을 보낼 수 있어요.',
-      data: { path: '/partner/register/continue' },
-    });
-    await markIncompleteReminderSent(reg.registrationId);
-    incompleteReminded += 1;
+  try {
+    const staleIncomplete = await getStaleIncompleteRegistrations();
+    for (const reg of staleIncomplete) {
+      await sendExpoPushToUsers([reg.authUserId], {
+        title: `${reg.branchName} 등록을 마무리하세요`,
+        body: '사진만 올리면 승인 요청을 보낼 수 있어요.',
+        data: { path: '/partner/register/continue' },
+      });
+      await markIncompleteReminderSent(reg.registrationId);
+      incompleteReminded += 1;
+    }
+  } catch (err) {
+    console.error('[morning-branch-notifications] incomplete reminder step failed', err);
   }
 
   return NextResponse.json({ overnightNotified, weeklyNotified, incompleteReminded });
