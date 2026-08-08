@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-import { BadgeCheck, Eye, Megaphone, MapPinned } from 'lucide-react';
-import { getPublicBranchDetail } from '@/lib/public/branch';
+import { BadgeCheck, Building2, Eye, Megaphone, MapPinned } from 'lucide-react';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { SITE_CONFIG } from '@/lib/config/site';
+import { avatarGradient, cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,13 +33,24 @@ const BENEFITS = [
  *
  * 실적 숫자(등록 지점 수 등)는 의도적으로 넣지 않는다 - 지금은 1곳뿐이라 오히려
  * 설득력을 깎는다. 대신 지금 살아있는 프로모션(6개월 무료·선착순 100개,
- * event_popups 확인됨)으로 설득한다. 미리보기 지점의 tagline은 표시하지 않는다
- * (W-060 - "최강" 같은 미검증 최상급 표현이 심사 대기 중).
+ * event_popups 확인됨)으로 설득한다.
+ *
+ * W-081 - 실제 등록된 "정도" 지점 데이터를 미리보기 예시로 썼었는데, 그 지점이
+ * 테스트용이라 삭제될 예정이라 지점이 삭제/수정될 때마다 이 광고 랜딩이 함께
+ * 흔들리는 구조였다. /planner-register가 실제 개인 프로필 대신 가상 예시를 쓰는
+ * 것과 같은 이유(본인 동의 없이 실제 데이터를 광고 소재로 쓰지 않는다)로, 카드
+ * 컴포넌트 형태(BranchCard의 사진 없을 때 폴백 패턴 - avatarGradient + Building2
+ * 아이콘)는 그대로 재사용하되 데이터는 가상 예시로 고정한다. 조회수는 넣지 않는다.
  */
-export default async function RegisterIntroPage() {
-  const branch = await getPublicBranchDetail('정도-28268b5c');
-  const previewImage = branch?.media.find((m) => m.type === 'image_main') ?? branch?.media[0];
+const PREVIEW_EXAMPLE = {
+  gaCompanyName: '○○금융파트너스',
+  isGaVerified: true,
+  branchName: '○○지점',
+  sidoName: '서울특별시',
+  sigunguName: '○○구',
+};
 
+export default function RegisterIntroPage() {
   return (
     <div className="min-h-screen bg-surface">
       <header className="mx-auto flex max-w-xl items-center justify-between px-5 py-4">
@@ -78,28 +88,29 @@ export default async function RegisterIntroPage() {
           ))}
         </section>
 
-        {branch && (
-          <section className="flex flex-col gap-2">
-            <p className="text-xs font-bold text-ink-faint">이렇게 노출됩니다 (실제 등록 지점 예시)</p>
-            <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
-              {previewImage && (
-                <div className="relative aspect-video w-full bg-surface-sunken">
-                  <Image src={previewImage.url} alt="" fill sizes="480px" className="object-cover" />
-                </div>
+        <section className="flex flex-col gap-2">
+          <p className="text-xs font-bold text-ink-faint">이렇게 노출됩니다 (예시)</p>
+          <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+            <div
+              className={cn(
+                'flex aspect-video w-full items-center justify-center bg-gradient-to-br text-white/85',
+                avatarGradient(PREVIEW_EXAMPLE.gaCompanyName + PREVIEW_EXAMPLE.branchName)
               )}
-              <div className="flex flex-col gap-1 p-4">
-                <div className="flex items-center gap-1 text-xs font-semibold text-brand-600">
-                  {branch.gaCompany.isVerified && <BadgeCheck className="h-3.5 w-3.5" />}
-                  {branch.gaCompany.name}
-                </div>
-                <p className="text-base font-bold text-ink">{branch.name}</p>
-                <p className="text-xs text-ink-faint">
-                  {branch.sidoName} {branch.sigunguName}
-                </p>
-              </div>
+            >
+              <Building2 className="h-8 w-8" strokeWidth={1.5} />
             </div>
-          </section>
-        )}
+            <div className="flex flex-col gap-1 p-4">
+              <div className="flex items-center gap-1 text-xs font-semibold text-brand-600">
+                {PREVIEW_EXAMPLE.isGaVerified && <BadgeCheck className="h-3.5 w-3.5" />}
+                {PREVIEW_EXAMPLE.gaCompanyName}
+              </div>
+              <p className="text-base font-bold text-ink">{PREVIEW_EXAMPLE.branchName}</p>
+              <p className="text-xs text-ink-faint">
+                {PREVIEW_EXAMPLE.sidoName} {PREVIEW_EXAMPLE.sigunguName}
+              </p>
+            </div>
+          </div>
+        </section>
 
         <section className="sticky bottom-4 pt-2">
           <HeroCtaButton
