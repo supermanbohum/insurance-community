@@ -46,7 +46,7 @@ export default function PlannerRegisterIntroPage() {
 
       <main className="mx-auto flex max-w-xl flex-col gap-8 px-5 pb-16 pt-4">
         <section className="flex flex-col items-center gap-3 text-center">
-          <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-600">설계사 등록 · 완전 무료</span>
+          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600">설계사 등록 · 완전 무료</span>
           <h1 className="text-[26px] font-extrabold leading-tight text-ink">
             지점을 찾아다니지 마세요.
             <br />
@@ -62,7 +62,7 @@ export default function PlannerRegisterIntroPage() {
         <section className="flex flex-col gap-3">
           {REASONS.map(({ icon: Icon, label, desc }) => (
             <div key={label} className="flex items-start gap-3 rounded-2xl border border-line bg-white p-4 shadow-card">
-              <Icon className="h-5 w-5 shrink-0 text-violet-500" />
+              <Icon className="h-5 w-5 shrink-0 text-brand-500" />
               <div>
                 <p className="text-sm font-bold text-ink">{label}</p>
                 <p className="text-xs leading-relaxed text-ink-faint">{desc}</p>
@@ -91,8 +91,8 @@ export default function PlannerRegisterIntroPage() {
             href="/planner-market/register"
             label="무료로 등록하기"
             icon={<UserPlus className="h-6 w-6" strokeWidth={2.5} />}
-            gradientClassName="from-indigo-500 via-violet-600 to-violet-800"
-            glowColor="rgba(124,58,237,0.45)"
+            gradientClassName="from-brand-500 via-brand-600 to-brand-800"
+            glowColor="rgba(37,99,235,0.45)"
           />
           <p className="mt-2 text-center text-[11px] text-ink-faint">등록 정보는 운영팀 검토 후 승인되면 공개됩니다.</p>
         </section>

@@ -81,8 +81,8 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           href="/planner-register"
           label="설계사 등록하기"
           icon={<UserPlus className="h-6 w-6" strokeWidth={2.5} />}
-          gradientClassName="from-indigo-500 via-violet-600 to-violet-800"
-          glowColor="rgba(124,58,237,0.45)"
+          gradientClassName="from-brand-500 via-brand-600 to-brand-800"
+          glowColor="rgba(37,99,235,0.45)"
         />
       </div>
 

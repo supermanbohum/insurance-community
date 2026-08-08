@@ -89,7 +89,7 @@ export default function RegisterIntroPage() {
         </section>
 
         <section className="flex flex-col gap-2">
-          <p className="text-xs font-bold text-ink-faint">이렇게 노출됩니다 (예시)</p>
+          <p className="text-xs font-bold text-ink-faint">등록하시면 이렇게 보입니다 — 예시 화면입니다</p>
           <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
             <div
               className={cn(
