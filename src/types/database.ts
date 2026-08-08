@@ -822,6 +822,7 @@ export interface Database {
           reviewed_by_admin_id: string | null;
           reviewed_at: string | null;
           review_reason: string | null;
+          incomplete_reminder_sent_at: string | null;
           created_at: string;
           updated_at: string;
         };

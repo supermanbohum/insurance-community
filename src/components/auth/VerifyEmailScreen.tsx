@@ -4,15 +4,22 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { logoutThenGoToSignupAction } from '@/lib/actions/user-auth';
 import type { AuthProviderType } from '@/types/database';
 
 const RESEND_COOLDOWN_MS = 30_000;
 
+const PROVIDER_LABEL: Record<string, string> = {
+  kakao: '카카오',
+  google: 'Google',
+};
+
 /**
  * /verify-email 화면(W-034). "로그인은 됐지만 이메일 인증은 안 한" 사용자에게 실제로
  * 할 수 있는 행동(재발송)을 준다 - 예전엔 이 상태에서 /login으로 튕겨 빈 화면만 봤다.
- * provider가 email이 아닌 경우(카카오/구글, W-033 이후 발생 가능)는 재발송 대상 이메일이
- * 없으므로 재발송 버튼 없이 안내 문구만 보여준다.
+ * provider가 email이 아닌 경우(카카오/구글)는 이 계정 자체에 인증할 이메일이 없어
+ * 재발송이 불가능하다 - 대신 이메일 계정으로 새로 가입하는 실제 경로를 준다
+ * (예전엔 "고객센터로 문의해주세요"뿐인 진짜 막다른 길이었다).
  */
 export function VerifyEmailScreen({
   email,
@@ -66,9 +73,21 @@ export function VerifyEmailScreen({
           </button>
         </>
       ) : (
-        <p className="text-sm text-ink-faint">
-          계정 인증이 아직 완료되지 않았습니다. 고객센터로 문의해주세요.
-        </p>
+        <>
+          <p className="text-sm text-ink-faint">
+            {PROVIDER_LABEL[provider] ?? '간편'} 계정에는 이메일 인증 절차가 없습니다.
+            <br />
+            이메일로 새로 가입하시면 지점·프로필 등록과 댓글을 바로 이용하실 수 있습니다.
+          </p>
+          <form action={logoutThenGoToSignupAction}>
+            <button
+              type="submit"
+              className="mt-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700"
+            >
+              이메일로 가입하기
+            </button>
+          </form>
+        </>
       )}
     </>
   );

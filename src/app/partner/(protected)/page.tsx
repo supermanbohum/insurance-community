@@ -3,25 +3,54 @@ import { notFound } from 'next/navigation';
 import { requirePartner } from '@/lib/partner/session';
 import { getGaCompanyById, getBranchesByGaCompanyId } from '@/lib/admin/ga';
 import { listChangeRequests, countPendingChangeRequests } from '@/lib/change-requests';
+import { getMyIncompleteBranchRegistrationAction } from '@/lib/actions/partner';
 import { APPROVAL_STATUS_BADGE_VARIANT, APPROVAL_STATUS_LABEL } from '@/lib/admin/approval-status';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChangeHistoryList } from '@/components/partner/ChangeHistoryList';
 import { PartnerStepIndicator } from '@/components/partner/PartnerStepIndicator';
+
+const MIN_OFFICE_PHOTOS = 3;
 
 export default async function PartnerDashboardPage() {
   const partner = await requirePartner();
   const company = await getGaCompanyById(partner.ga_company_id!);
   if (!company) notFound();
 
-  const [branches, pendingCount, recentHistory] = await Promise.all([
+  const [branches, pendingCount, recentHistory, incompleteRegistration] = await Promise.all([
     getBranchesByGaCompanyId(company.id),
     countPendingChangeRequests(company.id),
     listChangeRequests({ gaCompanyId: company.id }),
+    getMyIncompleteBranchRegistrationAction(),
   ]);
+
+  const missingItems = incompleteRegistration
+    ? [
+        !incompleteRegistration.hasMainPhoto && '대표사진 1장',
+        incompleteRegistration.officePhotoCount < MIN_OFFICE_PHOTOS &&
+          `사무실 사진 ${MIN_OFFICE_PHOTOS - incompleteRegistration.officePhotoCount}장`,
+      ].filter((v): v is string => Boolean(v))
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
+      {incompleteRegistration && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+            <div>
+              <p className="text-sm font-bold text-amber-900">{incompleteRegistration.branchName} 등록을 마무리하세요</p>
+              <p className="mt-0.5 text-sm text-amber-800">
+                {missingItems.length > 0 ? `남은 것: ${missingItems.join(', ')}` : '사진 확인 후 승인 요청을 보낼 수 있어요.'}
+              </p>
+            </div>
+            <Button asChild size="sm">
+              <Link href="/partner/register/continue">이어서 작성</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="pt-6">
           <PartnerStepIndicator status={company.approval_status} />

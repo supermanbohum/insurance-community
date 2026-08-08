@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getOvernightInquiryGroups } from '@/lib/push/overnight-inquiries';
 import { getWeeklyBranchViewCounts } from '@/lib/push/weekly-branch-performance';
 import { getActiveGaAdminAuthUserIdsByCompany } from '@/lib/push/ga-admins';
+import { getStaleIncompleteRegistrations, markIncompleteReminderSent } from '@/lib/push/incomplete-registration-reminders';
 import { sendExpoPushToUsers } from '@/lib/push/expo';
 
 function isMondayKst(now = new Date()): boolean {
@@ -18,6 +19,8 @@ function isMondayKst(now = new Date()): boolean {
  *    묶어 "어젯밤 문의 N건" 한 번에 발송(건별 발송 금지 - 오너 지시).
  * ② 월요일만: 지난주 조회수 브리핑("이번 주 {지점명}을 N명이 봤어요").
  *    APP_GROWTH_PLAN §4.5의 "브리핑성 알림은 주 1~2회 상한"에 따라 주 1회로 고정.
+ * ③ 매일: 사진 없이 저장된(status='incomplete') 등록이 3일 이상 방치되면 1회만
+ *    리마인드(W-087④) - incomplete_reminder_sent_at으로 매일 재발송을 막는다.
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -55,5 +58,17 @@ export async function GET(request: Request) {
     weeklyNotified += 1;
   }
 
-  return NextResponse.json({ overnightNotified, weeklyNotified });
+  const staleIncomplete = await getStaleIncompleteRegistrations();
+  let incompleteReminded = 0;
+  for (const reg of staleIncomplete) {
+    await sendExpoPushToUsers([reg.authUserId], {
+      title: `${reg.branchName} 등록을 마무리하세요`,
+      body: '사진만 올리면 승인 요청을 보낼 수 있어요.',
+      data: { path: '/partner/register/continue' },
+    });
+    await markIncompleteReminderSent(reg.registrationId);
+    incompleteReminded += 1;
+  }
+
+  return NextResponse.json({ overnightNotified, weeklyNotified, incompleteReminded });
 }

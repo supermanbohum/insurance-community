@@ -10,6 +10,15 @@ export async function logoutAction(): Promise<void> {
   redirect('/');
 }
 
+/** 카카오/구글 등 비이메일 프로바이더로 로그인했지만 정회원 전환 경로가 없는 계정이
+ * 이메일 계정으로 새로 가입하도록 유도할 때 쓴다(VerifyEmailScreen) - 기존 세션을
+ * 로그아웃해야 /signup에서 새 이메일 계정을 정상적으로 만들 수 있다. */
+export async function logoutThenGoToSignupAction(): Promise<void> {
+  const supabase = createServerSupabaseClient();
+  await supabase.auth.signOut();
+  redirect('/signup');
+}
+
 export type ActionResult = { success: true } | { success: false; error: string };
 
 /** 마이페이지 - 비밀번호 변경. 재인증(현재 비밀번호 확인) 후 Supabase Auth의

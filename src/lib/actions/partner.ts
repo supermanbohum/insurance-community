@@ -231,6 +231,43 @@ export async function getMyBranchRegistrationDraftAction(): Promise<Record<strin
   return (data as Record<string, unknown> | null) ?? null;
 }
 
+export type IncompleteRegistrationSummary = {
+  registrationId: string;
+  branchId: string;
+  branchName: string;
+  hasMainPhoto: boolean;
+  officePhotoCount: number;
+};
+
+/** W-087④ - 사진 없이 저장된(status='incomplete') 내 등록을 찾는다. /partner
+ * 대시보드의 "이어서 작성" 카드와 /partner/register/continue 페이지가 이 값으로
+ * 무엇이 남았는지 구체적으로 보여준다. */
+export async function getMyIncompleteBranchRegistrationAction(): Promise<IncompleteRegistrationSummary | null> {
+  const partner = await requirePartner();
+  const supabase = createServerSupabaseClient();
+
+  const { data: registration } = await supabase
+    .from('branch_registrations')
+    .select('id, branch_id')
+    .eq('submitted_by_ga_admin_id', partner.id)
+    .eq('status', 'incomplete')
+    .maybeSingle();
+  if (!registration || !registration.branch_id) return null;
+
+  const [{ data: branch }, { data: media }] = await Promise.all([
+    supabase.from('ga_branch').select('name').eq('id', registration.branch_id).maybeSingle(),
+    supabase.from('branch_media').select('media_type').eq('branch_id', registration.branch_id).in('media_type', ['image_main', 'image_office']),
+  ]);
+
+  return {
+    registrationId: registration.id,
+    branchId: registration.branch_id,
+    branchName: branch?.name ?? '',
+    hasMainPhoto: (media ?? []).some((m) => m.media_type === 'image_main'),
+    officePhotoCount: (media ?? []).filter((m) => m.media_type === 'image_office').length,
+  };
+}
+
 const DOC_MIME_EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
