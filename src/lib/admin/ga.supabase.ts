@@ -10,7 +10,13 @@ export async function listGaCompanies(options: {
   q?: string;
 }): Promise<GaCompanyRow[]> {
   const supabase = createAdminClient();
-  let query = supabase.from('ga_company').select('*').neq('status', 'deleted').order('created_at', { ascending: false });
+  // W-086 - 지점/설계사 대기열과 동일 원칙: 심사중(pending)은 오래된 순으로 보여줘야
+  // 며칠 묵은 신청이 신규 신청 아래로 밀려 눈에 안 띄는 일이 없다. 다른 상태는 최신순 유지.
+  let query = supabase
+    .from('ga_company')
+    .select('*')
+    .neq('status', 'deleted')
+    .order('created_at', { ascending: options.status === 'pending' });
 
   if (options.status) {
     query = query.eq('approval_status', options.status);

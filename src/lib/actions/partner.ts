@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePartner } from '@/lib/partner/session';
 import { slugify } from '@/lib/utils';
+import { notifyAdminsOfNewBranchRegistration } from '@/lib/push/admin-alerts';
 import type { BranchMediaSource } from '@/types/database';
 
 export type ActionResult = { success: true } | { success: false; error: string };
@@ -100,6 +101,7 @@ export async function submitBranchRegistrationAction(input: {
 
   revalidatePath('/partner');
   revalidatePath('/admin/change-requests');
+  await notifyAdminsOfNewBranchRegistration();
   return { success: true, branchId: data.branch_id, registrationId: data.registration_id };
 }
 

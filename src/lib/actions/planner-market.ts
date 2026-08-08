@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { requireUser } from '@/lib/auth/session';
+import { notifyAdminsOfNewPlannerRegistration } from '@/lib/push/admin-alerts';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 export type UploadResult = { success: true; path: string } | { success: false; error: string };
@@ -135,6 +136,7 @@ export async function submitPlannerMarketProfileAction(
   revalidatePath('/planner-market');
   revalidatePath('/planner-market/my');
   revalidatePath('/admin/planner-market');
+  await notifyAdminsOfNewPlannerRegistration();
   return { success: true };
 }
 

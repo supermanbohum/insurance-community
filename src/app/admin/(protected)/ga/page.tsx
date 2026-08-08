@@ -3,6 +3,7 @@ import { BadgeCheck, Plus } from 'lucide-react';
 import { listGaCompanies } from '@/lib/admin/ga';
 import type { GaApprovalStatus } from '@/types/database';
 import { APPROVAL_STATUS_BADGE_VARIANT, APPROVAL_STATUS_LABEL } from '@/lib/admin/approval-status';
+import { waitingLabel, isOverdue } from '@/lib/admin/waiting-days';
 import { GaApprovalActions } from '@/components/admin/GaApprovalActions';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -97,7 +98,12 @@ export default async function AdminGaListPage({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(ga.created_at).toLocaleDateString('ko-KR')}
+                      <div className="flex items-center gap-1.5">
+                        {new Date(ga.created_at).toLocaleDateString('ko-KR')}
+                        {ga.approval_status === 'pending' && (
+                          <Badge variant={isOverdue(ga.created_at) ? 'destructive' : 'outline'}>{waitingLabel(ga.created_at)}</Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end">
