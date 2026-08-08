@@ -41,7 +41,13 @@ export default async function PartnerRegisterPage() {
           입력한 정보는 보험맵 운영팀 검토 후 승인되면 공개됩니다.
         </p>
       </div>
-      <OnboardingForm regions={regions} gaOptions={gaOptions} initialDraft={draft as RegistrationDraftPayload | null} />
+      <OnboardingForm
+        regions={regions}
+        gaOptions={gaOptions}
+        initialDraft={draft as RegistrationDraftPayload | null}
+        signupContact={user.contact}
+        signupGaCompanyId={user.gaCompanyId}
+      />
     </div>
   );
 }

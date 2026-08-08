@@ -105,6 +105,115 @@ export async function submitBranchRegistrationAction(input: {
   return { success: true, branchId: data.branch_id, registrationId: data.registration_id };
 }
 
+/** W-087③ - 사진 없이 지점 등록을 저장한다. status='incomplete'라 승인 대기열에는
+ * 안 잡힌다(review_branch_registration은 절대 손대지 않았다 - 사진 요건은 그대로).
+ * OnboardingForm.tsx의 ALLOW_INCOMPLETE_SUBMIT 상수로 UI 노출이 꺼져 있어 오너 확인
+ * 전에는 이 경로를 탈 방법이 없다. */
+export async function saveIncompleteBranchRegistrationAction(input: {
+  gaName: string;
+  registrant: {
+    name: string;
+    title: string;
+    phone: string;
+    company: string;
+    branchLabel: string;
+  };
+  branch: {
+    name: string;
+    regionId: string | null;
+    managerName?: string;
+    address: string;
+    addressDetail?: string;
+    lat?: number | null;
+    lng?: number | null;
+    introText?: string;
+    tagline?: string;
+    plannerCount?: number | null;
+    parkingAvailable?: boolean | null;
+    visitConsultAvailable?: boolean | null;
+    newRecruitTraining?: boolean | null;
+    experiencedHire?: boolean | null;
+    dbSupport?: boolean | null;
+    settlementSupport?: boolean | null;
+  };
+}): Promise<RegisterGaResult> {
+  if (!input.gaName.trim() || !input.branch.name.trim() || !input.branch.address.trim()) {
+    return { success: false, error: 'GA, 지점명, 주소는 필수입니다.' };
+  }
+  const { name, title, phone, company, branchLabel } = input.registrant;
+  if (!name.trim() || !title.trim() || !phone.trim() || !company.trim() || !branchLabel.trim()) {
+    return { success: false, error: '등록자 정보를 모두 입력해주세요.' };
+  }
+
+  const partner = await requirePartner();
+  if (partner.ga_company_id) {
+    return { success: false, error: '이미 등록된 지점이 있습니다.' };
+  }
+
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase
+    .rpc('submit_branch_registration_incomplete', {
+      p_ga_name: input.gaName.trim(),
+      p_branch_slug: uniqueSlug(input.branch.name, partner.id),
+      p_branch_name: input.branch.name.trim(),
+      p_region_id: input.branch.regionId,
+      p_manager_name: input.branch.managerName?.trim() ?? null,
+      p_address: input.branch.address.trim(),
+      p_address_detail: input.branch.addressDetail?.trim() ?? null,
+      p_registrant_name: name.trim(),
+      p_registrant_title: title.trim(),
+      p_registrant_phone: phone.trim(),
+      p_registrant_company: company.trim(),
+      p_registrant_branch_label: branchLabel.trim(),
+      p_intro_text: input.branch.introText?.trim() ?? null,
+      p_planner_count: input.branch.plannerCount ?? null,
+      p_parking_available: input.branch.parkingAvailable ?? null,
+      p_visit_consult_available: input.branch.visitConsultAvailable ?? null,
+      p_business_hours: null,
+      p_lat: input.branch.lat ?? null,
+      p_lng: input.branch.lng ?? null,
+      p_tagline: input.branch.tagline?.trim() ?? null,
+      p_new_recruit_training: input.branch.newRecruitTraining ?? null,
+      p_experienced_hire: input.branch.experiencedHire ?? null,
+      p_db_support: input.branch.dbSupport ?? null,
+      p_settlement_support: input.branch.settlementSupport ?? null,
+    })
+    .single();
+
+  if (error || !data) {
+    return { success: false, error: '지점 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  await supabase.rpc('clear_branch_registration_draft');
+  revalidatePath('/partner');
+  return { success: true, branchId: data.branch_id, registrationId: data.registration_id };
+}
+
+/** W-087③ - 미완성 등록에 사진을 마저 올린 뒤 호출해 실제 승인 대기열('pending')로
+ * 전환한다. 사진/서류가 부족하면 RPC가 그대로 거부한다(review_branch_registration과
+ * 동일 기준). */
+export async function completeBranchRegistrationAction(registrationId: string): Promise<ActionResult> {
+  await requirePartner();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('complete_branch_registration', { p_registration_id: registrationId });
+  if (error) {
+    const message = error.message.includes('MISSING_MAIN_PHOTO')
+      ? '대표사진을 등록해주세요.'
+      : error.message.includes('MISSING_OFFICE_PHOTOS')
+        ? '사무실 사진을 3장 이상 등록해주세요.'
+        : error.message.includes('MISSING_REQUIRED_DOCUMENTS')
+          ? '임대차계약서와 명함을 등록해주세요.'
+          : error.message.includes('INTRO_TEXT_TOO_SHORT')
+            ? '지점 소개글을 50자 이상 입력해주세요.'
+            : '완료 처리하지 못했습니다.';
+    return { success: false, error: message };
+  }
+  revalidatePath('/partner');
+  revalidatePath('/admin/change-requests');
+  await notifyAdminsOfNewBranchRegistration();
+  return { success: true };
+}
+
 /** 신규 지점 등록 폼 임시저장 - ga_company/ga_branch를 전혀 만들지 않고 입력값만
  * jsonb로 보관한다(파일 제외). 폼이 마운트될 때 이 값을 불러와 "이어서 작성"한다. */
 export async function saveBranchRegistrationDraftAction(payload: Record<string, unknown>): Promise<ActionResult> {

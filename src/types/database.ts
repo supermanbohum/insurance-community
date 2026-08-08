@@ -1857,6 +1857,39 @@ export interface Database {
         };
         Returns: { registration_id: string; ga_company_id: string; branch_id: string }[];
       };
+      submit_branch_registration_incomplete: {
+        Args: {
+          p_ga_name: string;
+          p_branch_slug: string;
+          p_branch_name: string;
+          p_region_id: string | null;
+          p_manager_name?: string | null;
+          p_address: string;
+          p_address_detail?: string | null;
+          p_registrant_name: string;
+          p_registrant_title: string;
+          p_registrant_phone: string;
+          p_registrant_company: string;
+          p_registrant_branch_label: string;
+          p_intro_text?: string | null;
+          p_planner_count?: number | null;
+          p_parking_available?: boolean | null;
+          p_visit_consult_available?: boolean | null;
+          p_business_hours?: string | null;
+          p_lat?: number | null;
+          p_lng?: number | null;
+          p_tagline?: string | null;
+          p_new_recruit_training?: boolean | null;
+          p_experienced_hire?: boolean | null;
+          p_db_support?: boolean | null;
+          p_settlement_support?: boolean | null;
+        };
+        Returns: { registration_id: string; ga_company_id: string; branch_id: string }[];
+      };
+      complete_branch_registration: {
+        Args: { p_registration_id: string };
+        Returns: void;
+      };
       attach_registration_document: {
         Args: { p_registration_id: string; p_doc_type: string; p_path: string };
         Returns: void;
