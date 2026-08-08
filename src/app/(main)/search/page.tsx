@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { Search, SearchX } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { listGaFilterOptions, splitRegisteredGaIds } from '@/lib/public/ga-directory';
 import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
 import { listSidoGroups } from '@/lib/public/region';
 import { BranchCard } from '@/components/branch/BranchCard';
+import { EmptyBranchResults } from '@/components/branch/EmptyBranchResults';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { SearchFilters } from '@/components/search/SearchFilters';
 import { SearchFilterButton } from '@/components/search/SearchFilterSheet';
@@ -168,20 +169,10 @@ export default async function SearchPage({
           <p className="text-sm">지점명 또는 소속 회사명을 검색하거나 필터를 사용해보세요.</p>
         </div>
       ) : totalCount === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line py-20 text-ink-faint">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-sunken">
-            <SearchX className="h-6 w-6" strokeWidth={1.5} />
-          </span>
-          <p className="text-sm">
-            {q && !hasFilters ? (
-              <>
-                <span className="font-bold text-ink">&ldquo;{q}&rdquo;</span>에 대한 검색 결과가 없습니다.
-              </>
-            ) : (
-              '해당 조건으로 등록되어 있는 지점이 없습니다.'
-            )}
-          </p>
-        </div>
+        <EmptyBranchResults
+          title={q && !hasFilters ? `"${q}"에 대한 검색 결과가 아직 없습니다` : '해당 조건에 등록된 지점이 아직 없습니다'}
+          secondaryAction={hasFilters ? { label: '필터 초기화', href: q ? `/search?q=${encodeURIComponent(q)}` : '/search' } : { label: '지도에서 보기', href: '/map' }}
+        />
       ) : (
         <>
           <div className="flex items-center justify-between gap-2">

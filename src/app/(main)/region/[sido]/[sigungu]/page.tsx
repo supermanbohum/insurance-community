@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { listPublicBranches } from '@/lib/public/branch';
 import { BranchCard } from '@/components/branch/BranchCard';
+import { EmptyBranchResults } from '@/components/branch/EmptyBranchResults';
 import { Breadcrumb } from '@/components/seo/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
@@ -59,7 +60,10 @@ export default async function RegionSigunguPage({
         {region.sido_name} {region.sigungu_name}
       </h1>
       {branches.length === 0 ? (
-        <p className="py-16 text-center text-sm text-gray-400">등록된 지점이 없습니다.</p>
+        <EmptyBranchResults
+          title={`${region.sido_name} ${region.sigungu_name}에 등록된 지점이 아직 없습니다`}
+          secondaryAction={{ label: '지도에서 보기', href: '/map' }}
+        />
       ) : (
         <div className="flex flex-col gap-2">
           {branches.map((branch) => (

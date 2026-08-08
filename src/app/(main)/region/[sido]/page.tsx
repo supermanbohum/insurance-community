@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { listSigunguBySido } from '@/lib/public/region';
 import { listPublicBranches } from '@/lib/public/branch';
 import { BranchCard } from '@/components/branch/BranchCard';
+import { EmptyBranchResults } from '@/components/branch/EmptyBranchResults';
 import { Breadcrumb } from '@/components/seo/Breadcrumb';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +35,7 @@ export default async function RegionSidoPage({ params }: { params: { sido: strin
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5">
         <Breadcrumb items={breadcrumbItems} />
         <h1 className="text-lg font-bold text-gray-900">{sidoName}</h1>
-        <BranchListOrEmpty branches={branches} />
+        <BranchListOrEmpty branches={branches} sidoName={sidoName} />
       </div>
     );
   }
@@ -58,9 +59,17 @@ export default async function RegionSidoPage({ params }: { params: { sido: strin
   );
 }
 
-function BranchListOrEmpty({ branches }: { branches: Awaited<ReturnType<typeof listPublicBranches>> }) {
+function BranchListOrEmpty({
+  branches,
+  sidoName,
+}: {
+  branches: Awaited<ReturnType<typeof listPublicBranches>>;
+  sidoName: string;
+}) {
   if (branches.length === 0) {
-    return <p className="py-16 text-center text-sm text-gray-400">등록된 지점이 없습니다.</p>;
+    return (
+      <EmptyBranchResults title={`${sidoName}에 등록된 지점이 아직 없습니다`} secondaryAction={{ label: '지도에서 보기', href: '/map' }} />
+    );
   }
   return (
     <div className="flex flex-col gap-2">
