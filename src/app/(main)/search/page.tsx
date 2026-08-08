@@ -170,7 +170,9 @@ export default async function SearchPage({
         </div>
       ) : totalCount === 0 ? (
         <EmptyBranchResults
-          title={q && !hasFilters ? `"${q}"에 대한 검색 결과가 아직 없습니다` : '해당 조건에 등록된 지점이 아직 없습니다'}
+          title={q && !hasFilters ? `"${q}"에 대한 검색 결과가 아직 없습니다` : '해당 조건으로 등록된 지점이 아직 없습니다'}
+          nudge="우리 지점이 첫 번째가 될 수 있습니다 — 지역 1호 지점으로 등록하세요"
+          registerLabel="무료로 등록하기"
           secondaryAction={hasFilters ? { label: '필터 초기화', href: q ? `/search?q=${encodeURIComponent(q)}` : '/search' } : { label: '지도에서 보기', href: '/map' }}
         />
       ) : (

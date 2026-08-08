@@ -14,12 +14,14 @@ export function EmptyBranchResults({
   title,
   nudge = '이 지역 지점장이신가요? 지금 등록하면 이 검색의 첫 결과가 됩니다',
   registerHref = '/register',
+  registerLabel = '지점 등록하기',
   secondaryAction,
   compact = false,
 }: {
   title: string;
   nudge?: string;
   registerHref?: string;
+  registerLabel?: string;
   secondaryAction?: { label: string; href: string };
   compact?: boolean;
 }) {
@@ -43,7 +45,7 @@ export function EmptyBranchResults({
       <p className="mt-1 rounded-xl bg-surface-sunken px-5 py-3.5 text-[13px] text-ink-soft">{nudge}</p>
       <div className="mt-1 flex items-center justify-center gap-2.5">
         <Button asChild size="lg">
-          <Link href={registerHref}>지점 등록하기</Link>
+          <Link href={registerHref}>{registerLabel}</Link>
         </Button>
         {secondaryAction && (
           <Button asChild variant="outline" size="lg">

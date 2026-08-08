@@ -49,7 +49,9 @@ export function VerifyEmailScreen({
   return (
     <>
       <span className="text-5xl">📬</span>
-      <h1 className="text-xl font-extrabold tracking-tight text-ink">이메일 인증이 필요합니다</h1>
+      <h1 className="text-xl font-extrabold tracking-tight text-ink">
+        {provider === 'email' ? '이메일 인증이 필요합니다' : '이메일 가입이 필요합니다'}
+      </h1>
       {provider === 'email' ? (
         <>
           <p className="text-sm text-ink-faint">
