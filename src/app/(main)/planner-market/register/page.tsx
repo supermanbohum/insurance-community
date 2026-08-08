@@ -18,7 +18,7 @@ export default async function PlannerMarketRegisterPage() {
         <h1 className="text-xl font-bold">설계사 등록</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           무료로 프로필을 등록하면 GA가 나를 찾을 수 있습니다. 활동지역/경력/전문분야/자기소개는 공개되고, 연락처는 GA가 열람권을
-          사용해야만 볼 수 있습니다. 관리자 승인 후 공개됩니다.
+          사용해야만 볼 수 있습니다. 운영팀 승인 후 공개됩니다.
         </p>
       </div>
       <PlannerMarketRegisterForm regions={regions} gaOptions={gaOptions} />

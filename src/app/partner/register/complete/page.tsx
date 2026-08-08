@@ -22,7 +22,7 @@ export default async function PartnerRegisterCompletePage({ searchParams }: { se
         </span>
         <div>
           <h1 className="text-lg font-extrabold text-ink">지점 등록이 정상적으로 접수되었습니다</h1>
-          <p className="mt-1.5 text-sm text-ink-soft">관리자 승인 후 공개됩니다.</p>
+          <p className="mt-1.5 text-sm text-ink-soft">운영팀 승인 후 공개됩니다.</p>
         </div>
 
         <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">

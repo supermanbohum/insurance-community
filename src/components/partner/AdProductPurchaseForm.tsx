@@ -19,7 +19,7 @@ function defaultDates(): { start: string; end: string } {
 }
 
 /** 광고 상품 구매 - 본인 소속 지점 중 선택, 기간 지정. 결제는 스텁(항상 성공)이고
- * 구매 즉시 관리자 승인 대기 상태로 들어간다(즉시 노출되지 않음). */
+ * 구매 즉시 운영팀 승인 대기 상태로 들어간다(즉시 노출되지 않음). */
 export function AdProductPurchaseForm({ product, branches }: { product: AdProductCatalogItem; branches: { id: string; name: string }[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -43,7 +43,7 @@ export function AdProductPurchaseForm({ product, branches }: { product: AdProduc
         toast.error(result.error);
         return;
       }
-      toast.success('구매가 접수되었습니다. 관리자 승인 후 노출됩니다.');
+      toast.success('구매가 접수되었습니다. 운영팀 승인 후 노출됩니다.');
       router.push('/partner/ad-products/history');
       router.refresh();
     });

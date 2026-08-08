@@ -2,15 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building2, MapPin, History, Award, Megaphone, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Building2, MapPin, History, Megaphone, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// W-075 - "고소득 설계사 (Legacy)" 메뉴 제거. "Legacy"는 개발 용어라 지점장이 보는
+// 화면에 그대로 뜨면 안 됐고(오너 지적), planner_certifications/subscriptions
+// (plan_code='planner_addon') 둘 다 0행이라 실제로 쓴 사람이 아무도 없어 라벨만
+// 바꿔서 유지할 이유가 없다 - 신규 TOP 설계사 인증(top_designer_certifications)이
+// 이미 이 기능을 대체했다. /partner/planners 라우트 자체는 남겨둔다(직접 URL 접근
+// 가능, 데이터 삭제 아님) - 메뉴에서만 뺀다.
 const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { href: '/partner', label: '대시보드', icon: LayoutDashboard, exact: true },
   { href: '/partner/company', label: 'GA 정보', icon: Building2 },
   { href: '/partner/branches', label: '지점 관리', icon: MapPin },
   { href: '/partner/inquiries', label: '받은 문의', icon: MessageSquare },
-  { href: '/partner/planners', label: '고소득 설계사 (Legacy)', icon: Award },
   { href: '/partner/ad-products', label: '광고 상품', icon: Megaphone },
   { href: '/partner/history', label: '변경 이력', icon: History },
 ];

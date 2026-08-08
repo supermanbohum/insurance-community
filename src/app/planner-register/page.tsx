@@ -6,7 +6,7 @@ import { SITE_CONFIG } from '@/lib/config/site';
 
 export const metadata: Metadata = {
   title: '설계사 무료 등록 — 지점이 나를 찾습니다',
-  description: '보험맵에 프로필을 등록하면 지점이 먼저 연락합니다. 실명·소속·연락처는 공개되지 않고, 연락처는 동의한 경우에만 전달되며 언제든 철회할 수 있습니다.',
+  description: '보험맵에 프로필을 등록하면 관리자가 먼저 연락합니다. 실명·소속·연락처는 공개되지 않고, 연락처는 동의한 경우에만 전달되며 언제든 철회할 수 있습니다.',
   alternates: { canonical: '/planner-register' },
 };
 
@@ -50,12 +50,12 @@ export default function PlannerRegisterIntroPage() {
           <h1 className="text-[26px] font-extrabold leading-tight text-ink">
             지점을 찾아다니지 마세요.
             <br />
-            지점장이 먼저 연락합니다.
+            관리자가 먼저 연락합니다.
           </h1>
           <p className="text-sm leading-relaxed text-ink-soft">
             활동지역·경력·전문분야를 등록해두면
             <br />
-            관심 있는 지점이 회원님을 찾아 연락합니다.
+            관심 있는 관리자(지점장·본부장·단장)가 회원님을 찾아 연락합니다.
           </p>
         </section>
 
@@ -94,7 +94,7 @@ export default function PlannerRegisterIntroPage() {
             gradientClassName="from-indigo-500 via-violet-600 to-violet-800"
             glowColor="rgba(124,58,237,0.45)"
           />
-          <p className="mt-2 text-center text-[11px] text-ink-faint">등록 정보는 관리자 검토 후 승인되면 공개됩니다.</p>
+          <p className="mt-2 text-center text-[11px] text-ink-faint">등록 정보는 운영팀 검토 후 승인되면 공개됩니다.</p>
         </section>
       </main>
     </div>

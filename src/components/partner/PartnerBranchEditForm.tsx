@@ -91,7 +91,7 @@ export function PartnerBranchEditForm({
   const [recruitTitle, setRecruitTitle] = useState(activeRecruit?.title ?? '');
   const [recruitContent, setRecruitContent] = useState(activeRecruit?.content ?? '');
 
-  // --- 신뢰도 항목 (관리자 승인 필요) - 작성중/대기중인 요청이 있으면 그 내용을 우선
+  // --- 신뢰도 항목 (운영팀 승인 필요) - 작성중/대기중인 요청이 있으면 그 내용을 우선
   // 불러온다("이어서 작성"), 없으면 현재 공개된 지점 값에서 시작한다. ---
   const [registrant, setRegistrant] = useState<Record<(typeof REGISTRANT_FIELDS)[number]['key'], string>>({
     name: openRegistration?.registrant.name ?? '',
@@ -202,7 +202,7 @@ export function PartnerBranchEditForm({
         await uploadPendingBranchPhotoAction(branch.id, result.registrationId, fd, false);
       }
       toast.success(
-        openRegistration?.status === 'pending' ? '수정 내용이 다시 제출되었습니다. 관리자가 최신 내용을 검토합니다.' : '승인 요청이 접수되었습니다. 관리자 승인 후 반영됩니다.'
+        openRegistration?.status === 'pending' ? '수정 내용이 다시 제출되었습니다. 운영팀이 최신 내용을 검토합니다.' : '승인 요청이 접수되었습니다. 운영팀 승인 후 반영됩니다.'
       );
       setNewOfficePhotos([]);
       router.refresh();
@@ -228,7 +228,7 @@ export function PartnerBranchEditForm({
       <Card className="border-brand-200 bg-brand-50/40">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <CardTitle className="text-base">신뢰도 항목 수정 (관리자 승인 필요)</CardTitle>
+            <CardTitle className="text-base">신뢰도 항목 수정 (운영팀 승인 필요)</CardTitle>
             {openRegistration?.status === 'pending' ? (
               <Badge variant="warning" className="gap-1 text-[11px]">
                 <Clock className="h-3 w-3" />
@@ -242,7 +242,7 @@ export function PartnerBranchEditForm({
             ) : null}
           </div>
           <CardDescription>
-            이름/주소/지역/소개글/설계사수/편의시설/사진은 제출 즉시 반영되지 않고, 관리자 승인 후에 실제 지점 페이지에 반영됩니다.
+            이름/주소/지역/소개글/설계사수/편의시설/사진은 제출 즉시 반영되지 않고, 운영팀 승인 후에 실제 지점 페이지에 반영됩니다.
             {openRegistration?.status === 'pending' && ' 이미 검토 대기 중인 수정 요청이 있습니다 - 지금 수정해서 다시 제출하면 관리자는 최신 내용만 검토합니다.'}
             {openRegistration?.status === 'draft' && ' 이전에 임시저장한 내용을 불러왔습니다. 이어서 작성 후 제출해주세요.'}
           </CardDescription>
@@ -335,7 +335,7 @@ export function PartnerBranchEditForm({
 
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-semibold">사무실 사진 추가 (승인 필요)</Label>
-            <p className="text-xs text-muted-foreground">새로 추가하는 사무실 사진은 관리자 승인 후 상세페이지에 노출됩니다.</p>
+            <p className="text-xs text-muted-foreground">새로 추가하는 사무실 사진은 운영팀 승인 후 상세페이지에 노출됩니다.</p>
             {newOfficePhotos.length > 0 && (
               <div className="grid grid-cols-4 gap-2">
                 {newOfficePhotos.map((file, i) => (

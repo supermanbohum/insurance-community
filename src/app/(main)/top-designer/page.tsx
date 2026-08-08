@@ -64,7 +64,7 @@ export default async function TopDesignerPage({
           <Trophy className="h-10 w-10 text-amber-500" />
           <p className="text-base font-bold text-ink">1호 TOP 설계사가 되어보세요</p>
           <p className="max-w-xs text-sm text-muted-foreground">
-            원천징수영수증으로 연봉을 인증하면 관리자 검토 후 별등급 배지와 함께 이 페이지에 가장 먼저 노출됩니다.
+            원천징수영수증으로 연봉을 인증하면 운영팀 검토 후 별등급 배지와 함께 이 페이지에 가장 먼저 노출됩니다.
           </p>
           <Link
             href="/top-designer/apply"

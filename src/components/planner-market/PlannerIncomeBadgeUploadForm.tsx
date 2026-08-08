@@ -53,7 +53,7 @@ export function PlannerIncomeBadgeUploadForm({
         toast.error(result.error);
         return;
       }
-      toast.success(`${label} 신청이 접수되었습니다. 관리자 검토 후 배지가 표시됩니다.`);
+      toast.success(`${label} 신청이 접수되었습니다. 운영팀 검토 후 배지가 표시됩니다.`);
       setFile(null);
       router.refresh();
     });

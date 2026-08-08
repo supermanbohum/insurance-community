@@ -38,7 +38,7 @@ export default async function PartnerRegisterPage() {
       <div>
         <h1 className="text-xl font-bold">지점 등록 신청</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          입력한 정보는 보험맵 관리자 검토 후 승인되면 공개됩니다.
+          입력한 정보는 보험맵 운영팀 검토 후 승인되면 공개됩니다.
         </p>
       </div>
       <OnboardingForm regions={regions} gaOptions={gaOptions} initialDraft={draft as RegistrationDraftPayload | null} />

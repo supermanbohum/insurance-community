@@ -36,8 +36,8 @@ export default async function PartnerDashboardPage() {
           </Badge>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          {company.approval_status === 'pending' && '관리자 승인을 기다리고 있습니다. 승인 전에는 정보를 자유롭게 수정할 수 있어요.'}
-          {company.approval_status === 'approved' && '공개 중입니다. 이제부터의 수정은 관리자 승인 후 반영됩니다.'}
+          {company.approval_status === 'pending' && '운영팀 승인을 기다리고 있습니다. 승인 전에는 정보를 자유롭게 수정할 수 있어요.'}
+          {company.approval_status === 'approved' && '공개 중입니다. 이제부터의 수정은 운영팀 승인 후 반영됩니다.'}
           {company.approval_status === 'rejected' && `반려되었습니다.${company.approval_reason ? ` 사유: ${company.approval_reason}` : ''}`}
           {company.approval_status === 'suspended' && `노출이 중지되었습니다.${company.approval_reason ? ` 사유: ${company.approval_reason}` : ''}`}
         </p>

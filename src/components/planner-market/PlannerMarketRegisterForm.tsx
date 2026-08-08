@@ -227,7 +227,7 @@ export function PlannerMarketRegisterForm({
         }
       }
 
-      toast.success(isEditMode ? '수정되었습니다. 활동지역/경력/희망GA 변경은 관리자 승인 후 반영됩니다.' : '설계사 등록 신청이 접수되었습니다. 관리자 승인 후 공개됩니다.');
+      toast.success(isEditMode ? '수정되었습니다. 활동지역/경력/희망GA 변경은 운영팀 승인 후 반영됩니다.' : '설계사 등록 신청이 접수되었습니다. 운영팀 승인 후 공개됩니다.');
       router.push('/planner-market/my');
       router.refresh();
     });
@@ -429,7 +429,7 @@ export function PlannerMarketRegisterForm({
       )}
       {isEditMode && (
         <p className="text-center text-xs text-muted-foreground">
-          연락처/사진/자기소개 등은 저장 즉시 반영됩니다. 활동지역/경력/희망GA 변경은 관리자 승인 후 반영됩니다.
+          연락처/사진/자기소개 등은 저장 즉시 반영됩니다. 활동지역/경력/희망GA 변경은 운영팀 승인 후 반영됩니다.
         </p>
       )}
     </form>

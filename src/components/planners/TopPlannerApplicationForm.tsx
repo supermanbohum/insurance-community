@@ -77,7 +77,7 @@ export function TopPlannerApplicationForm() {
           toast.error(result.error);
           return;
         }
-        toast.success('신청이 접수되었습니다. 관리자 승인 후 지점 페이지에 배지가 노출됩니다.');
+        toast.success('신청이 접수되었습니다. 운영팀 승인 후 지점 페이지에 배지가 노출됩니다.');
         router.push('/');
         router.refresh();
       })
@@ -208,7 +208,7 @@ export function TopPlannerApplicationForm() {
           <CardTitle className="text-base">원천징수영수증 (필수)</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          <p className="text-xs text-muted-foreground">관리자 승인용으로만 사용되며, 실제 서류/연봉은 외부에 절대 공개되지 않습니다.</p>
+          <p className="text-xs text-muted-foreground">운영팀 승인용으로만 사용되며, 실제 서류/연봉은 외부에 절대 공개되지 않습니다.</p>
           {doc ? (
             <div className="flex items-center justify-between rounded-xl border border-line px-3 py-2.5 text-sm">
               <span className="flex items-center gap-1.5 truncate text-ink-soft">

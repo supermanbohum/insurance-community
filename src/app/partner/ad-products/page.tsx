@@ -14,7 +14,7 @@ export default async function PartnerAdProductsPage() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-xl font-bold">광고 상품</h1>
-        <p className="mt-1 text-sm text-muted-foreground">지점 노출을 위한 광고 상품을 구매합니다. 구매 후 관리자 승인을 거쳐 노출됩니다.</p>
+        <p className="mt-1 text-sm text-muted-foreground">지점 노출을 위한 광고 상품을 구매합니다. 구매 후 운영팀 승인을 거쳐 노출됩니다.</p>
       </div>
       <AdProductCatalog branches={approvedBranches.map((b) => ({ id: b.id, name: b.name }))} />
     </div>

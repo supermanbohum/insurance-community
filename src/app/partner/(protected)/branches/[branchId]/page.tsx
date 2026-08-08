@@ -46,7 +46,7 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
           <h1 className="text-xl font-bold">{branch.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {branch.registration_status === 'pending'
-              ? '신규 등록 후 관리자 승인 대기 중입니다.'
+              ? '신규 등록 후 운영팀 승인 대기 중입니다.'
               : branch.registration_status === 'rejected'
                 ? '등록이 반려되었습니다. 정보를 수정해 다시 제출해주세요.'
                 : '공개 중인 지점입니다.'}
@@ -62,7 +62,7 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
 
       <Card className="border-amber-300 bg-amber-50">
         <CardContent className="pt-4 text-sm text-amber-900">
-          이름/주소/지역/소개글/설계사수/편의시설/사진 수정은 관리자 승인 후에 반영됩니다. 승인 대기 중에도 언제든 다시 수정해 제출할 수 있으며, 관리자는 항상 최신 내용만 검토합니다.
+          이름/주소/지역/소개글/설계사수/편의시설/사진 수정은 운영팀 승인 후에 반영됩니다. 승인 대기 중에도 언제든 다시 수정해 제출할 수 있으며, 운영팀은 항상 최신 내용만 검토합니다.
           연락처/취급보험사/채용정보는 저장 즉시 반영됩니다.
         </CardContent>
       </Card>

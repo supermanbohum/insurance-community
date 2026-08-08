@@ -30,7 +30,7 @@ export function TopDesignerApplyPageForm({ plannerProfileId }: { plannerProfileI
         toast.error(result.error);
         return;
       }
-      toast.success('TOP 설계사 인증 신청이 접수되었습니다. 관리자 승인 후 배지가 표시됩니다.');
+      toast.success('TOP 설계사 인증 신청이 접수되었습니다. 운영팀 승인 후 배지가 표시됩니다.');
       router.push('/planner-market/my');
       router.refresh();
     });

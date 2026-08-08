@@ -38,7 +38,7 @@ export default async function PartnerPlannersPage() {
         <div>
           <h1 className="text-xl font-bold">고소득 설계사</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            소속 설계사의 고소득 인증을 등록하고 관리합니다. 등급 배지만 공개되며 실제 연봉/서류는 관리자 승인용으로만 사용됩니다.
+            소속 설계사의 고소득 인증을 등록하고 관리합니다. 등급 배지만 공개되며 실제 연봉/서류는 운영팀 승인용으로만 사용됩니다.
           </p>
         </div>
         {approvedBranches.length > 0 && (
@@ -54,7 +54,7 @@ export default async function PartnerPlannersPage() {
       {approvedBranches.length === 0 && (
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="pt-4 text-sm text-amber-900">
-            관리자 승인이 완료된 지점이 있어야 고소득 설계사를 등록할 수 있습니다.
+            운영팀 승인이 완료된 지점이 있어야 고소득 설계사를 등록할 수 있습니다.
           </CardContent>
         </Card>
       )}

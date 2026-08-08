@@ -8,7 +8,7 @@ import { renewPlannerCertificationAction } from '@/lib/actions/planners';
 import { Button } from '@/components/ui/button';
 
 /** 만료 예정/만료 상태의 인증 옆에 노출되는 재인증 버튼 - 새 원천징수영수증만 다시 첨부하면
- * 되며, 실제 만료일 연장은 관리자 승인 시에만 이루어진다. */
+ * 되며, 실제 만료일 연장은 운영팀 승인 시에만 이루어진다. */
 export function RenewCertificationButton({ certificationId, branchId }: { certificationId: string; branchId: string }) {
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,7 +22,7 @@ export function RenewCertificationButton({ certificationId, branchId }: { certif
     startTransition(async () => {
       const result = await renewPlannerCertificationAction(certificationId, branchId, formData);
       if (result.success) {
-        toast.success('재인증 신청이 접수되었습니다. 관리자 승인 후 인증기간이 연장됩니다.');
+        toast.success('재인증 신청이 접수되었습니다. 운영팀 승인 후 인증기간이 연장됩니다.');
         router.refresh();
       } else {
         toast.error(result.error);

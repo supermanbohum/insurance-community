@@ -76,7 +76,7 @@ export default async function PlannerMarketMyPage() {
 
       {profile.trust_update_status === 'pending' && (
         <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-          활동지역/경력/희망GA 변경 요청이 관리자 승인 대기 중입니다.
+          활동지역/경력/희망GA 변경 요청이 운영팀 승인 대기 중입니다.
         </p>
       )}
 

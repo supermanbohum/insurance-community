@@ -26,7 +26,7 @@ export default async function PlannerMarketEditPage() {
     redirect('/planner-market/register');
   }
   // 활동지역/경력/희망GA는 재승인 대기(draft/pending) 중이면 그 작성 내용을 그대로
-  // 불러온다("이어서 작성") - 라이브 값은 관리자 승인 전까지 그대로 유지된다.
+  // 불러온다("이어서 작성") - 라이브 값은 운영팀 승인 전까지 그대로 유지된다.
   const hasOpenTrustUpdate = profile.trust_update_status !== 'none';
 
   return (

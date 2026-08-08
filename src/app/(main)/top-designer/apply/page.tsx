@@ -23,9 +23,10 @@ export default async function TopDesignerApplyPage() {
       <BackButton />
       <div>
         <h1 className="text-xl font-bold">TOP 설계사 인증 신청</h1>
+        {/* W-076 - 신청 자격(관리직 제외) 안내는 아래 TopDesignerApplyFields 카드 하나에서만
+            한다. 여기서도 요약해 중복으로 적으면 목록이 어긋날 때 분쟁 소지가 된다. */}
         <p className="mt-1 text-sm text-muted-foreground">
-          원천징수영수증으로 연봉을 증빙하면 관리자 검토 후 별등급(⭐1억~10억) 배지가 부여됩니다. 대표/본부장/지점장 등 관리직은
-          신청할 수 없습니다.
+          원천징수영수증으로 연봉을 증빙하면 운영팀 검토 후 별등급(⭐1억~10억) 배지가 부여됩니다.
         </p>
       </div>
       <TopDesignerApplyPageForm plannerProfileId={profile.id} />

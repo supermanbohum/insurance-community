@@ -326,7 +326,7 @@ export function OnboardingForm({
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <p className="text-xs text-muted-foreground">
-            실제 지점 확인 및 허위·중복 등록 방지를 위해 등록자 정보를 입력해주세요. 관리자 승인 참고자료로만 사용됩니다.
+            실제 지점 확인 및 허위·중복 등록 방지를 위해 등록자 정보를 입력해주세요. 운영팀 승인 참고자료로만 사용됩니다.
           </p>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="onb-ga-select">소속 GA</Label>
@@ -364,7 +364,7 @@ export function OnboardingForm({
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="text-xs text-muted-foreground">
-            임대차계약서와 등록자 명함을 첨부해주세요. 실제 지점 확인 및 관리자 승인에만 사용되며 외부에 노출되지 않습니다.
+            임대차계약서와 등록자 명함을 첨부해주세요. 실제 지점 확인 및 운영팀 승인에만 사용되며 외부에 노출되지 않습니다.
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">

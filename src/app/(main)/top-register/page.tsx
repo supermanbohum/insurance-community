@@ -17,7 +17,7 @@ export default async function TopRegisterPage() {
         <h1 className="text-xl font-extrabold tracking-tight text-ink">TOP설계사 등록</h1>
         <p className="mt-1 text-sm text-ink-faint">
           지점등록과는 별개의 기능입니다. 본인 지점을 검색해 선택하고, 아래 정보를 입력해 신청해주세요.
-          관리자 승인 후 지점 페이지에 등급 배지가 노출됩니다.
+          운영팀 승인 후 지점 페이지에 등급 배지가 노출됩니다.
         </p>
       </div>
       <TopPlannerApplicationForm />

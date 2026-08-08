@@ -33,7 +33,7 @@ export function GaChangeRequestForm({
         toast.error(result.error);
         return;
       }
-      toast.success('변경 신청이 접수되었습니다. 관리자 승인 후 반영됩니다.');
+      toast.success('변경 신청이 접수되었습니다. 운영팀 승인 후 반영됩니다.');
       setGaCompanyId(null);
     });
   }
@@ -50,7 +50,7 @@ export function GaChangeRequestForm({
         {pendingRequest ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-800">
             <p className="font-semibold">
-              {pendingGaName}(으)로 변경 신청 대기중입니다. 관리자 승인 후 반영됩니다.
+              {pendingGaName}(으)로 변경 신청 대기중입니다. 운영팀 승인 후 반영됩니다.
             </p>
           </div>
         ) : (
@@ -59,7 +59,7 @@ export function GaChangeRequestForm({
             <Button type="button" disabled={isPending || !gaCompanyId} onClick={handleSubmit} className="self-start">
               변경 신청
             </Button>
-            <p className="text-[11px] text-muted-foreground">이직 등으로 소속이 바뀌는 경우를 위한 기능이며, 즉시 반영되지 않고 관리자 승인 후 반영됩니다.</p>
+            <p className="text-[11px] text-muted-foreground">이직 등으로 소속이 바뀌는 경우를 위한 기능이며, 즉시 반영되지 않고 운영팀 승인 후 반영됩니다.</p>
           </>
         )}
       </CardContent>

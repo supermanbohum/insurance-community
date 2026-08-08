@@ -24,7 +24,7 @@ export default async function SalaryRankingApplyPage() {
       <div>
         <h1 className="text-xl font-bold">전국 설계사 연봉 랭킹 등록</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          원천징수영수증으로 연봉을 증빙하면 관리자 검토 후 랭킹 페이지에 공개됩니다. 대표/본부장/지점장 등 관리직은 등록할 수
+          원천징수영수증으로 연봉을 증빙하면 운영팀 검토 후 랭킹 페이지에 공개됩니다. 대표/본부장/지점장 등 관리직은 등록할 수
           없습니다.
         </p>
       </div>
