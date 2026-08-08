@@ -17,3 +17,16 @@
   계정 자체를 분실/탈퇴하면 우리 서비스 계정에도 다시 못 들어온다(CTO 지적).
 - 왜 지금 안 만드나: 당장 만들 필요는 없다 - "아는 상태로 남겨두자"는 CTO 지시.
 - 언제 다시 볼까: 실제 문의/사고 발생 시, 또는 여유 있을 때 선제 설계.
+
+## 미출시 지점광고상품 5종의 카피가 확정형이다
+- 어디: `src/lib/ad-products/catalog.ts` `AD_PRODUCT_CATALOG`의 `isLive: false` 5종
+  (`main_banner`, `region_top_pin`, `search_top`, `top_exposure`, `event_banner`) - 각각
+  "노출됩니다" 식 확정 문구를 갖고 있다(18-23행).
+- 문제: 실제 노출 로직이 아직 없다(`0037_branch_ad_products.sql` 주석). 지금은 구매
+  자체가 클라이언트(`AdProductCatalog.tsx:38` - `disabled={!item.isLive || ...}`)와
+  서버(`ad-products.ts:30-32` - `isLive` 아니면 `'아직 준비 중인 상품입니다.'` 반환)
+  양쪽에서 차단돼 있어 "결제했는데 약속을 못 지키는" 상황이 발생할 수 없다 - 지금은 안전.
+- 왜 지금 안 고치나: 구매 자체가 막혀 있어 실질 위험이 없다. 5종 중 어느 걸 언제
+  출시할지도 아직 정해지지 않았다.
+- 언제 다시 볼까: 이 5종 중 하나라도 `isLive: true`로 바뀌어 실제 판매를 시작하기
+  직전 - 그때 카피가 실제 노출 로직과 일치하는지 다시 확인한다(RELEASE_GATES.md 7번).
