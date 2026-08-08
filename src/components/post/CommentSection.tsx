@@ -86,7 +86,7 @@ export function CommentSection({ postId, comments, isFullMember, loginHref, curr
         <CommentForm postId={postId} onSuccess={refresh} />
       ) : (
         <div className="rounded-xl bg-surface-sunken px-3.5 py-3 text-xs leading-relaxed text-ink-faint">
-          이메일 인증(또는 카카오 연동 인증)을 완료한 정회원만 댓글을 작성할 수 있습니다.{' '}
+          가입을 완료한 회원만 댓글을 작성할 수 있습니다.{' '}
           <Link href={loginHref} className="font-semibold text-brand-600 hover:underline">
             로그인 / 인증하러 가기
           </Link>

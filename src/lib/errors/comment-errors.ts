@@ -4,7 +4,7 @@
  */
 const ERROR_MESSAGES: Record<string, string> = {
   NOT_AUTHENTICATED: '세션이 만료되었습니다. 새로고침 후 다시 시도해주세요.',
-  NOT_FULL_MEMBER: '이메일 인증(또는 카카오 연동 인증)을 완료한 정회원만 댓글을 작성할 수 있습니다.',
+  NOT_FULL_MEMBER: '가입을 완료한 회원만 댓글을 작성할 수 있습니다.',
   USER_BLOCKED: '이용이 제한된 계정입니다.',
   INVALID_INPUT: '댓글 내용을 입력해주세요.',
   INVALID_AUTHOR_NAME: '작성자명을 확인해주세요.',
