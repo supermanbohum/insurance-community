@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { generateAnonName } from '@/lib/anon-name';
-import { detectPersonalInfo } from '@/lib/moderation';
+import { detectPersonalInfo, containsBannedContent } from '@/lib/moderation';
 import { postFormSchema, validateImageFile, IMAGE_MAX_COUNT } from '@/lib/validation/post';
 import { toPostErrorMessage } from '@/lib/errors/post-errors';
 import type { Database } from '@/types/database';
@@ -35,6 +35,15 @@ function validatePersonalInfo(title: string, content: string): string | null {
   const reasons = [...titleResult.reasons, ...contentResult.reasons];
   if (reasons.length > 0) {
     return `개인정보로 의심되는 내용이 포함되어 있습니다 (${reasons.join(', ')}).`;
+  }
+  return null;
+}
+
+/** W-072(CT-022) - 어떤 단어가 걸렸는지는 표시하지 않는다(우회 학습 방지). 정상 글이
+ * 막혔을 때 대응할 경로만 안내한다. */
+function validateBannedContent(title: string, content: string): string | null {
+  if (containsBannedContent(title) || containsBannedContent(content)) {
+    return '커뮤니티 운영 원칙에 따라 등록할 수 없는 표현이 포함되어 있습니다. 표현을 수정해 다시 시도해 주세요. (정상적인 글이 등록되지 않는다면 고객센터로 알려주세요)';
   }
   return null;
 }
@@ -112,6 +121,10 @@ export async function createPostAction(formData: FormData): Promise<PostActionRe
   if (personalInfoError) {
     return { success: false, error: personalInfoError };
   }
+  const bannedContentError = validateBannedContent(parsed.data.title, parsed.data.content);
+  if (bannedContentError) {
+    return { success: false, error: bannedContentError };
+  }
 
   const imageFiles = extractImageFiles(formData, 'images').slice(0, IMAGE_MAX_COUNT);
 
@@ -169,6 +182,10 @@ export async function updatePostAction(
   const personalInfoError = validatePersonalInfo(parsed.data.title, parsed.data.content);
   if (personalInfoError) {
     return { success: false, error: personalInfoError };
+  }
+  const bannedContentError = validateBannedContent(parsed.data.title, parsed.data.content);
+  if (bannedContentError) {
+    return { success: false, error: bannedContentError };
   }
 
   try {
