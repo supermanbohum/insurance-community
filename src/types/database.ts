@@ -1391,6 +1391,14 @@ export interface Database {
         Args: { p_comment_id: string };
         Returns: void;
       };
+      admin_create_comment_as: {
+        Args: {
+          p_post_id: string;
+          p_content: string;
+          p_parent_comment_id?: string | null;
+        };
+        Returns: string;
+      };
       add_post_image: {
         Args: {
           p_post_id: string;

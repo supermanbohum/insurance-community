@@ -1,8 +1,9 @@
-import { listAdminComments } from '@/lib/admin/community';
+import { listAdminComments, listAdminPosts } from '@/lib/admin/community';
 import { CommunityAdminTabs } from '@/components/admin/CommunityAdminTabs';
 import { CommentModerationActions } from '@/components/admin/CommentModerationActions';
+import { AdminCommentForm } from '@/components/admin/AdminCommentForm';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning'> = {
   visible: 'success',
@@ -12,7 +13,8 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
 const STATUS_LABEL: Record<string, string> = { visible: '공개', hidden: '숨김', deleted: '삭제됨' };
 
 export default async function AdminCommunityCommentsPage() {
-  const comments = await listAdminComments();
+  const [comments, posts] = await Promise.all([listAdminComments(), listAdminPosts()]);
+  const visiblePosts = posts.filter((p) => p.status === 'visible').map((p) => ({ id: p.id, title: p.title }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -22,6 +24,15 @@ export default async function AdminCommunityCommentsPage() {
       </div>
 
       <CommunityAdminTabs active="comments" />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">운영팀 공식 댓글 작성(W-085)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AdminCommentForm posts={visiblePosts} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="flex flex-col divide-y p-0">
