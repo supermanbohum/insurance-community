@@ -95,6 +95,29 @@ export async function getPublicTopDesigner(id: string): Promise<PublicTopDesigne
   return toSummary(data as unknown as PublicTopDesignerRow);
 }
 
+export interface TopDesignerRankingRow {
+  id: string;
+  name: string;
+  gaCompanyName: string;
+  branchName: string | null;
+}
+
+/** 홈 하단 랭킹 - 오너 사양대로 "GA/본부(지점)/이름"만, 연봉 자체는 절대 노출하지
+ * 않는다(정렬 기준일 뿐). get_top_designer_home_ranking RPC가 서버에서 이미 연봉
+ * 내림차순으로 정렬·상위 N 절단까지 끝내서 반환한다 - 클라이언트가 정렬을 바꿀 수
+ * 없다(뷰가 아니라 함수라 income 컬럼 자체가 응답에 없다). */
+export async function listTopDesignerHomeRanking(limit = 10): Promise<TopDesignerRankingRow[]> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await supabase.rpc('get_top_designer_home_ranking', { p_limit: limit });
+  if (error || !data) return [];
+  return (data as { id: string; name: string; ga_company_name: string; branch_name: string | null }[]).map((row) => ({
+    id: row.id,
+    name: row.name,
+    gaCompanyName: row.ga_company_name,
+    branchName: row.branch_name,
+  }));
+}
+
 /** sitemap.xml 전용 - 공개 인증 id/등록일만 가볍게 조회한다. 마이그레이션이 아직
  * 적용되지 않은 배포 환경에서도 sitemap.xml 빌드 전체가 깨지지 않도록 조회 실패 시
  * 빈 배열로 폴백한다(throw하지 않음). */

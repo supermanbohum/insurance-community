@@ -2100,6 +2100,10 @@ export interface Database {
         Args: { p_certification_id: string };
         Returns: undefined;
       };
+      get_top_designer_home_ranking: {
+        Args: { p_limit?: number };
+        Returns: { id: string; name: string; ga_company_name: string; branch_name: string | null }[];
+      };
       submit_salary_ranking: {
         Args: {
           p_planner_profile_id: string;

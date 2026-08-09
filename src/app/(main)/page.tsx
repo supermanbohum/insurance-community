@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
 import { getPageLayoutConfig } from '@/lib/design/layout';
 import { getActiveHomeOpenBanner } from '@/lib/admin/home-banner';
+import { listTopDesignerHomeRanking } from '@/lib/public/top-designer.supabase';
 import { HOME_SECTIONS, type Device } from '@/lib/design/sections';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { HomeOpenBanner } from '@/components/home/HomeOpenBanner';
@@ -12,6 +13,7 @@ import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
 import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
+import { TopDesignerHomeRanking } from '@/components/home/TopDesignerHomeRanking';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { websiteJsonLd, organizationJsonLd } from '@/lib/seo/jsonld';
 import { DEFAULT_META_DESCRIPTION, DEFAULT_KEYWORDS } from '@/lib/seo/config';
@@ -65,12 +67,15 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [popular, latest, stats, layoutConfig, openBanner] = await Promise.all([
+  const [popular, latest, stats, layoutConfig, openBanner, topDesignerRanking] = await Promise.all([
     listPublicBranches({ sort: 'views', limit: 10 }),
     listPublicBranches({ sort: 'newest', limit: 10 }),
     getHomeStats(),
     getPageLayoutConfig('home'),
     getActiveHomeOpenBanner(),
+    // 콘텐츠팀 임계 원칙(N>10에서만 순위 강조) 판별용으로 1건 더 받아온다 - 실제
+    // 렌더링은 컴포넌트 안에서 10건까지만 자른다.
+    listTopDesignerHomeRanking(11),
   ]);
 
   const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '우리 지점 등록하기';
@@ -114,6 +119,11 @@ export default async function HomePage() {
             items={latest.map((b) => ({ key: b.id, node: <NewBranchCard branch={b} /> }))}
           />
         )}
+      </Section>
+    ),
+    topDesignerRanking: (
+      <Section title="🏆 TOP 설계사 랭킹" subtitle="연봉 기준 실시간 랭킹" moreHref="/top-designer">
+        <TopDesignerHomeRanking rows={topDesignerRanking} />
       </Section>
     ),
   };
