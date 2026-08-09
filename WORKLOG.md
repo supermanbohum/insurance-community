@@ -3,6 +3,30 @@
 작업 단위마다 무엇을·왜·결과·검증·커밋을 남긴다(오너 지시, 2026-08-08). 설계가 중간에 바뀌는 경우
 바뀐 이유까지 남긴다 - 나중에 읽는 사람이 폐기된 방향을 다시 구현하지 않도록.
 
+## 2026-08-09 · TOP 설계사 Phase 0 - 설계사마켓 구조 분리 (커밋됨, 미배포)
+- 무엇: top_designer_certifications를 planner_profiles 참조 없이 완전 독립된 스키마로
+  재구성(0082) - user_id/name/ga_company_id/branch_name/career_years/self_introduction/
+  photo_path/photo_public/consent_public_display 신설, planner_profile_id 컬럼 자체를
+  드롭. 신청 RPC·공개뷰·스토리지 정책(신규 top-designer-profile-photos 버킷 포함) 전부
+  재작성. 신청 폼·개인 상세·목록·관리자 화면 TS 레이어 전부 새 스키마로 갱신.
+  PlannerMarketRegisterForm의 "TOP 설계사도 함께 신청" 토글은 선행 커밋(57b593f)에서
+  먼저 제거.
+- 왜: 오너 지시(2026-08-09) - 마켓(이직·익명)과 TOP(과시·공개)의 공개 원칙이 정반대라
+  같은 데이터를 공유하면 계속 충돌한다(CTO가 "교차 대조로 익명이 깨진다" 리스크를 올렸고
+  오너가 구조적 분리(B안)를 선택). GA는 ga_company_id로 기존 디렉토리에 연결하되
+  본부/지점은 자유텍스트(branch_name)로 받는다 - CTO 실측 결과 ga_branch가 0건이라
+  선택할 게 없는 선택 UI가 되는 걸 피했다(하이브리드 스키마).
+- 결과: 코드·마이그레이션 전부 작성 완료, 로컬 커밋만 함(033bba0) - **아직 push
+  안 함**. CTO 지시 하드 게이트 2개(① TOP 신청 폼 공개 동의 체크박스 - 콘텐츠팀 확정
+  문안 필요, 지금 코드엔 방향성 초안만 들어있음 ② /privacy에 신규 수집 항목 반영,
+  원천징수영수증 보유기간·파기시점 명시)가 아직 안 채워졌다. 콘텐츠팀에 문안·초안을
+  직접 요청해뒀다 - 둘 다 도착하면 같은 배포로 묶어서 push + 마이그레이션 0082 적용을
+  CTO에게 요청한다.
+- 검증: tsc/lint/build 전부 통과. Supabase BEGIN...ROLLBACK 트랜잭션으로 스키마·RPC·
+  스토리지 정책·공개뷰(GA사명 JOIN 포함)를 실제로 만들어 관리직 차단/동의 없음 거부/
+  사진 공개선택 누락 거부/정상 제출/관리자 승인/공개뷰 노출까지 end-to-end로 확인.
+- 커밋: 033bba0 (로컬만, 미push)
+
 ## 2026-08-09 · TOP 설계사 등록 설명 페이지 신설 (SPEC-032) + /planner-register 보조문구 2건
 - 무엇: `/top-designer-register` 신규(SPEC-032 확정 카피 - 배지/헤드2줄/부연2줄/요건블록3단/
   안심카드3장/페이지미리보기/CTA/하단고지 그대로). 골드(gold-*) 톤으로 인증 시각언어를
