@@ -271,9 +271,9 @@ export function PlannerMarketRegisterForm({
           )}
           {hasPhoto && (
             <div className="mt-4 flex flex-col gap-1.5">
-              <Label>TOP 설계사·연봉랭킹 사진 공개 여부</Label>
+              <Label>연봉랭킹 사진 공개 여부</Label>
               <p className="text-xs text-muted-foreground">
-                이 사진은 TOP 설계사·연봉랭킹에 선정될 경우에만 노출 여부에 사용됩니다. 비공개를 선택하면 열람권을 사용해도 볼 수 없습니다.
+                이 사진은 연봉랭킹에 선정될 경우에만 노출 여부에 사용됩니다. 비공개를 선택하면 어떤 방법으로도 볼 수 없습니다.
               </p>
               <div className="flex gap-2">
                 <button

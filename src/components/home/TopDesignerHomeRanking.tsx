@@ -26,7 +26,7 @@ export function TopDesignerHomeRanking({ rows }: { rows: TopDesignerRankingRow[]
           href="/top-designer-register"
           className="mt-1 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600"
         >
-          설계사 등록하기
+          TOP 설계사 인증 신청
         </Link>
       </div>
     );
