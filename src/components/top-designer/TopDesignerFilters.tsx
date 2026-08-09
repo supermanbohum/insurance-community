@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { RegionRow } from '@/lib/admin/branch';
-import { RegionSelect } from '@/components/admin/RegionSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,21 +10,15 @@ import type { TopDesignerSort } from '@/lib/public/top-designer.supabase';
 
 const SORT_LABEL: Record<TopDesignerSort, string> = { views: '조회순', likes: '좋아요순', newest: '최신순' };
 
-export function TopDesignerFilters({
-  regions,
-  initial,
-}: {
-  regions: RegionRow[];
-  initial: { regionId: string | null; starTier: StarTier | null; sort: TopDesignerSort };
-}) {
+/** 활동지역 필터는 뺐다 - TOP 설계사가 설계사마켓과 구조적으로 분리되면서 지역 필드
+ * 자체가 없어졌다(오너 사양은 GA·소속만 요구했다). */
+export function TopDesignerFilters({ initial }: { initial: { starTier: StarTier | null; sort: TopDesignerSort } }) {
   const router = useRouter();
-  const [regionId, setRegionId] = useState<string | null>(initial.regionId);
   const [starTier, setStarTier] = useState<StarTier | 'all'>(initial.starTier ?? 'all');
   const [sort, setSort] = useState<TopDesignerSort>(initial.sort);
 
   function apply() {
     const params = new URLSearchParams();
-    if (regionId) params.set('region', regionId);
     if (starTier !== 'all') params.set('starTier', starTier);
     if (sort !== 'newest') params.set('sort', sort);
     router.push(`/top-designer${params.toString() ? `?${params.toString()}` : ''}`);
@@ -34,12 +26,6 @@ export function TopDesignerFilters({
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-4">
-      <div>
-        <Label>활동지역</Label>
-        <div className="mt-1.5">
-          <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
-        </div>
-      </div>
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1.5">
           <Label>별등급</Label>

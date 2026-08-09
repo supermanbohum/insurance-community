@@ -12,7 +12,7 @@ export function TopDesignerLoadMoreButton({
   filters,
 }: {
   initialCount: number;
-  filters: { starTier?: StarTier; regionId?: string; sort?: TopDesignerSort };
+  filters: { starTier?: StarTier; sort?: TopDesignerSort };
 }) {
   const [items, setItems] = useState<PublicTopDesignerCardSummary[]>([]);
   const [exhausted, setExhausted] = useState(initialCount < 24);

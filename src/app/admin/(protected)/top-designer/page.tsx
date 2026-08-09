@@ -70,7 +70,8 @@ export default async function AdminTopDesignerPage({ searchParams }: { searchPar
               >
                 <div className="min-w-0">
                   <p className="font-medium">
-                    {item.plannerName} · {item.jobTitle}
+                    {item.name} · {item.gaCompanyName}
+                    {item.branchName ? ` · ${item.branchName}` : ''} · {item.jobTitle}
                     {item.starTier && <span className="ml-1.5 text-amber-600">{STAR_TIER_LABEL[item.starTier]}</span>}
                   </p>
                   <p className="text-xs text-muted-foreground">

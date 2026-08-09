@@ -17,10 +17,19 @@ const DOC_MIME_EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
   'application/pdf': 'pdf',
 };
+const IMAGE_MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
 
-/** 원천징수영수증 업로드 - planner-market-income-docs 등 기존 버킷과 동일한
- * 2단계 패턴(스토리지 업로드 → RPC 실패 시 고아 파일 삭제)의 첫 단계. */
-async function uploadIncomeDoc(plannerProfileId: string, file: File): Promise<UploadResult> {
+/** 원천징수영수증 업로드 - 폴더 접두사는 user.id(current_member_id) - 마켓과 완전
+ * 분리된 자체 스키마라 planner_profile_id를 더 이상 참조하지 않는다. */
+export async function uploadTopDesignerIncomeDocAction(formData: FormData): Promise<UploadResult> {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: '원천징수영수증을 선택해주세요.' };
+  }
   const extension = DOC_MIME_EXTENSIONS[file.type];
   if (!extension) {
     return { success: false, error: 'jpg, png, webp, pdf 형식만 업로드할 수 있습니다.' };
@@ -28,10 +37,36 @@ async function uploadIncomeDoc(plannerProfileId: string, file: File): Promise<Up
   if (file.size > 10 * 1024 * 1024) {
     return { success: false, error: '파일은 최대 10MB까지 업로드할 수 있습니다.' };
   }
+  const user = await requireUser();
   const supabase = createServerSupabaseClient();
-  const path = `${plannerProfileId}/${crypto.randomUUID()}.${extension}`;
+  const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
   const { error } = await supabase.storage
     .from('top-designer-income-docs')
+    .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
+  if (error) {
+    return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+  return { success: true, path };
+}
+
+/** 프로필 사진 업로드 - 마켓의 planner-market-profile-photos와 동일 패턴, 별개 버킷. */
+export async function uploadTopDesignerPhotoAction(formData: FormData): Promise<UploadResult> {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: '사진 파일을 선택해주세요.' };
+  }
+  const extension = IMAGE_MIME_EXTENSIONS[file.type];
+  if (!extension) {
+    return { success: false, error: 'jpg, png, webp 형식만 업로드할 수 있습니다.' };
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return { success: false, error: '이미지는 최대 5MB까지 업로드할 수 있습니다.' };
+  }
+  const user = await requireUser();
+  const supabase = createServerSupabaseClient();
+  const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage
+    .from('top-designer-profile-photos')
     .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
   if (error) {
     return { success: false, error: '업로드하지 못했습니다. 잠시 후 다시 시도해주세요.' };
@@ -43,41 +78,53 @@ function describeSubmitError(message: string): string {
   if (message.includes('BLOCKED_JOB_TITLE')) return '대표/본부장/지점장 등 관리직은 신청할 수 없습니다. 설계사만 신청 가능합니다.';
   if (message.includes('MISSING_INCOME_DOCUMENT')) return '원천징수영수증을 업로드해주세요.';
   if (message.includes('ALREADY_APPROVED')) return '이미 승인된 인증입니다.';
-  if (message.includes('NOT_AUTHORIZED')) return '본인의 설계사 프로필로만 신청할 수 있습니다.';
+  if (message.includes('CONSENT_REQUIRED')) return '실명·GA·소속 지점 공개 동의가 필요합니다.';
+  if (message.includes('PHOTO_PUBLIC_CHOICE_REQUIRED')) return '프로필 사진 공개 여부를 선택해주세요.';
+  if (message.includes('INVALID_GA_COMPANY')) return 'GA를 선택해주세요.';
   return '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';
 }
 
-/** TOP 설계사 인증 신청 - 서류 업로드 → RPC 제출 → OCR 스텁 실행(결과는 참고용,
- * 관리자가 항상 직접 확인·확정한다) 순서로 처리한다. */
-export async function submitTopDesignerCertificationAction(
-  plannerProfileId: string,
-  input: { jobTitle: string; declaredAnnualIncomeKrw?: number },
-  formData: FormData
-): Promise<ActionResult> {
+export interface TopDesignerSubmitInput {
+  name: string;
+  gaCompanyId: string;
+  branchName?: string;
+  jobTitle: string;
+  careerYears?: number;
+  selfIntroduction?: string;
+  declaredAnnualIncomeKrw?: number;
+  incomeDocPath: string;
+  photoPath?: string | null;
+  photoPublic?: boolean | null;
+  consentPublicDisplay: boolean;
+}
+
+/** TOP 설계사 인증 신청 - RPC 제출 → OCR 스텁 실행(결과는 참고용, 관리자가 항상 직접
+ * 확인·확정한다) 순서로 처리한다. 서류/사진 업로드는 폼에서 먼저 별도 액션으로 끝내고
+ * 경로만 여기로 넘어온다. */
+export async function submitTopDesignerCertificationAction(input: TopDesignerSubmitInput): Promise<ActionResult> {
   await requireUser();
-
-  const file = formData.get('file');
-  if (!(file instanceof File) || file.size === 0) {
-    return { success: false, error: '원천징수영수증을 업로드해주세요.' };
-  }
-
-  const uploaded = await uploadIncomeDoc(plannerProfileId, file);
-  if (!uploaded.success) return uploaded;
-
   const supabase = createServerSupabaseClient();
   const { data: certificationId, error } = await supabase.rpc('submit_top_designer_certification', {
-    p_planner_profile_id: plannerProfileId,
-    p_job_title: input.jobTitle,
-    p_income_doc_path: uploaded.path,
-    p_declared_annual_income_krw: input.declaredAnnualIncomeKrw,
+    p_name: input.name.trim(),
+    p_ga_company_id: input.gaCompanyId,
+    p_job_title: input.jobTitle.trim(),
+    p_income_doc_path: input.incomeDocPath,
+    p_consent_public_display: input.consentPublicDisplay,
+    p_branch_name: input.branchName?.trim() || null,
+    p_career_years: input.careerYears ?? null,
+    p_self_introduction: input.selfIntroduction?.trim() || null,
+    p_declared_annual_income_krw: input.declaredAnnualIncomeKrw ?? null,
+    p_photo_path: input.photoPath ?? null,
+    p_photo_public: input.photoPublic ?? null,
   });
 
   if (error || !certificationId) {
-    await createAdminClient().storage.from('top-designer-income-docs').remove([uploaded.path]);
+    if (input.incomeDocPath) await createAdminClient().storage.from('top-designer-income-docs').remove([input.incomeDocPath]);
+    if (input.photoPath) await createAdminClient().storage.from('top-designer-profile-photos').remove([input.photoPath]);
     return { success: false, error: describeSubmitError(error?.message ?? '') };
   }
 
-  const ocr = await runIncomeDocOcr(uploaded.path);
+  const ocr = await runIncomeDocOcr(input.incomeDocPath);
   if (ocr.incomeKrw !== null) {
     await createAdminClient()
       .from('top_designer_certifications')
@@ -86,7 +133,6 @@ export async function submitTopDesignerCertificationAction(
   }
 
   revalidatePath('/top-designer');
-  revalidatePath('/planner-market/my');
   return { success: true };
 }
 
@@ -111,7 +157,7 @@ export async function recordTopDesignerViewAction(certificationId: string): Prom
  * 클라이언트 트리거 데이터 조회를 전부 Server Action으로 처리하고 별도 API 라우트를
  * 쓰지 않는 관례를 따른다. */
 export async function loadMoreTopDesignersAction(
-  filters: { starTier?: StarTier; regionId?: string; sort?: TopDesignerSort },
+  filters: { starTier?: StarTier; sort?: TopDesignerSort },
   offset: number
 ): Promise<PublicTopDesignerCardSummary[]> {
   return listPublicTopDesigners({ ...filters, offset, limit: 24 });

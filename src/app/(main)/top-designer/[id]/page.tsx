@@ -13,20 +13,20 @@ import { User, Eye } from 'lucide-react';
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const designer = await getPublicTopDesigner(params.id);
   if (!designer) return {};
-  const title = `${STAR_TIER_LABEL[designer.starTier]} · ${designer.activeRegionLabel} TOP 설계사`;
+  const title = `${STAR_TIER_LABEL[designer.starTier]} · ${designer.gaCompanyName} TOP 설계사 ${designer.name}`;
   return { title, alternates: { canonical: `/top-designer/${designer.id}` } };
 }
 
-/** 명함(실명 포함) 다운로드는 본인만 볼 수 있다 - planner_profiles.name은 이
- * 코드베이스 전체에서 GA 열람권 없이는 절대 공개되지 않는 비공개 필드라, 공개
- * 상세페이지에는 실명을 노출하지 않고 본인 로그인 시에만 자신의 명함을 만들 수 있게 한다. */
-async function getOwnerNameIfViewerIsOwner(plannerProfileId: string): Promise<string | null> {
+/** 실명·GA·소속은 오너 확정대로 항상 공개다("개인 특정 OK" - TOP은 과시가 목적이라
+ * 마켓과 반대). "본인 명함 다운로드"는 이름을 가리기 위한 게 아니라 본인 전용
+ * 유틸리티라 유지한다 - top_designer_certifications.user_id로 직접 소유자를 확인한다
+ * (마켓 프로필 조회는 더 이상 하지 않는다 - 구조 분리). */
+async function isViewerTheOwner(certificationId: string): Promise<boolean> {
   const user = await getCurrentUser();
-  if (!user) return null;
+  if (!user) return false;
   const supabase = createServerSupabaseClient();
-  const { data } = await supabase.rpc('get_my_planner_market_profile');
-  const own = data?.find((row) => row.id === plannerProfileId);
-  return own?.name ?? null;
+  const { data } = await supabase.from('top_designer_certifications').select('user_id').eq('id', certificationId).maybeSingle();
+  return data?.user_id === user.id;
 }
 
 export default async function TopDesignerDetailPage({ params }: { params: { id: string } }) {
@@ -34,7 +34,7 @@ export default async function TopDesignerDetailPage({ params }: { params: { id: 
   if (!designer) notFound();
 
   await recordTopDesignerViewAction(designer.id);
-  const ownerName = await getOwnerNameIfViewerIsOwner(designer.plannerProfileId);
+  const isOwner = await isViewerTheOwner(designer.id);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
@@ -55,10 +55,12 @@ export default async function TopDesignerDetailPage({ params }: { params: { id: 
           <span className="w-fit rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
             {STAR_TIER_LABEL[designer.starTier]} · 보험맵 공식 인증
           </span>
-          <h1 className="text-lg font-bold">
-            {designer.activeRegionLabel} · 경력 {designer.careerYears}년
-          </h1>
-          {designer.specialties.length > 0 && <p className="text-sm text-ink-soft">{designer.specialties.join(', ')}</p>}
+          <h1 className="text-lg font-bold">{designer.name} 설계사</h1>
+          <p className="text-sm text-ink-soft">
+            {designer.gaCompanyName}
+            {designer.branchName ? ` · ${designer.branchName}` : ''}
+            {designer.careerYears != null ? ` · 경력 ${designer.careerYears}년` : ''}
+          </p>
         </div>
       </div>
 
@@ -81,14 +83,14 @@ export default async function TopDesignerDetailPage({ params }: { params: { id: 
         <p className="text-sm text-ink-soft">{designer.jobTitle}</p>
       </section>
 
-      {ownerName && (
+      {isOwner && (
         <section className="rounded-2xl border border-line p-4">
           <h2 className="mb-3 text-sm font-bold">내 명함</h2>
           <TopDesignerBusinessCardDownload
-            name={ownerName}
+            name={designer.name}
             starTier={designer.starTier}
-            regionLabel={designer.activeRegionLabel}
-            careerYears={designer.careerYears}
+            regionLabel={`${designer.gaCompanyName}${designer.branchName ? ` · ${designer.branchName}` : ''}`}
+            careerYears={designer.careerYears ?? 0}
             profilePhotoUrl={designer.profilePhotoUrl}
             seed={designer.id}
           />

@@ -1229,7 +1229,15 @@ export interface Database {
       top_designer_certifications: {
         Row: {
           id: string;
-          planner_profile_id: string;
+          user_id: string;
+          name: string;
+          ga_company_id: string;
+          branch_name: string | null;
+          career_years: number | null;
+          self_introduction: string | null;
+          photo_path: string | null;
+          photo_public: boolean | null;
+          consent_public_display: boolean;
           job_title: string;
           income_doc_storage_path: string;
           declared_annual_income_krw: number | null;
@@ -1344,16 +1352,17 @@ export interface Database {
       public_top_designer_certifications: {
         Row: {
           id: string;
-          planner_profile_id: string;
+          name: string;
+          ga_company_id: string;
+          ga_company_name: string;
+          branch_name: string | null;
           job_title: string;
           star_tier: 'star_1' | 'star_2' | 'star_3' | 'star_4' | 'star_5' | null;
+          career_years: number | null;
+          self_introduction: string | null;
           certified_at: string | null;
           created_at: string;
-          profile_photo_path: string | null;
-          active_region_id: string;
-          career_years: number;
-          specialties: string[];
-          self_introduction: string | null;
+          photo_path: string | null;
           view_count: number;
           like_count: number;
         };
@@ -2054,7 +2063,19 @@ export interface Database {
         Returns: string;
       };
       submit_top_designer_certification: {
-        Args: { p_planner_profile_id: string; p_job_title: string; p_income_doc_path: string; p_declared_annual_income_krw?: number };
+        Args: {
+          p_name: string;
+          p_ga_company_id: string;
+          p_job_title: string;
+          p_income_doc_path: string;
+          p_consent_public_display: boolean;
+          p_branch_name?: string | null;
+          p_career_years?: number | null;
+          p_self_introduction?: string | null;
+          p_declared_annual_income_krw?: number | null;
+          p_photo_path?: string | null;
+          p_photo_public?: boolean | null;
+        };
         Returns: string;
       };
       admin_review_top_designer_certification: {

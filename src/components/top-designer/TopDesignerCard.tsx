@@ -42,10 +42,11 @@ export function TopDesignerCard({ designer, className }: { designer: PublicTopDe
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <p className="text-sm font-semibold text-ink">
-          {designer.activeRegionLabel || '지역 미상'} · 경력 {designer.careerYears}년
+        <p className="text-sm font-semibold text-ink">{designer.name} 설계사</p>
+        <p className="truncate text-xs text-ink-soft">
+          {designer.gaCompanyName}
+          {designer.branchName ? ` · ${designer.branchName}` : ''}
         </p>
-        {designer.specialties.length > 0 && <p className="truncate text-xs text-ink-soft">{designer.specialties.join(', ')}</p>}
         {designer.selfIntroduction && <p className="line-clamp-2 text-xs text-ink-faint">{designer.selfIntroduction}</p>}
         <div className="mt-auto flex items-center gap-3 pt-1 text-[11px] text-ink-faint">
           <span className="flex items-center gap-0.5">

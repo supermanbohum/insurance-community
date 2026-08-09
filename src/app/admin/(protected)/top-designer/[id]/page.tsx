@@ -34,7 +34,7 @@ export default async function AdminTopDesignerDetailPage({ params }: { params: {
             </Link>
           </p>
           <div className="mt-1 flex items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{detail.plannerName}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{detail.name}</h1>
             <Badge variant={STATUS_VARIANT[detail.status]}>{STATUS_LABEL[detail.status]}</Badge>
             {detail.starTier && <Badge variant="outline">{STAR_TIER_LABEL[detail.starTier]}</Badge>}
           </div>
@@ -42,7 +42,7 @@ export default async function AdminTopDesignerDetailPage({ params }: { params: {
         </div>
         <TopDesignerReviewActions
           certificationId={detail.id}
-          plannerName={detail.plannerName}
+          plannerName={detail.name}
           status={detail.status}
           ocrExtractedIncomeKrw={detail.ocrExtractedIncomeKrw}
         />
@@ -53,9 +53,11 @@ export default async function AdminTopDesignerDetailPage({ params }: { params: {
           <CardTitle className="text-base">신청 정보</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+          <InfoRow label="소속 GA" value={detail.gaCompanyName} />
+          <InfoRow label="본부/지점" value={detail.branchName ?? '-'} />
           <InfoRow label="직급" value={detail.jobTitle} />
-          <InfoRow label="연락처" value={detail.plannerPhone} />
-          <InfoRow label="이메일" value={detail.plannerEmail} />
+          <InfoRow label="연락처" value={detail.applicantContact} />
+          <InfoRow label="이메일" value={detail.applicantEmail} />
           <InfoRow label="신고 연봉" value={detail.declaredAnnualIncomeKrw ? `${detail.declaredAnnualIncomeKrw.toLocaleString()}원` : '-'} />
           <InfoRow label="확정 연봉" value={detail.confirmedAnnualIncomeKrw ? `${detail.confirmedAnnualIncomeKrw.toLocaleString()}원` : '-'} />
         </CardContent>

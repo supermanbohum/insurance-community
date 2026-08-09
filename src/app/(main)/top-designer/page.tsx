@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Award, Trophy } from 'lucide-react';
 import { listPublicTopDesigners, type TopDesignerSort } from '@/lib/public/top-designer.supabase';
-import { listRegions } from '@/lib/admin/branch';
 import { TopDesignerFilters } from '@/components/top-designer/TopDesignerFilters';
 import { TopDesignerCard } from '@/components/top-designer/TopDesignerCard';
 import { TopDesignerLoadMoreButton } from '@/components/top-designer/TopDesignerLoadMoreButton';
@@ -21,15 +20,12 @@ export const metadata: Metadata = {
 export default async function TopDesignerPage({
   searchParams,
 }: {
-  searchParams: { region?: string; starTier?: string; sort?: string };
+  searchParams: { starTier?: string; sort?: string };
 }) {
   const starTier = (searchParams.starTier as StarTier | undefined) ?? undefined;
   const sort = (searchParams.sort as TopDesignerSort | undefined) ?? 'newest';
 
-  const [regions, designers] = await Promise.all([
-    listRegions(),
-    listPublicTopDesigners({ regionId: searchParams.region, starTier, sort, limit: 24 }),
-  ]);
+  const designers = await listPublicTopDesigners({ starTier, sort, limit: 24 });
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
@@ -57,7 +53,7 @@ export default async function TopDesignerPage({
         ))}
       </div>
 
-      <TopDesignerFilters regions={regions} initial={{ regionId: searchParams.region ?? null, starTier: starTier ?? null, sort }} />
+      <TopDesignerFilters initial={{ starTier: starTier ?? null, sort }} />
 
       {designers.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-amber-200 bg-amber-50/50 py-14 text-center">
@@ -81,7 +77,7 @@ export default async function TopDesignerPage({
         </div>
       )}
 
-      <TopDesignerLoadMoreButton initialCount={designers.length} filters={{ regionId: searchParams.region, starTier, sort }} />
+      <TopDesignerLoadMoreButton initialCount={designers.length} filters={{ starTier, sort }} />
     </div>
   );
 }
