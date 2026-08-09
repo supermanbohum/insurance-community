@@ -57,6 +57,11 @@ export default function PlannerRegisterIntroPage() {
             <br />
             관심 있는 관리자(지점장·본부장·단장)가 회원님을 찾아 연락합니다.
           </p>
+          <p className="text-xs leading-relaxed text-ink-faint">
+            추후 일반 고객이 설계사님을 직접 찾아오는 기능도 개발 예정입니다.
+            <br />
+            미리 등록해 두시면, 열리는 순간 가장 앞자리에서 시작합니다.
+          </p>
         </section>
 
         <section className="flex flex-col gap-3">
