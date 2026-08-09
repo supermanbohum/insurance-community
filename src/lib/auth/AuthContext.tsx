@@ -99,7 +99,15 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
         const redirectTo = isInsideAppWebView() ? APP_OAUTH_RETURN_URL : `${window.location.origin}/auth/callback${nextParam}`;
         const { error } = await supabase.auth.signInWithOAuth({
           provider,
-          options: { redirectTo },
+          options: {
+            redirectTo,
+            // 카카오 비즈 앱 전환 전이라 카카오계정(이메일)·프로필 사진 동의항목이
+            // 콘솔에서 아직 신청 불가(회색) 상태다 - Supabase 기본 scope(account_email
+            // 포함)를 그대로 쓰면 카카오가 "설정되지 않은 동의항목"으로 보고 KOE205로
+            // 거부한다. 우리는 연락처를 자체 폼에서 받으므로 이메일이 필요 없고, 프로필
+            // 사진을 쓰는 화면도 없다 - 닉네임 하나만 요청한다.
+            scopes: 'profile_nickname',
+          },
         });
         if (error) {
           resolve({ success: false, error: error.message });
