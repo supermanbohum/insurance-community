@@ -18,7 +18,13 @@ export type TopDesignerReviewDecision = 'approved' | 'on_hold' | 'rejected' | 'p
  * 확정 정책). 이 프로젝트의 storage.objects에는 직접 SQL DELETE를 막는 트리거가
  * 걸려 있어("Use the Storage API instead.") RPC 안에서 지울 수 없다 - RPC 호출
  * 전에 경로를 읽어두고, RPC가 경로 컬럼을 null로 비운 뒤 여기서 Storage API로
- * 실제 파일을 지운다. 심사 기록(신청자·일시·등급·처리자·결과)은 행에 그대로 남는다. */
+ * 실제 파일을 지운다. 심사 기록(신청자·일시·등급·처리자·결과)은 행에 그대로 남는다.
+ *
+ * 🔴 RPC가 경로 컬럼을 null로 비운 뒤에 Storage remove()가 실패하면, DB에는 더 이상
+ * 그 경로가 남아있지 않아 나중에 orphan 파일을 찾을 길이 없어진다(CTO 지적). remove()
+ * 실패를 조용히 삼키지 않고 기존 audit_logs(0053에서 다른 관리자 액션들이 이미 쓰는
+ * 표)에 실패한 경로를 기록해 관리자가 /admin/audit-log에서 발견하고 수동으로
+ * 지울 수 있게 한다. */
 export async function reviewTopDesignerCertificationAction(
   certificationId: string,
   decision: TopDesignerReviewDecision,
@@ -31,7 +37,7 @@ export async function reviewTopDesignerCertificationAction(
     return { success: false, error: '사유를 입력해주세요.' };
   }
 
-  await requireAdmin();
+  const adminSession = await requireAdmin();
   const supabase = createServerSupabaseClient();
   const admin = createAdminClient();
 
@@ -58,7 +64,16 @@ export async function reviewTopDesignerCertificationAction(
   }
 
   if (pathsToPurge.length > 0) {
-    await admin.storage.from('top-designer-income-docs').remove(pathsToPurge);
+    const { error: purgeError } = await admin.storage.from('top-designer-income-docs').remove(pathsToPurge);
+    if (purgeError) {
+      await admin.from('audit_logs').insert({
+        admin_id: adminSession.id,
+        target_type: 'top_designer_certification',
+        target_id: certificationId,
+        action: 'document_purge_failed',
+        reason_detail: `파일 삭제 실패 - 수동 확인 필요: ${pathsToPurge.join(', ')} (${purgeError.message})`,
+      });
+    }
   }
 
   revalidatePath('/admin/top-designer');
