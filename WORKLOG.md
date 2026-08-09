@@ -3,6 +3,40 @@
 작업 단위마다 무엇을·왜·결과·검증·커밋을 남긴다(오너 지시, 2026-08-08). 설계가 중간에 바뀌는 경우
 바뀐 이유까지 남긴다 - 나중에 읽는 사람이 폐기된 방향을 다시 구현하지 않도록.
 
+## 2026-08-09 · [P0] 카카오 로그인 KOE205 - scope 축소 코드fix 배포 (대시보드 설정 별도 필요)
+- 무엇: `AuthContext.tsx`의 `signInWithOAuth` 호출에 `options.scopes: 'profile_nickname'`
+  추가. 기존엔 `redirectTo`만 있어 Supabase 기본 scope(account_email 포함)를 그대로 썼다.
+- 왜: 오너가 카카오 로그인 버튼을 눌렀더니 KOE205("서비스 설정 오류") 발생 - 카카오
+  콘솔이 비즈 앱 전환 전이라 카카오계정(이메일) 동의항목이 아직 신청 불가(회색)
+  상태인데, Supabase가 그 항목을 요청 scope에 포함시켜 카카오가 거부한 것.
+- 결과: **코드 배포만으로는 안 풀린다는 걸 curl 실측으로 확인**했다 -
+  `curl .../authorize?provider=kakao&scopes=profile_nickname`의 응답 Location이
+  `scope=account_email+profile_image+profile_nickname+profile_nickname`으로 나옴.
+  Supabase의 `scopes` 옵션은 provider 기본값을 **대체가 아니라 추가(append)**한다.
+  account_email·profile_image는 코드가 아니라 **Supabase 대시보드 Kakao provider의
+  Scopes 필드** 자체에 기본값으로 박혀 있어, 그 필드를 직접 고쳐야 한다(대시보드
+  접근 권한이 없어 CTO 세션에 즉시 보고, 오너/CTO가 처리 대기 중).
+- 검증: tsc/lint/build 통과. 로컬 dev는 `NEXT_PUBLIC_KAKAO_LOGIN_ENABLED` 플래그가
+  꺼져 있어 브라우저 클릭 재현 불가 - 대신 Supabase authorize 엔드포인트에 직접
+  curl해 scope 병합 방식(추가 vs 대체)을 실측 확인.
+- 커밋: 7f691fe
+
+## 2026-08-09 · TOP설계사 구조분리 후 "설계사" 표기 모호성 스윕 (CTO 라이브 DOM 점검 발견분)
+- 무엇: 홈 랭킹 빈상태 CTA "설계사 등록하기"→"TOP 설계사 인증 신청"(링크는 동일하게
+  `/top-designer-register` 유지, 라벨만 정정). 같은 유형 점검 중 실제 버그 1건 추가
+  발견: `PlannerMarketRegisterForm.tsx`의 사진공개선택 라벨이 "TOP 설계사·연봉랭킹
+  사진 공개 여부"로 남아있었는데, Phase 0(0082) 이후 TOP설계사는 완전히 별개
+  `photo_path`/`photo_public` 컬럼을 쓰므로 더는 사실이 아님 - "연봉랭킹" 단독으로 정정.
+  `BohomMapHeader.tsx`/`HomeRegisterHero.tsx` 주석 3건도 더는 없는 "인증" 메뉴
+  그룹명을 실제 그룹명("TOP 설계사 · 연봉랭킹")으로 정정.
+- 왜: CTO가 배포된 홈 화면을 실제 DOM으로 점검하다가 분리 후 "설계사"라는 단어가
+  마켓 등록과 TOP 인증 양쪽에서 겹쳐 쓰이며 생긴 오독 가능성을 발견 - 라벨 자체는
+  이미 배포됐던 화면이라 사용자가 실제로 오독할 수 있는 상태였다.
+- 결과: 전 4개 파일 수정 완료, `/top-designer` 목록 페이지는 이미 CTA가 명확해
+  수정 불필요로 확인. 실제 기능/DB 변경 없음(문구·주석뿐).
+- 검증: tsc/lint/build 통과, Browser로 홈 랭킹 빈상태 CTA 라벨 실제 렌더링 확인.
+- 커밋: 1e4dd4e
+
 ## 2026-08-09 · TOP 설계사 Phase 2 - 홈 하단 랭킹 (연봉 기준, 미적용 마이그레이션이라 빈 상태만 표시 중)
 - 무엇: `get_top_designer_home_ranking(p_limit)` 신규 RPC(0083) - 확정연봉 내림차순
   정렬·상위 N 절단을 서버에서 끝내고 id/name/ga_company_name/branch_name만 반환한다
