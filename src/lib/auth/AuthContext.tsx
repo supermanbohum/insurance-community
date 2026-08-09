@@ -101,11 +101,15 @@ export function AuthProvider({ initialUser, children }: { initialUser: UserSessi
           provider,
           options: {
             redirectTo,
-            // 카카오 비즈 앱 전환 전이라 카카오계정(이메일)·프로필 사진 동의항목이
-            // 콘솔에서 아직 신청 불가(회색) 상태다 - Supabase 기본 scope(account_email
-            // 포함)를 그대로 쓰면 카카오가 "설정되지 않은 동의항목"으로 보고 KOE205로
-            // 거부한다. 우리는 연락처를 자체 폼에서 받으므로 이메일이 필요 없고, 프로필
-            // 사진을 쓰는 화면도 없다 - 닉네임 하나만 요청한다.
+            // 8/9 비즈 앱 전환 완료 후 카카오 콘솔에서 account_email이 선택 동의로
+            // 열렸다 - 지금은 프로필 사진(필수)·이메일(선택) 전부 정상 요청 가능하다.
+            // 아래 scopes는 8/8 KOE205(카카오계정 동의항목 미설정) 대응으로 넣었던
+            // 것인데, Supabase의 signInWithOAuth({scopes})는 provider 콘솔의 기본
+            // scope를 대체하지 않고 뒤에 덧붙인다(실측 확인) - 그래서 실제로 카카오에
+            // 가는 scope는 이 값과 무관하게 콘솔 기본값(account_email profile_image
+            // profile_nickname) 그대로이고, profile_nickname만 중복으로 한 번 더
+            // 붙는다. 동작 자체는 이미 종단 검증 완료(2026-08-09)라 지금 건드리지
+            // 않는다 - 지우면 중복만 없어질 뿐 scope 구성은 바뀌지 않는다.
             scopes: 'profile_nickname',
           },
         });
