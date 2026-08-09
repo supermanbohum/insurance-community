@@ -42,7 +42,7 @@ const REQUIREMENT_STEPS = [
 
 const TRUST_CARDS = [
   { icon: Gift, label: '완전 무료', desc: '신청·심사·유지 전 과정에 비용이 없습니다.' },
-  { icon: FileText, label: '국세청 서류 기반', desc: '원천징수영수증으로 확인합니다. 자기 신고 인증이 아닙니다.' },
+  { icon: FileText, label: '원천징수영수증 기반', desc: '운영팀이 국세청 발급 서류로 확인합니다. 자기 신고 인증이 아닙니다.' },
   { icon: Lock, label: '사진 공개는 선택', desc: '비공개를 선택하면 열람권으로도 볼 수 없습니다.' },
 ];
 
@@ -115,7 +115,7 @@ export default function TopDesignerRegisterIntroPage() {
               </p>
             </div>
             <div className="border-t border-gold-50 bg-gold-50/60 px-4 py-2.5 text-[10.5px] leading-relaxed text-ink-soft">
-              <span className="font-bold text-gold-600">✔ 국세청 서류로 확인된 등급</span> · 원천징수영수증 인증
+              <span className="font-bold text-gold-600">✔ 원천징수영수증으로 확인된 등급</span> · 국세청 발급 서류
             </div>
           </div>
           <p className="text-[13px] font-bold leading-relaxed text-brand-900">
