@@ -3,6 +3,32 @@
 작업 단위마다 무엇을·왜·결과·검증·커밋을 남긴다(오너 지시, 2026-08-08). 설계가 중간에 바뀌는 경우
 바뀐 이유까지 남긴다 - 나중에 읽는 사람이 폐기된 방향을 다시 구현하지 않도록.
 
+## 2026-08-09 · W-088 TOP설계사·연봉랭킹 사진 공개선택 (신규 기능, 버그 아님)
+- 무엇: `planner_profiles.photo_public`(nullable boolean, 기본값 없음) 신규 컬럼(0080).
+  `submit_planner_market_profile`/`update_planner_market_profile_instant` RPC 둘 다
+  `p_photo_public` 파라미터 추가 + 사진이 있는데 선택이 없으면
+  `PHOTO_PUBLIC_CHOICE_REQUIRED`로 거부. `public_top_designer_certifications`,
+  `public_salary_ranking_submissions` 두 공개 뷰를
+  `case when photo_public then profile_photo_path else null end`으로 재정의(비공개/미선택
+  시 사진 자체를 내려주지 않음 - 프론트에서 가리는 게 아니라 서버가 안 줌). 등록/수정 폼에
+  사진이 있을 때만 보이는 공개/비공개 필수 선택 UI 추가(`PlannerMarketRegisterForm.tsx`).
+- 왜: 오너가 8/7에 지시했던 "TOP설계사·연봉랭킹 사진은 설계사가 공개/비공개를 직접
+  선택하게 하라, 비공개면 열람권으로도 못 본다"가 CTO 실측 결과 지금까지 전혀
+  구현된 적이 없었음이 확인됨(버그가 아니라 미구현 기능).
+- 결과: 완료, 마이그레이션 0080은 CTO가 직접 적용 예정(합의된 절차).
+- 검증: tsc/lint(4개 변경 파일)/build 모두 통과. Supabase에서
+  BEGIN...ROLLBACK으로 감싼 트랜잭션으로 실제 함수/뷰를 만들어 확인 -
+  ① photo_public=true→사진 노출 ②false→비노출 ③null(미선택)→비노출, TOP/연봉랭킹 뷰
+  둘 다 동일하게 동작 ④ 실제 소유자로 impersonate해 사진 있는데 선택 null로
+  `update_planner_market_profile_instant` 호출 시 PHOTO_PUBLIC_CHOICE_REQUIRED로
+  정확히 거부됨 확인 ⑤ 선택값 제공 시 정상 저장 확인. 열람권 크레딧 언락 경로
+  (0036/0045)는 top_designer_certifications·salary_ranking_submissions를 전혀
+  참조하지 않음을 grep으로 재확인 - 우회 경로 자체가 없음(CTO 지시 3번 항목).
+  단, `public_top_designer_certifications` 뷰가 0056에서 `view_count`/`like_count`
+  컬럼이 추가된 상태였던 걸 초안 마이그레이션이 놓쳐 `cannot drop columns from view`로
+  1차 실패 - 라이브 뷰 정의를 다시 조회해 두 컬럼을 포함하도록 수정 후 재검증 통과.
+- 커밋: (다음 커밋에서 반영 예정)
+
 ## 2026-08-08 · `/verify-email` 비이메일 프로바이더 막다른 길 수정
 - 무엇: `VerifyEmailScreen.tsx`에서 provider≠'email'일 때 액션 없는 안내문구만 있던 것을
   "이메일로 가입하기"(로그아웃 후 `/signup` 이동) 버튼으로 교체. 신규 server action

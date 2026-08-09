@@ -15,6 +15,7 @@ export interface PlannerMarketProfileInput {
   email: string;
   kakaoId?: string;
   profilePhotoPath?: string | null;
+  photoPublic?: boolean | null;
   activeRegionId: string;
   careerYears: number;
   specialties: string[];
@@ -34,6 +35,11 @@ function validateProfileInput(input: PlannerMarketProfileInput): string | null {
   }
   if (!input.activeRegionId) {
     return '활동지역을 선택해주세요.';
+  }
+  // W-088(오너 지시) - 사진을 올렸으면 공개 여부를 반드시 선택해야 한다. 기본값을
+  // 두지 않는다 - "선택지를 주는" 것이지 옵트아웃이 아니다.
+  if (input.profilePhotoPath && input.photoPublic == null) {
+    return '프로필 사진 공개 여부를 선택해주세요.';
   }
   return null;
 }
@@ -122,6 +128,7 @@ export async function submitPlannerMarketProfileAction(
     p_desired_region_id: input.desiredRegionId ?? null,
     p_desired_ga_company_id: input.desiredGaCompanyId ?? null,
     p_desired_conditions: input.desiredConditions?.trim() || null,
+    p_photo_public: input.photoPublic ?? null,
   });
 
   if (error) {
@@ -129,7 +136,9 @@ export async function submitPlannerMarketProfileAction(
       ? '이미 등록된 설계사 정보가 있습니다.'
       : error.message.includes('CONSENT_REQUIRED')
         ? '모든 필수 동의 항목에 체크해주세요.'
-        : '등록에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        : error.message.includes('PHOTO_PUBLIC_CHOICE_REQUIRED')
+          ? '프로필 사진 공개 여부를 선택해주세요.'
+          : '등록에 실패했습니다. 잠시 후 다시 시도해주세요.';
     return { success: false, error: message };
   }
 
@@ -170,9 +179,13 @@ export async function updatePlannerMarketProfileAction(
     p_self_introduction: input.selfIntroduction?.trim() || null,
     p_desired_region_id: input.desiredRegionId ?? null,
     p_desired_conditions: input.desiredConditions?.trim() || null,
+    p_photo_public: input.photoPublic ?? null,
   });
   if (instantError) {
-    return { success: false, error: '저장하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+    const message = instantError.message.includes('PHOTO_PUBLIC_CHOICE_REQUIRED')
+      ? '프로필 사진 공개 여부를 선택해주세요.'
+      : '저장하지 못했습니다. 잠시 후 다시 시도해주세요.';
+    return { success: false, error: message };
   }
 
   const { error } = await supabase.rpc('submit_planner_trust_update', {

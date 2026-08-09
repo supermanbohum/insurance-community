@@ -87,6 +87,7 @@ export interface PlannerMarketEditableProfile {
   kakaoId: string | null;
   profilePhotoPath: string | null;
   profilePhotoUrl: string | null;
+  photoPublic: boolean | null;
   activeRegionId: string;
   careerYears: number;
   specialties: string[];
@@ -119,6 +120,7 @@ export function PlannerMarketRegisterForm({
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [existingPhotoUrl, setExistingPhotoUrl] = useState(initialProfile?.profilePhotoUrl ?? null);
+  const [photoPublic, setPhotoPublic] = useState<boolean | null>(initialProfile?.photoPublic ?? null);
   const [name, setName] = useState(initialProfile?.name ?? '');
   const [phone, setPhone] = useState(initialProfile?.phone ?? '');
   const [email, setEmail] = useState(initialProfile?.email ?? '');
@@ -144,8 +146,16 @@ export function PlannerMarketRegisterForm({
   const [topDesignerApply, setTopDesignerApply] = useState<TopDesignerApplyState>(EMPTY_TOP_DESIGNER_APPLY_STATE);
 
   const allConsented = isEditMode || Object.values(consents).every(Boolean);
+  const hasPhoto = Boolean(photo || existingPhotoUrl);
   const canSubmit =
-    name.trim() && phone.trim() && email.trim() && activeRegionId && careerYears !== '' && jobSearchStatus && allConsented;
+    name.trim() &&
+    phone.trim() &&
+    email.trim() &&
+    activeRegionId &&
+    careerYears !== '' &&
+    jobSearchStatus &&
+    allConsented &&
+    (!hasPhoto || photoPublic !== null);
 
   function toggleContactableTime(time: ContactableTime) {
     setContactableTimes((prev) => (prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]));
@@ -159,11 +169,16 @@ export function PlannerMarketRegisterForm({
       return;
     }
     setPhoto(file);
+    setPhotoPublic(null);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit || !activeRegionId || !jobSearchStatus) return;
+    if (hasPhoto && photoPublic === null) {
+      toast.error('프로필 사진 공개 여부를 선택해주세요.');
+      return;
+    }
 
     startTransition(async () => {
       let profilePhotoPath: string | null = existingPhotoUrl ? (initialProfile?.profilePhotoPath ?? null) : null;
@@ -184,6 +199,7 @@ export function PlannerMarketRegisterForm({
         email,
         kakaoId,
         profilePhotoPath,
+        photoPublic: profilePhotoPath ? photoPublic : null,
         activeRegionId,
         careerYears: Number(careerYears),
         specialties: specialtiesText
@@ -270,6 +286,7 @@ export function PlannerMarketRegisterForm({
                 onClick={() => {
                   setPhoto(null);
                   setExistingPhotoUrl(null);
+                  setPhotoPublic(null);
                 }}
                 className="absolute right-0 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white"
                 aria-label="사진 삭제"
@@ -283,6 +300,36 @@ export function PlannerMarketRegisterForm({
               사진 선택
               <input type="file" accept={IMAGE_TYPES.join(',')} className="hidden" onChange={(e) => pickPhoto(e.target.files)} />
             </label>
+          )}
+          {hasPhoto && (
+            <div className="mt-4 flex flex-col gap-1.5">
+              <Label>TOP 설계사·연봉랭킹 사진 공개 여부</Label>
+              <p className="text-xs text-muted-foreground">
+                이 사진은 TOP 설계사·연봉랭킹에 선정될 경우에만 노출 여부에 사용됩니다. 비공개를 선택하면 열람권을 사용해도 볼 수 없습니다.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPhotoPublic(true)}
+                  className={cn(
+                    'flex-1 rounded-md border px-3 py-2 text-sm font-semibold transition-colors',
+                    photoPublic === true ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-ink-soft hover:border-brand-200'
+                  )}
+                >
+                  공개
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPhotoPublic(false)}
+                  className={cn(
+                    'flex-1 rounded-md border px-3 py-2 text-sm font-semibold transition-colors',
+                    photoPublic === false ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-line text-ink-soft hover:border-brand-200'
+                  )}
+                >
+                  비공개
+                </button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

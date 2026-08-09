@@ -990,6 +990,7 @@ export interface Database {
           id: string;
           user_id: string;
           profile_photo_path: string | null;
+          photo_public: boolean | null;
           photo_flagged: boolean;
           photo_flag_reason: string | null;
           active_region_id: string;
@@ -2173,6 +2174,7 @@ export interface Database {
           p_desired_region_id?: string | null;
           p_desired_ga_company_id?: string | null;
           p_desired_conditions?: string | null;
+          p_photo_public?: boolean | null;
         };
         Returns: string;
       };
@@ -2192,6 +2194,7 @@ export interface Database {
           p_self_introduction?: string | null;
           p_desired_region_id?: string | null;
           p_desired_conditions?: string | null;
+          p_photo_public?: boolean | null;
         };
         Returns: void;
       };

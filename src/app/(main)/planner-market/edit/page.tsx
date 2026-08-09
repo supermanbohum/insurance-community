@@ -44,6 +44,7 @@ export default async function PlannerMarketEditPage() {
           kakaoId: profile.kakao_id,
           profilePhotoPath: profile.profile_photo_path,
           profilePhotoUrl: photoUrl(profile.profile_photo_path),
+          photoPublic: profile.photo_public,
           activeRegionId: hasOpenTrustUpdate ? (profile.pending_active_region_id ?? profile.active_region_id) : profile.active_region_id,
           careerYears: hasOpenTrustUpdate ? (profile.pending_career_years ?? profile.career_years) : profile.career_years,
           specialties: profile.specialties,
