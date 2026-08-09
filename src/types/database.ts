@@ -1235,11 +1235,13 @@ export interface Database {
           branch_name: string | null;
           career_years: number | null;
           self_introduction: string | null;
+          business_card_path: string | null;
           photo_path: string | null;
           photo_public: boolean | null;
           consent_public_display: boolean;
+          consent_document_collection: boolean;
           job_title: string;
-          income_doc_storage_path: string;
+          income_doc_storage_path: string | null;
           declared_annual_income_krw: number | null;
           confirmed_annual_income_krw: number | null;
           star_tier: 'star_1' | 'star_2' | 'star_3' | 'star_4' | 'star_5' | null;
@@ -2068,7 +2070,9 @@ export interface Database {
           p_ga_company_id: string;
           p_job_title: string;
           p_income_doc_path: string;
+          p_business_card_path: string;
           p_consent_public_display: boolean;
+          p_consent_document_collection: boolean;
           p_branch_name?: string | null;
           p_career_years?: number | null;
           p_self_introduction?: string | null;

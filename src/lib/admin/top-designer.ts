@@ -36,7 +36,8 @@ interface TopDesignerRow {
   ocr_extracted_income_krw: number | null;
   ocr_confidence: number | null;
   created_at: string;
-  income_doc_storage_path: string;
+  income_doc_storage_path: string | null;
+  business_card_path: string | null;
   user_id: string;
 }
 
@@ -87,25 +88,37 @@ export interface TopDesignerDetail extends TopDesignerListItem {
   applicantEmail: string;
   applicantContact: string;
   documentUrl: string | null;
+  businessCardUrl: string | null;
 }
 
 /** 신청자 연락처는 top_designer_certifications가 아니라 public.users(user_id)에서
- * 가져온다 - 마켓 planner_profiles를 더 이상 참조하지 않는다(구조 분리). */
+ * 가져온다 - 마켓 planner_profiles를 더 이상 참조하지 않는다(구조 분리).
+ *
+ * income_doc_storage_path/business_card_path는 심사 완료(승인/반려) 후 파기돼 null이
+ * 될 수 있다 - null이면 서명 URL을 만들지 않고 링크 없음으로 둔다("파기됨"이 정상
+ * 상태이지, 에러가 아니다). */
 export async function getTopDesignerCertificationDetail(id: string): Promise<TopDesignerDetail | null> {
   const admin = createAdminClient();
   const { data: row } = await admin.from('top_designer_certifications').select('*').eq('id', id).maybeSingle();
   if (!row) return null;
+  const typedRow = row as TopDesignerRow;
 
-  const [[listItem], { data: user }, { data: signed }] = await Promise.all([
-    toListItems([row as TopDesignerRow]),
-    admin.from('users').select('email, contact').eq('id', row.user_id).maybeSingle(),
-    admin.storage.from('top-designer-income-docs').createSignedUrl(row.income_doc_storage_path, 600),
+  const [[listItem], { data: user }, signedDoc, signedCard] = await Promise.all([
+    toListItems([typedRow]),
+    admin.from('users').select('email, contact').eq('id', typedRow.user_id).maybeSingle(),
+    typedRow.income_doc_storage_path
+      ? admin.storage.from('top-designer-income-docs').createSignedUrl(typedRow.income_doc_storage_path, 600)
+      : Promise.resolve({ data: null }),
+    typedRow.business_card_path
+      ? admin.storage.from('top-designer-income-docs').createSignedUrl(typedRow.business_card_path, 600)
+      : Promise.resolve({ data: null }),
   ]);
 
   return {
     ...listItem,
     applicantEmail: user?.email ?? '-',
     applicantContact: user?.contact ?? '-',
-    documentUrl: signed?.signedUrl ?? null,
+    documentUrl: signedDoc.data?.signedUrl ?? null,
+    businessCardUrl: signedCard.data?.signedUrl ?? null,
   };
 }

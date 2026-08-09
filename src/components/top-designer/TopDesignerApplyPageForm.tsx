@@ -3,7 +3,12 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { submitTopDesignerCertificationAction, uploadTopDesignerIncomeDocAction, uploadTopDesignerPhotoAction } from '@/lib/actions/top-designer';
+import {
+  submitTopDesignerCertificationAction,
+  uploadTopDesignerIncomeDocAction,
+  uploadTopDesignerBusinessCardAction,
+  uploadTopDesignerPhotoAction,
+} from '@/lib/actions/top-designer';
 import { TopDesignerApplyFields, EMPTY_TOP_DESIGNER_APPLY_STATE } from '@/components/top-designer/TopDesignerApplyFields';
 import type { GaFilterOption } from '@/lib/public/ga-directory';
 import { Button } from '@/components/ui/button';
@@ -18,13 +23,15 @@ export function TopDesignerApplyPageForm({ gaOptions }: { gaOptions: GaFilterOpt
     state.gaCompanyId &&
     state.jobTitle.trim() &&
     state.incomeDocFile &&
+    state.businessCardFile &&
     state.consentPublicDisplay &&
+    state.consentDocumentCollection &&
     (!state.photoFile || state.photoPublic !== null);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || !state.gaCompanyId || !state.incomeDocFile) {
-      toast.error('이름/소속 GA/직급/원천징수영수증/공개 동의를 모두 입력해주세요.');
+    if (!canSubmit || !state.gaCompanyId || !state.incomeDocFile || !state.businessCardFile) {
+      toast.error('이름/소속 GA/직급/원천징수영수증/명함/공개 동의/서류수집 동의를 모두 입력해주세요.');
       return;
     }
 
@@ -34,6 +41,14 @@ export function TopDesignerApplyPageForm({ gaOptions }: { gaOptions: GaFilterOpt
       const uploadedDoc = await uploadTopDesignerIncomeDocAction(docFd);
       if (!uploadedDoc.success) {
         toast.error(uploadedDoc.error);
+        return;
+      }
+
+      const cardFd = new FormData();
+      cardFd.set('file', state.businessCardFile!);
+      const uploadedCard = await uploadTopDesignerBusinessCardAction(cardFd);
+      if (!uploadedCard.success) {
+        toast.error(uploadedCard.error);
         return;
       }
 
@@ -58,9 +73,11 @@ export function TopDesignerApplyPageForm({ gaOptions }: { gaOptions: GaFilterOpt
         selfIntroduction: state.selfIntroduction,
         declaredAnnualIncomeKrw: state.declaredIncome ? Number(state.declaredIncome) : undefined,
         incomeDocPath: uploadedDoc.path,
+        businessCardPath: uploadedCard.path,
         photoPath,
         photoPublic: photoPath ? state.photoPublic : null,
         consentPublicDisplay: state.consentPublicDisplay,
+        consentDocumentCollection: state.consentDocumentCollection,
       });
       if (!result.success) {
         toast.error(result.error);

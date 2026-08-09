@@ -65,17 +65,37 @@ export default async function AdminTopDesignerDetailPage({ params }: { params: {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">원천징수영수증</CardTitle>
+          <CardTitle className="text-base">증빙 서류</CardTitle>
         </CardHeader>
-        <CardContent>
-          {detail.documentUrl ? (
-            <a href={detail.documentUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
-              문서 열기 (10분간 유효)
-            </a>
-          ) : (
-            <p className="text-sm text-muted-foreground">문서를 불러올 수 없습니다.</p>
-          )}
-          <p className="mt-2 text-xs text-muted-foreground">
+        <CardContent className="flex flex-col gap-3">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">원천징수영수증 (소득 증명)</p>
+            {detail.documentUrl ? (
+              <a href={detail.documentUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+                문서 열기 (10분간 유효)
+              </a>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {detail.status === 'approved' || detail.status === 'rejected' ? '심사 완료로 파기됨' : '문서를 불러올 수 없습니다.'}
+              </p>
+            )}
+            {detail.status === 'pending_review' || detail.status === 'on_hold' ? (
+              <p className="mt-1 text-[11px] text-amber-700">⚠️ 주민등록번호가 보이면 반려하고 마스킹 후 재제출을 요청하세요.</p>
+            ) : null}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">명함 (소속·직급 증명)</p>
+            {detail.businessCardUrl ? (
+              <a href={detail.businessCardUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+                명함 열기 (10분간 유효)
+              </a>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {detail.status === 'approved' || detail.status === 'rejected' ? '심사 완료로 파기됨' : '문서를 불러올 수 없습니다.'}
+              </p>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
             OCR 인식: {detail.ocrStatus === 'completed' && detail.ocrExtractedIncomeKrw
               ? `${detail.ocrExtractedIncomeKrw.toLocaleString()}원 (신뢰도 ${detail.ocrConfidence ?? '-'})`
               : '미실행 (참고용 - 관리자가 직접 확인 후 확정)'}

@@ -22,17 +22,22 @@ export const metadata: Metadata = {
  * 구분해 "인증"의 시각 언어로 둔다(디자인 확정). 네이비는 brand-900(#152d70, 구 브랜드색
  * 보존값)을 재사용한다 - 별도 navy 토큰이 tailwind.config에 없다.
  *
- * 지점 유인 층 1줄(미리보기 캡션 위, 이중 독해 문구)은 콘텐츠팀 확정 문안 대기 중이라
- * 아직 넣지 않았다 - 도착하면 바로 추가한다.
+ * 지점 유인 층 1줄(미리보기 캡션 위)은 디자인팀 확정 문안이 도착해 반영했다:
+ * "설계사의 이름이 오를 때, 지점의 이름도 함께 오릅니다." - 신청자에게는 "내 이름 옆에
+ * 우리 지점이 함께 걸린다", 지점장이 읽으면 "우리 설계사를 올리면 우리 지점이 보인다"로
+ * 읽히는 이중 독해 문장이다.
+ *
+ * 요건 블록은 오너 지시(명함 추가)에 따라 콘텐츠팀 확정 문안(top-consent-privacy.md
+ * §③)으로 갱신했다 - 원천징수영수증만이 아니라 명함까지 함께 제출한다(소득+소속 증명).
  *
  * CTA는 현재 실제로 동작하는 /top-designer/apply로 보낸다(설계사마켓 프로필이 없으면
  * 그쪽에서 안내). TOP 설계사가 마켓과 구조적으로 분리되면(진행 중) 신규 독립 신청
  * 라우트로 교체한다.
  */
 const REQUIREMENT_STEPS = [
-  { icon: FileText, title: '원천징수영수증 제출', desc: '국세청 발급 서류입니다. 자기 신고가 아닙니다.' },
-  { icon: ShieldCheck, title: '운영팀 심사', desc: '실제 연봉 기준을 충족해야 합니다.' },
-  { icon: CheckCircle2, title: '승인', desc: '인증 배지가 붙고, 개인 상세 페이지가 활성화됩니다.' },
+  { icon: FileText, title: '원천징수영수증 + 명함 제출', desc: '국세청 서류로 소득을, 명함으로 소속을 증명합니다. 자기 신고가 아닙니다.' },
+  { icon: ShieldCheck, title: '운영팀 심사', desc: '실제 연봉 기준과 소속을 함께 확인합니다.' },
+  { icon: CheckCircle2, title: '승인', desc: '인증 배지 + 개인 상세 페이지 활성화.' },
 ];
 
 const TRUST_CARDS = [
@@ -113,6 +118,9 @@ export default function TopDesignerRegisterIntroPage() {
               <span className="font-bold text-gold-600">✔ 국세청 서류로 확인된 등급</span> · 원천징수영수증 인증
             </div>
           </div>
+          <p className="text-[13px] font-bold leading-relaxed text-brand-900">
+            설계사의 이름이 오를 때, 지점의 이름도 함께 오릅니다.
+          </p>
           <p className="text-[11px] leading-relaxed text-ink-faint">
             <span className="font-semibold text-ink-soft">승인 전에는 페이지가 만들어지지 않습니다.</span> 사진 공개 여부는 등록할 때
             선택합니다(실명·소속은 공개).
