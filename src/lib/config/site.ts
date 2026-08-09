@@ -27,7 +27,11 @@ export const COMPANY_INFO = {
   bizNo: '699-01-04079',
   address: '경기도 시흥시 시청로 25, 904호',
   email: 'dlgoghk1538@gmail.com',
-  kakaoChannelUrl: 'https://open.kakao.com/o/sNMQngGi',
+  // 정식 카카오톡 채널(보험맵, 2026-08-09 개설) - 오픈채팅방(open.kakao.com)이 아니다.
+  // /delete-account가 이 값을 개인정보 삭제 요청 창구로 안내하므로(제7조), 익명 참여가
+  // 가능하고 언제든 사라질 수 있는 오픈채팅방을 여기 다시 쓰지 않는다. /chat까지 붙여
+  // "채널 구경"이 아니라 바로 대화가 시작되게 한다.
+  kakaoChannelUrl: 'https://pf.kakao.com/_aNxoBX/chat',
   // TODO(결제 심사): 관할 시/군/구청·정부24에서 통신판매업 신고 완료 후 신고번호 기입.
   // 빈 문자열인 동안 푸터/문의 페이지는 "발급 후 입력 예정"으로 표시한다.
   mailOrderBizNo: '',
