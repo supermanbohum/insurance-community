@@ -27,7 +27,7 @@
   단, `public_top_designer_certifications` 뷰가 0056에서 `view_count`/`like_count`
   컬럼이 추가된 상태였던 걸 초안 마이그레이션이 놓쳐 `cannot drop columns from view`로
   1차 실패 - 라이브 뷰 정의를 다시 조회해 두 컬럼을 포함하도록 수정 후 재검증 통과.
-- 커밋: (다음 커밋에서 반영 예정)
+- 커밋: 4a3010d
 
 ## 2026-08-08 · `/verify-email` 비이메일 프로바이더 막다른 길 수정
 - 무엇: `VerifyEmailScreen.tsx`에서 provider≠'email'일 때 액션 없는 안내문구만 있던 것을
