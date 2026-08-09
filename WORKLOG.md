@@ -3,6 +3,41 @@
 작업 단위마다 무엇을·왜·결과·검증·커밋을 남긴다(오너 지시, 2026-08-08). 설계가 중간에 바뀌는 경우
 바뀐 이유까지 남긴다 - 나중에 읽는 사람이 폐기된 방향을 다시 구현하지 않도록.
 
+## 2026-08-09 · 카카오 로그인 실개통 - /privacy 정정, verify 브랜치 프리뷰 검증, 후속 fix 2건
+- 무엇:
+  1) 오너가 카카오 앱을 개인 개발자 비즈 앱으로 전환, account_email이 선택 동의로
+     열림 - `/privacy` 제1조/2조/3조/11조를 실제 동의항목(필수: 식별자·닉네임·
+     프로필 사진 / 선택: 이메일)에 맞게 정정, 이용목적 문구를 카카오 API 신고
+     문구와 정확히 일치시킴("회원 계정 식별 및 가입 시 이메일 정보 자동 입력").
+  2) CTO 지시로 master push를 잠그고 `verify/kakao-gate` 빈 커밋 브랜치만 push해
+     Vercel Preview 배포를 별도로 띄움(Production엔 영향 0) - CTO가 그 Preview
+     URL(Deployment Protection 걸려 있어 팀 계정 로그인 필요)에서 카카오 로그인을
+     종단 검증. **프리뷰 검증 중 실제 버그 발견**: `/signup`이 항상 `?next=/my`를
+     붙이는데 Supabase Redirect URLs엔 쿼리 없는 콜백 URL만 등록돼 있어 매칭
+     실패 - 운영이었어도 100% 동일하게 실패했을 구조였음(CTO가 Supabase 설정에
+     와일드카드 패턴 추가로 해결, 웹 코드 변경 아님).
+  3) 종단검증 통과 후 master 잠금 해제 받고 후속 2건 배포: (a) `AuthContext.tsx`의
+     카카오 scope 주석이 "닉네임만 요청"이라 돼 있었는데 실측 결과 Supabase의
+     `scopes` 옵션은 provider 콘솔 기본값에 append될 뿐 대체하지 않아 실제로는
+     콘솔 기본값(account_email profile_image profile_nickname) 그대로 나가는
+     것으로 확인 - 동작은 이미 검증 통과 상태라 코드는 안 건드리고 주석만 정정.
+     (b) 카카오 이메일 scope로 실제 이메일을 받아오는데 가입폼 이메일 칸이 이를
+     안 쓰고 있던 것을 발견 - `authUser.email` 있으면 프리필, 없으면 빈칸(선택
+     동의라 값이 없을 수 있음을 그대로 반영, 있다고 단정 안 함).
+- 왜: "코드 배포 = 검증 완료"가 아니라는 걸 8/8 사고에서 이미 배운 상태였고,
+  이번엔 오너가 대기 중인 P0라 검증 순서(방침 문서 선행 → 실사용자 노출 0인
+  프리뷰에서 종단 검증 → 통과 후에만 운영 개통)를 CTO가 설계·집행, 웹은 push
+  잠금을 그대로 지키며 지시된 범위만 수행.
+- 결과: bohummap.com에서 카카오 로그인 종단 통과 확인(카카오 가입→정회원
+  판정→로그아웃→재로그인). `verify/kakao-gate` 브랜치는 검증 후 원격+로컬
+  삭제 완료.
+- 검증: 매 커밋마다 tsc/lint/build 통과. `/privacy`는 배포 직후 운영 URL을
+  curl로 직접 읽어 4개 정정 문구가 실제로 반영된 것 확인. 이메일 프리필은
+  실제 카카오 세션이 있어야 렌더되는 분기라 이 세션에서 브라우저로 직접
+  재현 검증은 못 했음(코드 리뷰 + tsc/lint/build로만 확인) - 한계로 명시.
+- 커밋: 3e48f1b(/privacy 정정), f9881f9(verify 브랜치, 빈 커밋, 삭제됨),
+  b0e12ca(scope 주석 정정), d2af31c(이메일 프리필)
+
 ## 2026-08-09 · [P0] 카카오 로그인 KOE205 - scope 축소 코드fix 배포 (대시보드 설정 별도 필요)
 - 무엇: `AuthContext.tsx`의 `signInWithOAuth` 호출에 `options.scopes: 'profile_nickname'`
   추가. 기존엔 `redirectTo`만 있어 Supabase 기본 scope(account_email 포함)를 그대로 썼다.
