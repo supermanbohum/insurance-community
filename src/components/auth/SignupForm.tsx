@@ -24,11 +24,13 @@ export function SignupForm({
   next = '/my',
   kakaoMode = false,
   kakaoNickname,
+  kakaoEmail,
 }: {
   gaOptions: GaFilterOption[];
   next?: string;
   kakaoMode?: boolean;
   kakaoNickname?: string;
+  kakaoEmail?: string;
 }) {
   const router = useRouter();
   const { signUpWithEmail, isPending: isEmailPending } = useAuth();
@@ -41,7 +43,7 @@ export function SignupForm({
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [name, setName] = useState(kakaoNickname ?? '');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(kakaoEmail ?? '');
   const [contact, setContact] = useState('');
   const [gaCompanyId, setGaCompanyId] = useState<string | null>(null);
 

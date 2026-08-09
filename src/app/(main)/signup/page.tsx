@@ -58,6 +58,8 @@ export default async function SignupPage({ searchParams }: { searchParams: { nex
   if (isKakaoAwaitingProfile) {
     const meta = authUser!.user_metadata ?? {};
     const kakaoNickname: string = meta.full_name || meta.name || meta.nickname || '';
+    // 이메일은 선택 동의 항목이라 값이 없을 수 있다 - 있으면 채우고 없으면 빈칸으로 둔다.
+    const kakaoEmail: string = authUser!.email ?? '';
 
     return (
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-12">
@@ -70,7 +72,7 @@ export default async function SignupPage({ searchParams }: { searchParams: { nex
         </div>
 
         <div className="w-full max-w-sm">
-          <SignupForm gaOptions={gaOptions} next={next} kakaoMode kakaoNickname={kakaoNickname} />
+          <SignupForm gaOptions={gaOptions} next={next} kakaoMode kakaoNickname={kakaoNickname} kakaoEmail={kakaoEmail} />
         </div>
       </div>
     );
