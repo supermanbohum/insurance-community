@@ -25,6 +25,7 @@ export function HeroCtaButton({
   icon,
   gradientClassName,
   glowColor,
+  textClassName = 'text-white',
 }: {
   href: string;
   label: string;
@@ -33,6 +34,8 @@ export function HeroCtaButton({
   gradientClassName: string;
   /** 정적 엘리베이션 글로우 색상. 예: 'rgba(37,99,235,0.45)' */
   glowColor: string;
+  /** 밝은(골드 등) 그라디언트에서 대비(AA)를 맞출 때만 오버라이드. 기본은 흰색. */
+  textClassName?: string;
 }) {
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [shineKey, setShineKey] = useState(0);
@@ -75,8 +78,8 @@ export function HeroCtaButton({
           style={{ left: r.x, top: r.y, width: r.size, height: r.size }}
         />
       ))}
-      <span className="relative text-white">{icon}</span>
-      <span className="relative text-xl font-extrabold tracking-tight text-white">{label}</span>
+      <span className={cn('relative', textClassName)}>{icon}</span>
+      <span className={cn('relative text-xl font-extrabold tracking-tight', textClassName)}>{label}</span>
     </Link>
   );
 }
