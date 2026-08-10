@@ -15,7 +15,6 @@ import {
   ExternalLink,
   MessageCircle,
   Search,
-  UserPlus,
   Ticket,
   Edit3,
   Award,
@@ -27,6 +26,7 @@ import { AnimatedHeaderBrandMark } from '@/components/brand/AnimatedHeaderBrandM
 import { GlobalShareButton } from '@/components/shared/GlobalShareButton';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { cn } from '@/lib/utils';
+import { PLANNER_MARKET_LABEL } from '@/lib/config/labels';
 
 // 기존 "인증" 그룹(우리동네 TOP설계사, planner_certifications 기반)은 메뉴에서 제거했다 -
 // DB/RPC/구독(/admin/planners, /partner/planners)은 전혀 건드리지 않았고 URL 직접 접근은
@@ -52,14 +52,14 @@ const MENU_GROUPS = [
     // 설계사 마켓(열람권)/지점 광고 - TOP설계사(아래 "TOP 설계사 · 연봉랭킹" 그룹)와는 완전히 별개 시스템이다.
     label: '리크루팅',
     items: [
+      // 설계사 마켓 3줄(찾기/등록/수정)을 1줄로 통합했다(오너 지시, 2026-08-10) - 등록/수정
+      // 진입점은 /planner-market/search 페이지 상단 버튼 2개로 옮겼다. 라벨 문자열은
+      // PLANNER_MARKET_LABEL 한 곳에서만 관리한다(표기 변경 시 한 줄로 끝나도록).
       // hardNavigate:true - QuickMenuGrid.tsx와 동일한 이유(라우트 참고). Next 클라이언트
       // 라우터를 우회해 항상 전체 페이지 이동을 강제한다.
-      { href: '/planner-market/search', label: '설계사 찾기', icon: Search, tile: 'bg-emerald-50 text-emerald-600', hardNavigate: true },
-      { href: '/planner-market/register', label: '설계사 등록', icon: UserPlus, tile: 'bg-indigo-50 text-indigo-600' },
-      // 본인이 등록한 정보만 수정 가능 - 각 진입점 자체가 소유자 확인 후 없으면 등록 화면으로 보낸다.
-      { href: '/planner-market/edit', label: '설계사 수정', icon: Edit3, tile: 'bg-indigo-50 text-indigo-600' },
-      { href: '/partner/register', label: '지점 등록', icon: MapPin, tile: 'bg-blue-50 text-blue-600' },
-      { href: '/partner/branches', label: '지점 수정', icon: Edit3, tile: 'bg-blue-50 text-blue-600' },
+      { href: '/planner-market/search', label: PLANNER_MARKET_LABEL, icon: Search, tile: 'bg-emerald-50 text-emerald-600', hardNavigate: true },
+      { href: '/partner/register', label: '우리 지점 등록하기', icon: MapPin, tile: 'bg-blue-50 text-blue-600' },
+      { href: '/partner/branches', label: '우리 지점 수정하기', icon: Edit3, tile: 'bg-blue-50 text-blue-600' },
       { href: '/partner/ad-products', label: '광고상품', icon: Megaphone, tile: 'bg-rose-50 text-rose-600' },
       { href: '/planner-market/purchase', label: '구매센터', icon: Ticket, tile: 'bg-amber-50 text-amber-600' },
     ],
@@ -69,7 +69,9 @@ const MENU_GROUPS = [
     // planner_certifications(고소득 설계사, Legacy)와 무관하다.
     label: 'TOP 설계사 · 연봉랭킹',
     items: [
-      { href: '/top-designer', label: 'TOP 설계사', icon: Award, tile: 'bg-amber-50 text-amber-600' },
+      // 예전엔 목록(/top-designer)으로 갔지만, 오너 지시로 등록 진입점 우선 노출로
+      // 바꿨다(2026-08-10) - 목록은 홈 "🏆 TOP 설계사 랭킹" 더보기로 계속 접근 가능하다.
+      { href: '/top-designer/apply', label: 'TOP설계사 등록하기', icon: Award, tile: 'bg-amber-50 text-amber-600' },
       { href: '/salary-ranking', label: '전국 설계사 연봉 랭킹', icon: TrendingUp, tile: 'bg-rose-50 text-rose-600' },
     ],
   },

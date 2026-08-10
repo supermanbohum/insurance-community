@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
+import { UserPlus, Edit3 } from 'lucide-react';
 import { listPublicPlannerProfiles } from '@/lib/public/planner-market.supabase';
 import { listRegions } from '@/lib/admin/branch';
 import { PlannerMarketSearchFilters } from '@/components/planner-market/PlannerMarketSearchFilters';
 import { PlannerCard } from '@/components/planner-market/PlannerCard';
+import { PLANNER_MARKET_LABEL } from '@/lib/config/labels';
 
 // 이 페이지는 cookies()를 전혀 읽지 않아(공개 조회 전용) Next.js가 세그먼트 단위로
 // 정적/프리페치 캐시가 가능하다고 판단한다. force-dynamic만으로는 서버 응답에
@@ -17,13 +20,15 @@ import { PlannerCard } from '@/components/planner-market/PlannerCard';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: '설계사 찾기',
+  title: PLANNER_MARKET_LABEL,
   description: '활동지역/경력/전문분야로 구직중인 보험설계사를 검색하세요. 연락처는 열람권으로 확인할 수 있습니다.',
   alternates: { canonical: '/planner-market/search' },
 };
 
-/** 설계사 찾기 - 누구나 열람 가능(공개 필드만). 연락처는 상세페이지에서 GA 파트너가
- * 열람권으로 잠금해제해야 볼 수 있다. */
+/** 설계사 찾기(=설계사Market) - 누구나 열람 가능(공개 필드만). 연락처는 상세페이지에서
+ * GA 파트너가 열람권으로 잠금해제해야 볼 수 있다. 햄버거 메뉴가 예전엔 "설계사 찾기/
+ * 등록/수정" 3줄이었는데 이 페이지 하나로 통합됐다(오너 지시, 2026-08-10) - 등록/수정
+ * 진입점은 이 페이지 상단 버튼 2개로 옮겼다. */
 export default async function PlannerMarketSearchPage({
   searchParams,
 }: {
@@ -41,9 +46,27 @@ export default async function PlannerMarketSearchPage({
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
-      <div>
-        <h1 className="text-xl font-bold">설계사 찾기</h1>
-        <p className="mt-1 text-sm text-muted-foreground">활동지역/경력/전문분야를 확인하고, 마음에 드는 설계사의 연락처는 열람권으로 확인하세요.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold">{PLANNER_MARKET_LABEL}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">활동지역/경력/전문분야를 확인하고, 마음에 드는 설계사의 연락처는 열람권으로 확인하세요.</p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Link
+            href="/planner-market/register"
+            className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-surface-sunken"
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            {PLANNER_MARKET_LABEL} 등록
+          </Link>
+          <Link
+            href="/planner-market/edit"
+            className="flex items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-2 text-[13px] font-semibold text-ink-soft transition-colors hover:bg-surface-sunken"
+          >
+            <Edit3 className="h-3.5 w-3.5" />
+            {PLANNER_MARKET_LABEL} 수정
+          </Link>
+        </div>
       </div>
 
       <PlannerMarketSearchFilters
