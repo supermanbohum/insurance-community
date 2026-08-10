@@ -107,7 +107,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           glowColor="rgba(37,99,235,0.45)"
         />
         <HeroCtaButton
-          href="/branch-planner/register"
+          href="/branch-planner-register"
           label="우리 지점 설계사 등록하기"
           icon={<UserPlus className="h-6 w-6" strokeWidth={2.5} />}
           gradientClassName="from-brand-500 via-brand-600 to-brand-800"

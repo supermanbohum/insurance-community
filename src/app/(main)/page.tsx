@@ -48,14 +48,18 @@ function Section({
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex items-end justify-between">
-        <div>
+      {/* P0 수정(2026-08-10, 오너 실기기 발견) - 부제가 길어지면(0089 반영판 "우수 GA"
+          문구) min-w-0 없는 flex item이 줄바꿈 대신 넘쳐서 우측 링크와 겹쳤다. 왼쪽에
+          min-w-0+flex-1로 줄바꿈 여지를 주고, 오른쪽 링크는 shrink-0으로 항상 제자리를
+          지키게 한다. */}
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h2 className="text-[17px] font-extrabold tracking-tight text-ink">{title}</h2>
           {subtitle && <p className="mt-0.5 text-xs text-ink-faint">{subtitle}</p>}
         </div>
         <Link
           href={moreHref}
-          className="flex items-center gap-0.5 text-xs font-medium text-ink-faint transition-colors hover:text-brand-600"
+          className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-ink-faint transition-colors hover:text-brand-600"
         >
           {moreLabel}
           <ChevronRight className="h-3.5 w-3.5" />
