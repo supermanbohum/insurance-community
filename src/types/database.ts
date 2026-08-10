@@ -1244,7 +1244,7 @@ export interface Database {
           income_doc_storage_path: string | null;
           declared_annual_income_krw: number | null;
           confirmed_annual_income_krw: number | null;
-          star_tier: 'star_1' | 'star_2' | 'star_3' | 'star_4' | 'star_5' | null;
+          star_tier: 'star_1' | 'star_2' | 'star_3' | 'star_4' | null;
           status: 'pending_review' | 'on_hold' | 'approved' | 'rejected';
           review_reason: string | null;
           reviewed_by_admin_id: string | null;
@@ -1359,7 +1359,7 @@ export interface Database {
           ga_company_name: string;
           branch_name: string | null;
           job_title: string;
-          star_tier: 'star_1' | 'star_2' | 'star_3' | 'star_4' | 'star_5' | null;
+          star_tier: 'star_1' | 'star_2' | 'star_3' | 'star_4' | null;
           career_years: number | null;
           self_introduction: string | null;
           certified_at: string | null;

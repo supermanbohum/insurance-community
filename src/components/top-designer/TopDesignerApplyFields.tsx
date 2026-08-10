@@ -114,7 +114,7 @@ export function TopDesignerApplyFields({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs text-muted-foreground">
-        원천징수영수증과 명함으로 소득·소속을 증빙한 설계사에게 별등급(⭐1억~10억)을 부여합니다. 실명·GA·소속 지점은
+        원천징수영수증과 명함으로 소득·소속을 증빙한 설계사에게 별등급(⭐1억~5억)을 부여합니다. 실명·GA·소속 지점은
         승인되면 TOP 설계사 페이지와 랭킹에 공개됩니다.
       </p>
 

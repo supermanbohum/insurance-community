@@ -16,7 +16,7 @@ export default async function TopDesignerApplyPage() {
       <div>
         <h1 className="text-xl font-bold">TOP 설계사 인증 신청</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          원천징수영수증으로 연봉을 증빙하면 운영팀 검토 후 별등급(⭐1억~10억) 배지와 함께 나만의 상세 페이지가 열립니다.
+          원천징수영수증으로 연봉을 증빙하면 운영팀 검토 후 별등급(⭐1억~5억) 배지와 함께 나만의 상세 페이지가 열립니다.
         </p>
       </div>
       <TopDesignerApplyPageForm gaOptions={gaOptions} />

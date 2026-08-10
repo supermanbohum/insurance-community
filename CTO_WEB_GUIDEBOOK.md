@@ -171,7 +171,7 @@ WebView로 감싼 하이브리드 앱으로 배포된다 — **네이티브 기�
    기존에 이미 부여된 배지는 유지하되 신규 발급만 중단.
 3. **`top_designer_certifications`(0056/0057)** — 완전 신규, 독립 시스템. 설계사 본인이
    설계사마켓 등록 흐름에서 신청(`planner_profiles.id`만 FK로 재사용), 원천징수영수증
-   업로드, 관리자가 별등급(⭐1억~⭐⭐⭐⭐⭐10억) 부여. `/top-designer`.
+   업로드, 관리자가 별등급(⭐1억~⭐⭐⭐⭐5억, 2026-08-10 4단계로 축소) 부여. `/top-designer`.
 4. **`salary_ranking_submissions`(0058/0059)** — 3번과도 완전 분리된 별개 시스템(연봉
    랭킹). `display_name`(공개용 별도 필드)으로 `planner_profiles.name`을 노출하지 않으면서
    금액만 공개. `/salary-ranking`.
@@ -264,7 +264,7 @@ src/
 이 섹션은 `WEB_MASTER_ROADMAP.md`/`APP_DEVELOPER_GUIDE.md`가 반영하지 못한 최신 변경사항이다.
 
 ### TOP 설계사 인증 시스템 (`top_designer_*`, 마이그레이션 0056/0057)
-- 별등급 5단계: ⭐1억 / ⭐⭐2억 / ⭐⭐⭐3억 / ⭐⭐⭐⭐5억 / ⭐⭐⭐⭐⭐10억
+- 별등급 4단계(2026-08-10, 10억 제거): ⭐1억 / ⭐⭐2억 / ⭐⭐⭐3억 / ⭐⭐⭐⭐5억
   (`src/lib/top-designer/labels.ts`)
 - 관리직(대표/본부장/지점장/단장/센터장/관리자 등) 신청 차단 —
   `is_blocked_designer_job_title()` (기존 `is_blocked_planner_title`과 별개 함수)
