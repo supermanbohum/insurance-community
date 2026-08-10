@@ -8,20 +8,28 @@ import { BranchDetailView } from '@/components/branch/BranchDetailView';
 import { Breadcrumb } from '@/components/seo/Breadcrumb';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { localBusinessJsonLd } from '@/lib/seo/jsonld';
+import { SITE_URL } from '@/lib/seo/config';
 import type { BranchPreviewData } from '@/components/branch/types';
+import type { BranchDetail } from '@/lib/public/branch';
 
 export const dynamic = 'force-dynamic';
+
+/** generateMetadata(og:title/description)와 카카오 공유 버튼이 같은 문구를 쓰도록 한 곳에 모았다. */
+function buildBranchShareMeta(branch: BranchDetail) {
+  const regionLabel = branch.sigunguName ?? branch.sidoName ?? '';
+  const title = regionLabel ? `${branch.name} | ${regionLabel} 보험대리점` : branch.name;
+  const description =
+    branch.tagline ??
+    `${branch.gaCompany.name} ${branch.name} - ${branch.address}. 채용정보와 상세 안내를 보험맵에서 확인하세요.`;
+  return { title, description };
+}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const slug = decodeURIComponent(params.slug);
   const branch = await getPublicBranchDetail(slug);
   if (!branch) return {};
 
-  const regionLabel = branch.sigunguName ?? branch.sidoName ?? '';
-  const title = regionLabel ? `${branch.name} | ${regionLabel} 보험대리점` : branch.name;
-  const description =
-    branch.tagline ??
-    `${branch.gaCompany.name} ${branch.name} - ${branch.address}. 채용정보와 상세 안내를 보험맵에서 확인하세요.`;
+  const { title, description } = buildBranchShareMeta(branch);
 
   // og:image는 여기서 지정하지 않는다 - 같은 디렉터리의 opengraph-image.tsx가 지점 대표
   // 사진을 브랜드 오버레이와 합성해 자동으로 만들어준다(둘 다 설정하면 이미지가 중복 노출됨).
@@ -97,6 +105,7 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
 
   const mainPhoto = branch.media.find((m) => m.type === 'image_main')?.url ?? null;
   const phone = branch.contacts.find((c) => c.type === 'phone')?.value ?? null;
+  const shareMeta = buildBranchShareMeta(branch);
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-28 pt-4 lg:pb-4">
@@ -129,6 +138,12 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
         variant="public"
         favorite={{ branchId: branch.id, initialFavorited }}
         inquiry={{ branchId: branch.id, branchName: branch.name }}
+        share={{
+          title: shareMeta.title,
+          description: shareMeta.description,
+          imageUrl: `${SITE_URL}/branch/${branch.slug}/opengraph-image`,
+          url: `${SITE_URL}/branch/${branch.slug}`,
+        }}
         layoutConfig={layoutConfig}
       />
     </div>

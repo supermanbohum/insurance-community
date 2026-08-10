@@ -25,6 +25,7 @@ import { BranchContactList } from '@/components/branch/BranchContactList';
 import { BranchStickyActionBar } from '@/components/branch/BranchStickyActionBar';
 import { BranchPillTags } from '@/components/branch/BranchPillTags';
 import { BranchFavoriteButton } from '@/components/branch/BranchFavoriteButton';
+import { KakaoShareButton } from '@/components/shared/KakaoShareButton';
 import { BranchLocationMap } from '@/components/branch/BranchLocationMap';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { getDefaultConfig, type Device, type SectionConfig } from '@/lib/design/sections';
@@ -91,6 +92,7 @@ export function BranchDetailView({
   variant,
   favorite,
   inquiry,
+  share,
   layoutConfig,
 }: {
   data: BranchPreviewData;
@@ -99,6 +101,8 @@ export function BranchDetailView({
   favorite?: { branchId: string; initialFavorited: boolean };
   /** 공개 페이지에서만 넘겨준다(W-059) - 등록된 연락처가 없을 때 비로그인 문의 폼에 쓴다. */
   inquiry?: { branchId: string; branchName: string };
+  /** 공개 페이지에서만 넘겨준다 - 카카오톡 공유 콘텐츠(og:title/description과 동일 문구 재사용). */
+  share?: { title: string; description: string; imageUrl: string; url: string };
   /** 디자인 편집모드에서 저장한 값 - 콘텐츠 미리보기(관리자 지점 편집 폼의 "미리보기" 탭)처럼
    * 레이아웃 자체는 관심사가 아닌 곳에서는 생략하면 기본값(지금 순서 그대로)으로 렌더링된다. */
   layoutConfig?: Record<Device, SectionConfig[]>;
@@ -181,6 +185,14 @@ export function BranchDetailView({
             {data.addressDetail ? ` ${data.addressDetail}` : ''}
           </p>
         </div>
+        {share && (
+          <KakaoShareButton
+            title={share.title}
+            description={share.description}
+            imageUrl={share.imageUrl}
+            url={share.url}
+          />
+        )}
         {favorite && <BranchFavoriteButton branchId={favorite.branchId} initialFavorited={favorite.initialFavorited} />}
       </header>
 
