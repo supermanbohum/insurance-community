@@ -4,14 +4,14 @@ import { ChevronRight } from 'lucide-react';
 import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
 import { getPageLayoutConfig } from '@/lib/design/layout';
 import { getActiveHomeOpenBanner } from '@/lib/admin/home-banner';
-import { listTopDesignerHomeRanking } from '@/lib/public/top-designer.supabase';
+import { listTopDesignerHomeRanking, listGaQualityRanking } from '@/lib/public/top-designer.supabase';
 import { HOME_SECTIONS, type Device } from '@/lib/design/sections';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { HomeOpenBanner } from '@/components/home/HomeOpenBanner';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
-import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
+import { GaQualityCard } from '@/components/home/carousel/GaQualityCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 import { TopDesignerHomeRanking } from '@/components/home/TopDesignerHomeRanking';
 import { JsonLd } from '@/components/seo/JsonLd';
@@ -67,8 +67,9 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [popular, latest, stats, layoutConfig, openBanner, topDesignerRanking] = await Promise.all([
-    listPublicBranches({ sort: 'views', limit: 10 }),
+  const [gaQuality, latest, stats, layoutConfig, openBanner, topDesignerRanking] = await Promise.all([
+    // "인기 GA"(조회수) → "우수 GA"(TOP 설계사 등급 합산 점수)로 대체(오너 지시 ⑤).
+    listGaQualityRanking(10),
     listPublicBranches({ sort: 'newest', limit: 10 }),
     getHomeStats(),
     getPageLayoutConfig('home'),
@@ -85,20 +86,20 @@ export default async function HomePage() {
     quickMenu: <QuickMenuGrid />,
     popularGa: (
       <Section
-        title="🔥 인기 GA"
-        subtitle="가장 많이 찾아본 지점"
-        // W-086 - 목록이 비어 있을 때 "더보기"가 또 다른 빈 화면(검색결과 0건)으로
-        // 보내는 막다른 길이었다. 비어 있으면 등록 CTA로 대신 보낸다.
-        moreHref={popular.length === 0 ? '/register' : '/search?sort=views'}
-        moreLabel={popular.length === 0 ? '지점 등록하기' : '더보기'}
+        title="🏅 우수 GA"
+        subtitle="소속 설계사의 TOP 인증 등급을 합산한 순위입니다"
+        // 아직 승인된 TOP 인증이 없으면(부분 버전 - 미제출자 1점 티어는 ③ 이후) 빈
+        // 상태 CTA는 TOP 설계사 인증 신청으로 보낸다(등록 CTA가 아니라 인증 CTA).
+        moreHref={gaQuality.length === 0 ? '/top-designer-register' : '/top-designer'}
+        moreLabel={gaQuality.length === 0 ? 'TOP 설계사 인증 신청' : '더보기'}
       >
-        {popular.length === 0 ? (
-          <EmptyRow text="아직 조회 데이터가 없습니다." />
+        {gaQuality.length === 0 ? (
+          <EmptyRow text="첫 인증 설계사가 나오는 순간 그 지점의 GA가 1위로 시작합니다." />
         ) : (
           <InfiniteCarousel
             durationSec={28}
             itemClassName="w-[190px] sm:w-[210px]"
-            items={popular.map((b, i) => ({ key: b.id, node: <PopularGaCard branch={b} rank={i + 1} /> }))}
+            items={gaQuality.map((ga, i) => ({ key: ga.gaCompanyId, node: <GaQualityCard ga={ga} rank={i + 1} /> }))}
           />
         )}
       </Section>

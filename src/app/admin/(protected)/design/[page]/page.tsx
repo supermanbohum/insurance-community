@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import { listPublicBranches, getHomeStats, getPublicBranchDetail } from '@/lib/public/branch';
+import { listGaQualityRanking } from '@/lib/public/top-designer.supabase';
 import { getPageLayoutConfig } from '@/lib/design/layout';
 import { HOME_SECTIONS, BRANCH_DETAIL_SECTIONS, getSectionDefs, type PageKey } from '@/lib/design/sections';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -9,7 +10,7 @@ import { DesignEditor } from '@/components/admin/design/DesignEditor';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
-import { PopularGaCard } from '@/components/home/carousel/PopularGaCard';
+import { GaQualityCard } from '@/components/home/carousel/GaQualityCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 import type { BranchPreviewData } from '@/components/branch/types';
 
@@ -29,8 +30,8 @@ function EmptyRow({ text }: { text: string }) {
 }
 
 async function buildHomePreviewNodes() {
-  const [popular, latest, stats] = await Promise.all([
-    listPublicBranches({ sort: 'views', limit: 10 }),
+  const [gaQuality, latest, stats] = await Promise.all([
+    listGaQualityRanking(10),
     listPublicBranches({ sort: 'newest', limit: 10 }),
     getHomeStats(),
   ]);
@@ -41,18 +42,18 @@ async function buildHomePreviewNodes() {
     popularGa: (
       <section className="flex flex-col gap-3">
         <div className="flex items-end justify-between">
-          <h2 className="text-[17px] font-extrabold tracking-tight text-ink">🔥 인기 GA</h2>
+          <h2 className="text-[17px] font-extrabold tracking-tight text-ink">🏅 우수 GA</h2>
           <span className="flex items-center gap-0.5 text-xs font-medium text-ink-faint">
             더보기 <ChevronRight className="h-3.5 w-3.5" />
           </span>
         </div>
-        {popular.length === 0 ? (
-          <EmptyRow text="아직 조회 데이터가 없습니다." />
+        {gaQuality.length === 0 ? (
+          <EmptyRow text="첫 인증 설계사가 나오는 순간 그 지점의 GA가 1위로 시작합니다." />
         ) : (
           <InfiniteCarousel
             durationSec={28}
             itemClassName="w-[190px] sm:w-[210px]"
-            items={popular.map((b, i) => ({ key: b.id, node: <PopularGaCard branch={b} rank={i + 1} /> }))}
+            items={gaQuality.map((ga, i) => ({ key: ga.gaCompanyId, node: <GaQualityCard ga={ga} rank={i + 1} /> }))}
           />
         )}
       </section>

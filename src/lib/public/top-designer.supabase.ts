@@ -118,6 +118,34 @@ export async function listTopDesignerHomeRanking(limit = 10): Promise<TopDesigne
   }));
 }
 
+export interface GaQualityRankingRow {
+  gaCompanyId: string;
+  gaCompanyName: string;
+  gaCompanySlug: string;
+  score: number;
+  certifiedDesignerCount: number;
+}
+
+/** 홈 "우수 GA" - 소속 TOP 설계사 별등급을 점수로 합산한 GA 랭킹(오너 지시 ⑤,
+ * 2026-08-10, "인기 GA"를 대체). get_ga_quality_ranking RPC가 서버에서 이미 합산·
+ * 정렬까지 끝내서 반환한다 - 원천 데이터(개별 확정연봉)는 응답에 없다. 지금은
+ * "인증자만" 부분 버전이다(오너 지시 ③이 아직 없어 미제출자 1점 티어는 못
+ * 넣는다 - CTO 확인). */
+export async function listGaQualityRanking(limit = 10): Promise<GaQualityRankingRow[]> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await supabase.rpc('get_ga_quality_ranking', { p_limit: limit });
+  if (error || !data) return [];
+  return (
+    data as { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_designer_count: number }[]
+  ).map((row) => ({
+    gaCompanyId: row.ga_company_id,
+    gaCompanyName: row.ga_company_name,
+    gaCompanySlug: row.ga_company_slug,
+    score: row.score,
+    certifiedDesignerCount: row.certified_designer_count,
+  }));
+}
+
 /** sitemap.xml 전용 - 공개 인증 id/등록일만 가볍게 조회한다. 마이그레이션이 아직
  * 적용되지 않은 배포 환경에서도 sitemap.xml 빌드 전체가 깨지지 않도록 조회 실패 시
  * 빈 배열로 폴백한다(throw하지 않음). */

@@ -2104,6 +2104,10 @@ export interface Database {
         Args: { p_limit?: number };
         Returns: { id: string; name: string; ga_company_name: string; branch_name: string | null }[];
       };
+      get_ga_quality_ranking: {
+        Args: { p_limit?: number };
+        Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_designer_count: number }[];
+      };
       submit_salary_ranking: {
         Args: {
           p_planner_profile_id: string;
