@@ -34,9 +34,13 @@ export default async function TopDesignerPage({
           <h1 className="text-xl font-bold">🏆 TOP 설계사</h1>
           <p className="mt-1 text-sm text-muted-foreground">원천징수영수증으로 연봉을 인증받은 보험맵 공식 TOP 설계사입니다.</p>
         </div>
-        {/* 상시 신청 버튼(W-001) - 목록 위치와 무관하게 항상 눈에 띄게 노출. */}
+        {/* 상시 신청 버튼(W-001) - 목록 위치와 무관하게 항상 눈에 띄게 노출.
+            설명 페이지(/top-designer-register)를 거치도록 오너 지시(2026-08-10) -
+            원천징수영수증·명함 같은 민감 서류를 왜 내는지 모른 채 제출 폼부터
+            만나면 이탈률이 높다. 설명 페이지 하단 CTA가 실제 신청 폼(apply)으로
+            이어진다. */}
         <Link
-          href="/top-designer/apply"
+          href="/top-designer-register"
           className="flex shrink-0 items-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-card transition-colors hover:bg-amber-600"
         >
           <Award className="h-4 w-4" />
@@ -63,7 +67,7 @@ export default async function TopDesignerPage({
             원천징수영수증으로 연봉을 인증하면 운영팀 검토 후 별등급 배지와 함께 이 페이지에 가장 먼저 노출됩니다.
           </p>
           <Link
-            href="/top-designer/apply"
+            href="/top-designer-register"
             className="mt-1 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600"
           >
             TOP 설계사 인증 신청하기
