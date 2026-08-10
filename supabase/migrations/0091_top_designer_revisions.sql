@@ -205,7 +205,7 @@ begin
   end if;
 
   if p_decision = 'approved' then
-    if p_star_tier not in ('star_1', 'star_2', 'star_3', 'star_4', 'star_5') then
+    if p_star_tier not in ('star_1', 'star_2', 'star_3', 'star_4') then
       raise exception 'INVALID_STAR_TIER';
     end if;
     if p_confirmed_income_krw is null or p_confirmed_income_krw <= 0 then
