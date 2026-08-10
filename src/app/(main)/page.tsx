@@ -17,6 +17,7 @@ import { TopDesignerHomeRanking } from '@/components/home/TopDesignerHomeRanking
 import { JsonLd } from '@/components/seo/JsonLd';
 import { websiteJsonLd, organizationJsonLd } from '@/lib/seo/jsonld';
 import { DEFAULT_META_DESCRIPTION, DEFAULT_KEYWORDS } from '@/lib/seo/config';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: { absolute: '보험맵 | 전국 GA·보험대리점 정보와 보험설계사 리크루팅' },
@@ -38,32 +39,43 @@ function Section({
   subtitle,
   moreHref,
   moreLabel = '더보기',
+  moreVariant = 'default',
   children,
 }: {
   title: string;
   subtitle?: string;
   moreHref: string;
   moreLabel?: string;
+  /** 'gold' = TOP 인증류 CTA(디자인 SPEC-036 §2) - 인증 언어를 다른 섹션의 파랑
+   * CTA와 시각적으로 분리해 "이건 증명이 필요한 다른 종류의 행동"임을 알린다. */
+  moreVariant?: 'default' | 'gold';
   children: React.ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-3">
-      {/* P0 수정(2026-08-10, 오너 실기기 발견) - 부제가 길어지면(0089 반영판 "우수 GA"
-          문구) min-w-0 없는 flex item이 줄바꿈 대신 넘쳐서 우측 링크와 겹쳤다. 왼쪽에
-          min-w-0+flex-1로 줄바꿈 여지를 주고, 오른쪽 링크는 shrink-0으로 항상 제자리를
-          지키게 한다. */}
-      <div className="flex items-end justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[17px] font-extrabold tracking-tight text-ink">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-xs text-ink-faint">{subtitle}</p>}
+      {/* SPEC-036(디자인, 2026-08-10) - 부제를 제목+CTA 행과 완전히 분리된 전폭 2번째
+          행으로 뺐다. 부제가 몇 줄이 되든 아래로만 자라 CTA와 절대 같은 공간을 다투지
+          않는다(이전 P0 - min-w-0/shrink-0 패치는 같은 행 안에서 줄바꿈만 시켰는데,
+          디자인은 애초에 행을 분리하는 쪽을 최종 구조로 확정했다). */}
+      <div className="flex flex-col">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="whitespace-nowrap text-[17px] font-extrabold tracking-tight text-ink">{title}</h2>
+          <Link
+            href={moreHref}
+            className={cn(
+              'flex h-8 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-bold transition-colors',
+              moreVariant === 'gold'
+                ? 'border-[#c48a0f] text-[#c48a0f] hover:bg-[#fdf6e8]'
+                : 'border-brand-600 text-brand-600 hover:bg-[#F0F6FF]'
+            )}
+          >
+            {moreLabel}
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
-        <Link
-          href={moreHref}
-          className="flex shrink-0 items-center gap-0.5 text-xs font-medium text-ink-faint transition-colors hover:text-brand-600"
-        >
-          {moreLabel}
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
+        {subtitle && (
+          <p className="mt-1.5 w-full text-[13px] font-medium leading-[1.55] text-ink-faint [word-break:keep-all]">{subtitle}</p>
+        )}
       </div>
       {children}
     </section>
@@ -99,7 +111,8 @@ export default async function HomePage() {
         // 어긋나 있었다. 아직 승인된 TOP 인증이 없으면(부분 버전) 빈 상태 CTA는 TOP
         // 설계사 인증 신청으로 보낸다(등록 CTA가 아니라 인증 CTA).
         moreHref={gaQuality.length === 0 ? '/top-designer-register' : '/ga-ranking'}
-        moreLabel={gaQuality.length === 0 ? 'TOP 설계사 인증 신청' : '더보기'}
+        moreLabel={gaQuality.length === 0 ? 'TOP 인증 신청' : '더보기'}
+        moreVariant={gaQuality.length === 0 ? 'gold' : 'default'}
       >
         {gaQuality.length === 0 ? (
           <EmptyRow text="첫 점수를 만드는 GA가 1위로 시작합니다." />
@@ -117,7 +130,7 @@ export default async function HomePage() {
         title="🆕 신규 등록"
         subtitle="최근에 새로 올라온 지점"
         moreHref={latest.length === 0 ? '/register' : '/search?sort=newest'}
-        moreLabel={latest.length === 0 ? '지점 등록하기' : '더보기'}
+        moreLabel={latest.length === 0 ? '우리 지점 등록하기' : '더보기'}
       >
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
