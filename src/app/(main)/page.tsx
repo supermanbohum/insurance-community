@@ -153,7 +153,7 @@ export default async function HomePage() {
   const devices: Device[] = ['mobile', 'tablet', 'desktop'];
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col px-4 pb-6 pt-4">
+    <div className="mx-auto flex max-w-2xl flex-col px-5 pb-6 pt-4">
       {/* 화면에는 카드/CTA 위주 디자인이라 보이는 제목이 없다 - 검색엔진이 페이지
           주제를 정확히 파악하도록 시각적으로만 숨긴 h1을 둔다. */}
       <h1 className="sr-only">보험맵 - 전국 GA·보험대리점 정보와 보험설계사 리크루팅 플랫폼</h1>

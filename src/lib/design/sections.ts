@@ -59,9 +59,12 @@ export function getSectionDefs(pageKey: PageKey): SectionDef[] {
   return pageKey === 'home' ? HOME_SECTIONS : BRANCH_DETAIL_SECTIONS;
 }
 
-// 기존 코드의 고정 간격(홈 gap-10=40px, 지점상세 gap-5=20px)과 동일한 기본값 -
-// 저장된 설정이 없을 때 지금과 완전히 동일하게 보이도록 한다.
-const DEFAULT_MARGIN_BOTTOM: Record<PageKey, number> = { home: 40, branch_detail: 20 };
+// 지점상세(branch_detail)는 기존 고정 간격(gap-5=20px) 그대로 유지 - SPEC-036 §3은
+// 홈에만 적용되는 스펙이라 branch_detail 기본값은 건드리지 않는다.
+// 홈은 SPEC-036 §3(디자인, 2026-08-10) GAP_Y=28px로 갱신 - 저장된 admin 편집값이
+// 없을 때만 이 기본값이 쓰이므로(page_layouts에 'home' 행이 없음을 직접 쿼리로 확인),
+// 이 상수 변경이 곧 실제 프로덕션 동작 변경이다.
+const DEFAULT_MARGIN_BOTTOM: Record<PageKey, number> = { home: 28, branch_detail: 20 };
 
 export function getDefaultConfig(pageKey: PageKey): SectionConfig[] {
   const defs = getSectionDefs(pageKey);
