@@ -15,7 +15,7 @@ export interface HomeOpenBannerInput {
   ctaHref: string;
 }
 
-/** 홈 오픈 배너 저장 - id가 있으면 갱신, 없으면 새로 만든다. 8/17 09:00 오픈 전환처럼
+/** 홈 오픈 배너 저장 - id가 있으면 갱신, 없으면 새로 만든다. 정식 오픈 전환처럼
  * 재배포 없이 즉시 반영되어야 하는 문구라 event_popups와 동일 패턴을 쓴다. */
 export async function saveHomeOpenBannerAction(input: HomeOpenBannerInput): Promise<ActionResult> {
   if (!input.headline.trim()) {

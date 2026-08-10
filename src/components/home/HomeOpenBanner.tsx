@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Megaphone } from 'lucide-react';
 import type { HomeOpenBannerRow } from '@/lib/admin/home-banner';
 
-/** PROMO_PLAN §3 - 8/17 09:00에 문구 하나만 바뀌는 오픈 카운트다운 배너. 관리자
+/** PROMO_PLAN §3 - 정식 오픈 시 문구 하나만 바뀌는 오픈 카운트다운 배너. 관리자
  * 패널(home_open_banner, 0079)에서 편집하므로 재배포 없이 즉시 전환된다. */
 export function HomeOpenBanner({ banner }: { banner: HomeOpenBannerRow | null }) {
   if (!banner || !banner.isActive) return null;

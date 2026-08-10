@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Megaphone, MessageSquareText, Plus, UserPlus } from 'lucide-react';
+import { Megaphone, MessageSquareText, Plus } from 'lucide-react';
 import type { HomeStats } from '@/lib/public/branch';
 import { StatCountUp } from '@/components/home/StatCountUp';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
@@ -82,22 +82,13 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <HeroCtaButton
-          href="/register"
-          label={ctaLabel}
-          icon={<Plus className="h-6 w-6" strokeWidth={2.5} />}
-          gradientClassName="from-brand-500 via-brand-600 to-brand-800"
-          glowColor="rgba(37,99,235,0.45)"
-        />
-        <HeroCtaButton
-          href="/planner-register"
-          label="설계사 등록하기"
-          icon={<UserPlus className="h-6 w-6" strokeWidth={2.5} />}
-          gradientClassName="from-brand-500 via-brand-600 to-brand-800"
-          glowColor="rgba(37,99,235,0.45)"
-        />
-      </div>
+      <HeroCtaButton
+        href="/register"
+        label={ctaLabel}
+        icon={<Plus className="h-6 w-6" strokeWidth={2.5} />}
+        gradientClassName="from-brand-500 via-brand-600 to-brand-800"
+        glowColor="rgba(37,99,235,0.45)"
+      />
 
       <div className="grid grid-cols-2 gap-2">
         <Link

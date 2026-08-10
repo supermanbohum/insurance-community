@@ -67,7 +67,7 @@ export function HomeOpenBannerForm({ initial }: { initial: HomeOpenBannerRow | n
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="hb-subtext">보조 문구</Label>
-            <Input id="hb-subtext" value={subtext} onChange={(e) => setSubtext(e.target.value)} placeholder="8월 17일 정식 오픈" />
+            <Input id="hb-subtext" value={subtext} onChange={(e) => setSubtext(e.target.value)} placeholder="정식 오픈 전 사전 등록 기간" />
           </div>
         </CardContent>
       </Card>
