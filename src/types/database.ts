@@ -1253,11 +1253,44 @@ export interface Database {
           ocr_extracted_income_krw: number | null;
           ocr_raw_response: unknown;
           ocr_confidence: number | null;
+          appointed_at: string | null;
+          branch_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: Partial<Database['public']['Tables']['top_designer_certifications']['Row']>;
         Update: Partial<Database['public']['Tables']['top_designer_certifications']['Row']>;
+        Relationships: [];
+      };
+      branch_planner_registrations: {
+        Row: {
+          id: string;
+          user_id: string;
+          branch_id: string;
+          name: string;
+          job_title: string;
+          business_card_path: string | null;
+          income_doc_storage_path: string | null;
+          declared_annual_income_krw: number | null;
+          status: 'pending_review' | 'on_hold' | 'approved' | 'rejected';
+          review_reason: string | null;
+          reviewed_by_admin_id: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['branch_planner_registrations']['Row']>;
+        Update: Partial<Database['public']['Tables']['branch_planner_registrations']['Row']>;
+        Relationships: [];
+      };
+      branch_planner_gate_events: {
+        Row: {
+          id: string;
+          event_type: 'blocked' | 'forward_click';
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['branch_planner_gate_events']['Row']>;
+        Update: Partial<Database['public']['Tables']['branch_planner_gate_events']['Row']>;
         Relationships: [];
       };
       top_designer_likes: {
@@ -2107,6 +2140,25 @@ export interface Database {
       get_ga_quality_ranking: {
         Args: { p_limit?: number };
         Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_count: number; registered_count: number }[];
+      };
+      submit_branch_planner_registration: {
+        Args: {
+          p_branch_id: string;
+          p_name: string;
+          p_job_title: string;
+          p_business_card_path: string;
+          p_income_doc_path?: string | null;
+          p_declared_annual_income_krw?: number | null;
+        };
+        Returns: string;
+      };
+      admin_review_branch_planner_registration: {
+        Args: { p_registration_id: string; p_decision: string; p_reason?: string };
+        Returns: undefined;
+      };
+      record_branch_planner_gate_event: {
+        Args: { p_event_type: string };
+        Returns: undefined;
       };
       submit_salary_ranking: {
         Args: {

@@ -15,6 +15,7 @@ import {
   ExternalLink,
   MessageCircle,
   Search,
+  UserPlus,
   Ticket,
   Edit3,
   Award,
@@ -66,6 +67,10 @@ const MENU_GROUPS = [
       { href: '/planner-market/search', label: PLANNER_MARKET_LABEL, icon: Search, tile: 'bg-emerald-50 text-emerald-600', hardNavigate: true },
       { href: '/partner/register', label: '우리 지점 등록하기', icon: MapPin, tile: 'bg-blue-50 text-blue-600' },
       { href: '/partner/branches', label: '우리 지점 수정하기', icon: Edit3, tile: 'bg-blue-50 text-blue-600' },
+      // ③ ⓑ(오너 지시, 2026-08-10) - 지점 등록/수정과 짝을 이루는 설계사 등록/수정.
+      // 지점 연결이 필수라는 게 위 설계사Market과의 결정적 차이다.
+      { href: '/branch-planner/register', label: '우리지점 설계사 등록하기', icon: UserPlus, tile: 'bg-violet-50 text-violet-600' },
+      { href: '/branch-planner/edit', label: '우리지점 설계사 수정하기', icon: Edit3, tile: 'bg-violet-50 text-violet-600' },
       { href: '/partner/ad-products', label: '광고상품', icon: Megaphone, tile: 'bg-rose-50 text-rose-600' },
       { href: '/planner-market/purchase', label: '구매센터', icon: Ticket, tile: 'bg-amber-50 text-amber-600' },
     ],
