@@ -4,6 +4,7 @@ import type { HomeStats } from '@/lib/public/branch';
 import { StatCountUp } from '@/components/home/StatCountUp';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { GlobalShareButton } from '@/components/shared/GlobalShareButton';
+import { cn } from '@/lib/utils';
 
 /**
  * 헤더에 이미 로고+검색창이 있어(BohomMapHeader) 예전 HeroSearch가 그걸 그대로
@@ -39,26 +40,37 @@ function StatChip({ emoji, label, value, unit }: { emoji: string; label: string;
 }
 
 /** 임계값 미만일 때 숫자 대신 보여주는 CTA 카드 - 긴 판(2줄)/짧은 판(1줄)을 둘 다
- * 렌더링해두고 뷰포트 폭으로 전환한다(별도 클라이언트 JS 없이 반응형 처리). */
+ * 렌더링해두고 뷰포트 폭으로 전환한다(별도 클라이언트 JS 없이 반응형 처리).
+ * href가 없으면 클릭할 수 없는 정보성 카드로 렌더링한다 - 설계사 통계 카드가
+ * 이 경우다(③ 완료 전까지는 홈에서 설계사마켓으로 보낼 유효한 링크가 없다,
+ * 오너 지시: 홈→마켓 경로 전부 제거, 마켓은 햄버거 메뉴에서만). */
 function ReplacementCard({
   href,
   longLines,
   shortLine,
 }: {
-  href: string;
+  href?: string;
   longLines: [string, React.ReactNode];
   shortLine: React.ReactNode;
 }) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col gap-0.5 rounded-xl border border-dashed border-brand-200 bg-brand-50/50 px-3 py-2 text-center transition-colors hover:bg-brand-50"
-    >
+  const baseClassName = 'flex flex-col gap-0.5 rounded-xl border border-dashed border-brand-200 bg-brand-50/50 px-3 py-2 text-center';
+  const content = (
+    <>
       <span className="hidden sm:block">
         <span className="block text-[11px] text-ink-faint">{longLines[0]}</span>
         <span className="block text-[13px] font-bold text-ink-soft">{longLines[1]}</span>
       </span>
       <span className="text-[13px] font-bold text-ink-soft sm:hidden">{shortLine}</span>
+    </>
+  );
+
+  if (!href) {
+    return <div className={baseClassName}>{content}</div>;
+  }
+
+  return (
+    <Link href={href} className={cn(baseClassName, 'transition-colors hover:bg-brand-50')}>
+      {content}
     </Link>
   );
 }
@@ -137,7 +149,6 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           </div>
         ) : (
           <ReplacementCard
-            href="/planner-register"
             longLines={[
               '지점장님이 설계사님을 찾고 있어요',
               <>
