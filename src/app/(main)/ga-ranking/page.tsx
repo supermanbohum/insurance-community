@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: '우수 GA',
-  description: '소속 설계사의 TOP 인증 등급과 지점 등록 현황을 합산한 GA 랭킹입니다.',
+  description: 'TOP 인증 등급을 중심으로, 등록된 설계사 수까지 합산한 GA 점수 순위입니다.',
   alternates: { canonical: '/ga-ranking' },
 };
 
@@ -26,7 +26,7 @@ export default async function GaRankingPage() {
       <div>
         <h1 className="text-xl font-bold">🏅 우수 GA</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          소속 설계사의 TOP 인증 등급과 지점 등록 현황을 합산한 순위입니다.
+          TOP 인증 등급을 중심으로, 등록된 설계사 수까지 합산한 점수 순위입니다.
         </p>
         <p className="mt-1 text-xs text-ink-faint">
           조회수 기준 랭킹은{' '}
@@ -40,16 +40,19 @@ export default async function GaRankingPage() {
       {gaQuality.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-amber-200 bg-amber-50/50 py-14 text-center">
           <Trophy className="h-10 w-10 text-amber-500" />
-          <p className="text-base font-bold text-ink">1호 우수 GA가 될 수 있습니다</p>
+          <p className="text-base font-bold text-ink">우수 GA 1위 자리가 비어 있습니다</p>
           <p className="max-w-xs text-sm text-muted-foreground">
-            소속 설계사가 TOP 설계사 인증을 받거나 우리 지점 설계사로 등록되는 순간, 그 GA가 1위로 시작합니다.
+            첫 점수를 만드는 GA가 1위로 시작합니다. 소속 설계사의 TOP 인증 등급과 등록 인원이 점수가 됩니다.
           </p>
+          {/* CTA가 TOP 인증만 가리키지만 실제로는 ③ 등록만으로도 1점이 붙어 1위가 될
+              수 있다 - 콘텐츠팀이 남긴 예약 사항: ③ 폼 배포 시 이 CTA를 다시 검토한다
+              (통보 예정). 지금은 TOP 인증만 실제로 신청 가능한 경로라 단일 CTA로 둔다. */}
           <Link
             href="/top-designer-register"
             className="mt-1 flex items-center gap-1.5 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600"
           >
             <Award className="h-4 w-4" />
-            TOP 설계사 인증 신청하기
+            무료로 TOP 인증 신청하기
           </Link>
         </div>
       ) : (

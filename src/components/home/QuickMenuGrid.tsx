@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PLANNER_MARKET_LABEL } from '@/lib/config/labels';
 
 const ACTIONS = [
   { href: '/map', emoji: '🧭', label: '내 주변 대리점 찾기', tile: 'bg-blue-50' },
@@ -14,7 +15,7 @@ const ACTIONS = [
   // Next.js 라우터 내부까지는 규명하지 못했다). 반면 새로고침(F5)이나 URL 직접 이동
   // 같은 순수 브라우저 전체 페이지 이동은 매번 정확하게 동작했다 - 그래서 이 링크만
   // Next 클라이언트 라우터를 완전히 우회해 항상 전체 페이지 이동을 강제한다.
-  { href: '/planner-market/search', emoji: '🧑‍💼', label: '설계사 찾기', tile: 'bg-violet-50', hardNavigate: true },
+  { href: '/planner-market/search', emoji: '🧑‍💼', label: PLANNER_MARKET_LABEL, tile: 'bg-violet-50', hardNavigate: true },
   { href: '/top-designer', emoji: '🏆', label: 'TOP 설계사', tile: 'bg-amber-50', hardNavigate: true },
 ];
 

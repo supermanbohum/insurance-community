@@ -87,9 +87,9 @@ export default async function HomePage() {
     popularGa: (
       <Section
         title="🏅 우수 GA"
-        // 임시 문구(콘텐츠팀 확정본 대기, 0089로 미제출자 1점 티어가 포함되면서
-        // 기존 "TOP 인증 등급만 합산" 문구가 부정확해졌다 - CTO 지적, 2026-08-10).
-        subtitle="소속 설계사의 TOP 인증·지점 등록 현황을 합산한 순위입니다"
+        // 콘텐츠팀 확정 문안(2026-08-10) - "TOP 인증 등급만 합산" 문구가 0088(미제출자
+        // 1점 티어 포함)로 부정확해진 것을 반영.
+        subtitle="TOP 인증 등급을 중심으로, 등록된 설계사 수까지 합산한 점수 순위입니다"
         // "더보기"는 전체 목록 페이지(/ga-ranking, 0089와 함께 신설)로 보낸다 - 예전엔
         // /top-designer(TOP 설계사 개인 목록)로 갔는데 GA 단위 랭킹과 기준이 달라
         // 어긋나 있었다. 아직 승인된 TOP 인증이 없으면(부분 버전) 빈 상태 CTA는 TOP
@@ -98,7 +98,7 @@ export default async function HomePage() {
         moreLabel={gaQuality.length === 0 ? 'TOP 설계사 인증 신청' : '더보기'}
       >
         {gaQuality.length === 0 ? (
-          <EmptyRow text="첫 인증 설계사가 나오는 순간 그 지점의 GA가 1위로 시작합니다." />
+          <EmptyRow text="첫 점수를 만드는 GA가 1위로 시작합니다." />
         ) : (
           <InfiniteCarousel
             durationSec={28}
