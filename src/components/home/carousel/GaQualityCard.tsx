@@ -33,7 +33,10 @@ export function GaQualityCard({ ga, rank }: { ga: GaQualityRankingRow; rank?: nu
           <span className="flex min-w-0 items-center gap-1 truncate rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
             우수 GA 점수 {ga.score.toLocaleString('ko-KR')}
           </span>
-          <span className="shrink-0 text-[11px] text-ink-faint">인증 {ga.certifiedDesignerCount}명</span>
+          {/* certifiedCount(TOP 인증만)가 아니라 registeredCount(TOP 인증 + ③ 미인증
+              등록 전체)를 쓴다 - "인증 N명"이라고 썼다가 미인증자까지 섞이면 거짓
+              표시가 된다(CTO 지적, 2026-08-10). */}
+          <span className="shrink-0 text-[11px] text-ink-faint">등록 {ga.registeredCount}명</span>
         </div>
       </div>
     </Link>

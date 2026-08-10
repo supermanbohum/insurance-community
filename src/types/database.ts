@@ -2106,7 +2106,7 @@ export interface Database {
       };
       get_ga_quality_ranking: {
         Args: { p_limit?: number };
-        Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_designer_count: number }[];
+        Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_count: number; registered_count: number }[];
       };
       submit_salary_ranking: {
         Args: {

@@ -42,7 +42,11 @@ const MENU_GROUPS = [
       // 캐러셀이 이미 쓰는 정렬 파라미터(/search?sort=views·newest)에 맞춰 실제로
       // 다른 결과를 보여주도록 분리한다.
       { href: '/search', label: 'GA별', icon: Building2, tile: 'bg-indigo-50 text-indigo-600' },
-      { href: '/search?sort=views', label: '인기 GA', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
+      { href: '/search?sort=views', label: '인기 GA · 조회수순', icon: Flame, tile: 'bg-rose-50 text-rose-600' },
+      // "인기 GA"와 라벨이 한 글자 차이라(CTO 지적) 기준을 라벨에 직접 명시해 구분한다.
+      // 조회수 기준(인기)과 TOP 인증 점수 기준(우수)은 서로 다른 랭킹이고 둘 다 유지된다
+      // (오너 지시, 2026-08-10 - "우수GA랑 인기GA 2개 있는 것도 좋을듯").
+      { href: '/ga-ranking', label: '우수 GA · TOP인증순', icon: Award, tile: 'bg-amber-50 text-amber-600' },
       { href: '/search?sort=newest', label: '신규 GA', icon: Sparkles, tile: 'bg-amber-50 text-amber-600' },
       // PC(lg 이상)에서는 우측에 채팅 패널이 항상 떠 있어 이 메뉴 항목이 중복이라 숨긴다.
       { href: '/chat', label: '실시간 채팅', icon: MessageCircle, tile: 'bg-brand-50 text-brand-600', hideOnDesktop: true },
