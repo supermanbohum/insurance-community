@@ -102,7 +102,8 @@ export async function uploadTopDesignerPhotoAction(formData: FormData): Promise<
 }
 
 function describeSubmitError(message: string): string {
-  if (message.includes('BLOCKED_JOB_TITLE')) return '대표/본부장/지점장 등 관리직은 신청할 수 없습니다. 설계사만 신청 가능합니다.';
+  // BLOCKED_JOB_TITLE 매핑은 0084에서 관리직 차단을 없애며 함께 제거했다 - 이제
+  // submit_top_designer_certification이 이 코드를 던질 일이 없다(오너 지시 ⑩).
   if (message.includes('MISSING_INCOME_DOCUMENT')) return '원천징수영수증을 업로드해주세요.';
   if (message.includes('MISSING_BUSINESS_CARD')) return '명함을 업로드해주세요.';
   if (message.includes('ALREADY_APPROVED')) return '이미 승인된 인증입니다.';

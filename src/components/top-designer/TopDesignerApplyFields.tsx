@@ -46,9 +46,11 @@ export const EMPTY_TOP_DESIGNER_APPLY_STATE: TopDesignerApplyState = {
 };
 
 /** TOP 설계사 인증 신청 입력 - 설계사마켓과 완전 분리된 자체 필드다(오너 지시,
- * planner_profiles를 전혀 참조하지 않는다). 관리직(대표/본부장/지점장 등)은
- * 서버(is_blocked_designer_job_title)에서 최종 차단되므로, 여기서는 안내 문구로만
- * 미리 알려준다.
+ * planner_profiles를 전혀 참조하지 않는다). 관리직(대표/본부장/지점장 등)도 신청
+ * 가능하다(오너 지시 ⑩, 2026-08-10) - 0084에서 submit_top_designer_certification의
+ * 관리직 차단(is_blocked_designer_job_title 호출)을 제거했다. 연봉랭킹
+ * (submit_salary_ranking)은 이번 지시 대상이 아니라 그쪽은 여전히 차단된다 - 공유
+ * 함수 자체를 안 건드리고 TOP 설계사 RPC의 검사 한 줄만 뺀 이유다.
  *
  * 서류 카드를 원천징수영수증/명함 둘로 분리했다(소득 증명 vs 소속·직급 증명 - 오너
  * 지시로 명함 추가) - 마스킹 안내는 원천징수영수증 카드에만 붙는다(주민등록번호가
@@ -112,8 +114,8 @@ export function TopDesignerApplyFields({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs text-muted-foreground">
-        원천징수영수증과 명함으로 소득·소속을 증빙한 설계사에게 별등급(⭐1억~10억)을 부여합니다. 대표/본부장/지점장/단장/센터장
-        등 관리직은 신청할 수 없습니다. 실명·GA·소속 지점은 승인되면 TOP 설계사 페이지와 랭킹에 공개됩니다.
+        원천징수영수증과 명함으로 소득·소속을 증빙한 설계사에게 별등급(⭐1억~10억)을 부여합니다. 실명·GA·소속 지점은
+        승인되면 TOP 설계사 페이지와 랭킹에 공개됩니다.
       </p>
 
       <div className="flex flex-col gap-1.5">
