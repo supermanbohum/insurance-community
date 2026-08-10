@@ -62,11 +62,22 @@ function ReplacementCard({
   );
 }
 
+/** "선착순 100개" 실시간 카운트다운(오너 지시 ⑦, 2026-08-10) - 등록될 때마다
+ * 자리가 줄어드는 걸 보여준다. 카운팅 기준은 오너 확정대로 "지점 등록 수" -
+ * 별도 프로모션 참여 여부를 추적하는 컬럼이 없으므로(카카오 채널처럼 새 테이블을
+ * 만들 정도의 무게는 아니라고 판단) 이미 홈/관리자 대시보드가 공유하는
+ * get_platform_core_stats()의 승인 지점 수(stats.branchCount)를 그대로 재사용한다.
+ * showBranchNumber가 true로 바뀌는 시점(HOME_STAT_THRESHOLDS.branch=10)에 이
+ * 카드 자체가 사라지므로 remaining이 90 아래로 내려가는 걸 실제로 보게 될 일은
+ * 없다 - 0 밑으로 내려가지 않게 막아만 둔다(방어적 처리, 정상 동작에선 안 걸림). */
+const EARLY_BIRD_TOTAL_SLOTS = 100;
+
 export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
   const showBranchNumber = stats.branchCount >= HOME_STAT_THRESHOLDS.branch;
   const showPlannerNumber = stats.publicPlannerProfileCount >= HOME_STAT_THRESHOLDS.planner;
   const showVisitorNumber = stats.todayVisitorCount >= HOME_STAT_THRESHOLDS.visitor;
   const showTodayChip = stats.todayCount >= STAT_MIN_TODAY_COUNT;
+  const earlyBirdSlotsRemaining = Math.max(0, EARLY_BIRD_TOTAL_SLOTS - stats.branchCount);
 
   return (
     <div className="flex flex-col gap-3">
@@ -114,10 +125,12 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
             href="/register"
             longLines={[
               '지점장님의 지역은 아직 비어 있습니다',
-              // "6개월 무료(선착순 100개)"는 진행 중인 실제 이벤트(event_popups, 상시 노출)에
-              // 맞춘 문구다 - 해당 프로모션이 종료되면 이 문구도 함께 걷어내야 한다.
+              // "6개월 무료(선착순 N개)"는 진행 중인 실제 이벤트(event_popups, 상시 노출)에
+              // 맞춘 문구다 - 해당 프로모션이 종료되면 이 문구도 함께 걷어내야 한다. N은
+              // 더는 고정 100이 아니라 실시간 잔여 슬롯이다(오너 지시 ⑦).
               <>
-                <strong className="text-brand-600">지역 1호 지점으로 등록하세요</strong> — 6개월 무료(선착순 100개)
+                <strong className="text-brand-600">지역 1호 지점으로 등록하세요</strong> — 6개월 무료(선착순{' '}
+                <StatCountUp value={earlyBirdSlotsRemaining} />개)
               </>,
             ]}
             shortLine={<strong className="text-brand-600">지역 1호 지점을 선점하세요</strong>}
