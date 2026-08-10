@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Megaphone, MessageSquareText, Plus } from 'lucide-react';
+import { Megaphone, MessageSquareText, Plus, UserPlus } from 'lucide-react';
 import type { HomeStats } from '@/lib/public/branch';
 import { StatCountUp } from '@/components/home/StatCountUp';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
@@ -94,13 +94,26 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
 
   return (
     <div className="flex flex-col gap-3">
-      <HeroCtaButton
-        href="/register"
-        label={ctaLabel}
-        icon={<Plus className="h-6 w-6" strokeWidth={2.5} />}
-        gradientClassName="from-brand-500 via-brand-600 to-brand-800"
-        glowColor="rgba(37,99,235,0.45)"
-      />
+      {/* 투트랙 CTA(오너 지시, 2026-08-10) - ③ ⓑ 페이지(/branch-planner/register)가
+          생겨서 이 자리가 다시 채워졌다. 왼쪽=지점장, 오른쪽=설계사로 역할이 다르다.
+          승인 지점이 0개인 지금은 오른쪽을 누르면 대부분 미연결 게이트(BranchPlannerGate)로
+          가는데, 그게 설계대로다 - 게이트 자체가 지점 획득 채널로 설계됐다. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <HeroCtaButton
+          href="/register"
+          label={ctaLabel}
+          icon={<Plus className="h-6 w-6" strokeWidth={2.5} />}
+          gradientClassName="from-brand-500 via-brand-600 to-brand-800"
+          glowColor="rgba(37,99,235,0.45)"
+        />
+        <HeroCtaButton
+          href="/branch-planner/register"
+          label="우리 지점 설계사 등록하기"
+          icon={<UserPlus className="h-6 w-6" strokeWidth={2.5} />}
+          gradientClassName="from-brand-500 via-brand-600 to-brand-800"
+          glowColor="rgba(37,99,235,0.45)"
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-2">
         <Link
