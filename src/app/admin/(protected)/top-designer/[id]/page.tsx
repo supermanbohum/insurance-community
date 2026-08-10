@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getTopDesignerCertificationDetail } from '@/lib/admin/top-designer';
+import { getTopDesignerCertificationDetail, getTopDesignerRevisionForCertification } from '@/lib/admin/top-designer';
 import { STAR_TIER_LABEL } from '@/lib/top-designer/labels';
 import { TopDesignerReviewActions } from '@/components/admin/TopDesignerReviewActions';
+import { TopDesignerRevisionReviewActions } from '@/components/admin/TopDesignerRevisionReviewActions';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -20,9 +21,18 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: '반려됨',
 };
 
+const REVISION_STATUS_LABEL: Record<string, string> = {
+  pending_review: '재심사 대기',
+  on_hold: '재심사 보류',
+  approved: '재심사 승인됨',
+  rejected: '재심사 반려됨',
+};
+
 export default async function AdminTopDesignerDetailPage({ params }: { params: { id: string } }) {
   const detail = await getTopDesignerCertificationDetail(params.id);
   if (!detail) notFound();
+  const revision = detail.status === 'approved' ? await getTopDesignerRevisionForCertification(detail.id) : null;
+  const revisionInReview = revision && (revision.status === 'pending_review' || revision.status === 'on_hold');
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,6 +47,7 @@ export default async function AdminTopDesignerDetailPage({ params }: { params: {
             <h1 className="text-2xl font-semibold tracking-tight">{detail.name}</h1>
             <Badge variant={STATUS_VARIANT[detail.status]}>{STATUS_LABEL[detail.status]}</Badge>
             {detail.starTier && <Badge variant="outline">{STAR_TIER_LABEL[detail.starTier]}</Badge>}
+            {revisionInReview && <Badge variant="warning">{REVISION_STATUS_LABEL[revision.status]}</Badge>}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">{new Date(detail.createdAt).toLocaleString('ko-KR')}에 신청</p>
         </div>
@@ -47,6 +58,53 @@ export default async function AdminTopDesignerDetailPage({ params }: { params: {
           ocrExtractedIncomeKrw={detail.ocrExtractedIncomeKrw}
         />
       </div>
+
+      {revision && (
+        <Card className="border-amber-300">
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <CardTitle className="text-base">재심사 제안 (승인 전까지 위 공개 정보는 유지됩니다)</CardTitle>
+              <TopDesignerRevisionReviewActions
+                revisionId={revision.id}
+                certificationId={detail.id}
+                status={revision.status}
+                declaredIncomeKrw={revision.declaredAnnualIncomeKrw}
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+            <InfoRow label="제안된 소속 GA" value={revision.gaCompanyName} />
+            <InfoRow label="제안된 본부/지점" value={revision.branchName ?? '-'} />
+            <InfoRow label="제안된 직급" value={revision.jobTitle} />
+            <InfoRow label="제안된 신고 연봉" value={revision.declaredAnnualIncomeKrw ? `${revision.declaredAnnualIncomeKrw.toLocaleString()}원` : '-'} />
+            <div className="col-span-2 flex flex-col gap-1 sm:col-span-3">
+              <span className="text-xs text-muted-foreground">재제출 서류</span>
+              <div className="flex flex-wrap gap-3">
+                {revision.documentUrl ? (
+                  <a href={revision.documentUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+                    원천징수영수증 열기 (10분간 유효)
+                  </a>
+                ) : (
+                  <span className="text-sm text-muted-foreground">{revision.status === 'pending_review' || revision.status === 'on_hold' ? '문서를 불러올 수 없습니다.' : '심사 완료로 파기됨'}</span>
+                )}
+                {revision.businessCardUrl ? (
+                  <a href={revision.businessCardUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
+                    명함 열기 (10분간 유효)
+                  </a>
+                ) : (
+                  <span className="text-sm text-muted-foreground">{revision.status === 'pending_review' || revision.status === 'on_hold' ? '문서를 불러올 수 없습니다.' : '심사 완료로 파기됨'}</span>
+                )}
+              </div>
+            </div>
+            {revision.reviewReason && (
+              <div className="col-span-2 flex flex-col gap-0.5 sm:col-span-3">
+                <span className="text-xs text-muted-foreground">심사 사유</span>
+                <span className="text-sm">{revision.reviewReason}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

@@ -83,6 +83,10 @@ const MENU_GROUPS = [
       // 예전엔 목록(/top-designer)으로 갔지만, 오너 지시로 등록 진입점 우선 노출로
       // 바꿨다(2026-08-10) - 목록은 홈 "🏆 TOP 설계사 랭킹" 더보기로 계속 접근 가능하다.
       { href: '/top-designer/apply', label: 'TOP설계사 등록하기', icon: Award, tile: 'bg-amber-50 text-amber-600' },
+      // E(오너 지시, 2026-08-10) - 승인 후 직급/소속/연봉을 고칠 길이 없었다("수정이
+      // 없었던" 원인이 이 진입점 부재였다는 CTO 지적). apply와 별개 경로 -
+      // /top-designer/edit이 승인자 전용이고, 미승인자가 들어오면 notFound.
+      { href: '/top-designer/edit', label: 'TOP설계사 정보 수정하기', icon: Edit3, tile: 'bg-amber-50 text-amber-600' },
       { href: '/salary-ranking', label: '전국 설계사 연봉 랭킹', icon: TrendingUp, tile: 'bg-rose-50 text-rose-600' },
     ],
   },

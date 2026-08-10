@@ -188,6 +188,136 @@ export async function recordTopDesignerViewAction(certificationId: string): Prom
   await supabase.rpc('record_top_designer_view', { p_certification_id: certificationId });
 }
 
+export interface MyTopDesignerCertification {
+  id: string;
+  name: string;
+  gaCompanyId: string;
+  gaCompanyName: string;
+  branchName: string | null;
+  jobTitle: string;
+  careerYears: number | null;
+  selfIntroduction: string | null;
+  declaredAnnualIncomeKrw: number | null;
+  starTier: StarTier | null;
+  photoPath: string | null;
+  photoPublic: boolean | null;
+  status: 'pending_review' | 'on_hold' | 'approved' | 'rejected';
+  reviewReason: string | null;
+  pendingRevision: {
+    status: 'pending_review' | 'on_hold' | 'approved' | 'rejected';
+    reviewReason: string | null;
+  } | null;
+}
+
+/** 수정 화면(E) prefill용 - 내 인증 + (있으면) 진행 중인 재심사 제안 상태를 함께
+ * 반환한다. "수정이 없었던" 원인이 prefill 부재였다는 지적(CTO)을 그대로 반영 -
+ * 이 함수 없이는 수정 폼이 빈 값에서 시작해 사실상 재신청 폼과 다를 게 없었다. */
+export async function getMyTopDesignerCertificationAction(): Promise<MyTopDesignerCertification | null> {
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from('top_designer_certifications')
+    .select('id, name, ga_company_id, ga_company:ga_company_id(name), branch_name, job_title, career_years, self_introduction, declared_annual_income_krw, star_tier, photo_path, photo_public, status, review_reason')
+    .maybeSingle();
+  if (error || !data) return null;
+
+  const { data: revision } = await supabase
+    .from('top_designer_certification_revisions')
+    .select('status, review_reason')
+    .eq('certification_id', data.id)
+    .maybeSingle();
+
+  const gaCompany = data.ga_company as unknown as { name: string } | null;
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    gaCompanyId: data.ga_company_id as string,
+    gaCompanyName: gaCompany?.name ?? '',
+    branchName: data.branch_name as string | null,
+    jobTitle: data.job_title as string,
+    careerYears: data.career_years as number | null,
+    selfIntroduction: data.self_introduction as string | null,
+    declaredAnnualIncomeKrw: data.declared_annual_income_krw as number | null,
+    starTier: data.star_tier as StarTier | null,
+    photoPath: data.photo_path as string | null,
+    photoPublic: data.photo_public as boolean | null,
+    status: data.status as MyTopDesignerCertification['status'],
+    reviewReason: data.review_reason as string | null,
+    pendingRevision: revision
+      ? { status: revision.status as MyTopDesignerCertification['status'], reviewReason: revision.review_reason as string | null }
+      : null,
+  };
+}
+
+function describeProfileUpdateError(message: string): string {
+  if (message.includes('PHOTO_PUBLIC_CHOICE_REQUIRED')) return '프로필 사진 공개 여부를 선택해주세요.';
+  if (message.includes('NOT_APPROVED_CERTIFICATION')) return '승인된 TOP 설계사만 프로필을 수정할 수 있습니다.';
+  return '저장하지 못했습니다. 잠시 후 다시 시도해주세요.';
+}
+
+/** 즉시 반영 구간(E) - 자기소개/경력/사진. 심사 없이 바로 공개 화면에 반영된다. */
+export async function updateTopDesignerProfileAction(input: {
+  selfIntroduction?: string;
+  careerYears?: number;
+  photoPath?: string | null;
+  photoPublic?: boolean | null;
+}): Promise<ActionResult> {
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('update_top_designer_profile', {
+    p_self_introduction: input.selfIntroduction?.trim() || null,
+    p_career_years: input.careerYears ?? null,
+    p_photo_path: input.photoPath ?? null,
+    p_photo_public: input.photoPublic ?? null,
+  });
+  if (error) {
+    if (input.photoPath) await createAdminClient().storage.from('top-designer-profile-photos').remove([input.photoPath]);
+    return { success: false, error: describeProfileUpdateError(error.message) };
+  }
+  revalidatePath('/top-designer');
+  revalidatePath('/top-designer/edit');
+  return { success: true };
+}
+
+function describeRevisionError(message: string): string {
+  if (message.includes('MISSING_INCOME_DOCUMENT')) return '원천징수영수증을 업로드해주세요.';
+  if (message.includes('MISSING_BUSINESS_CARD')) return '명함을 업로드해주세요.';
+  if (message.includes('NOT_APPROVED_CERTIFICATION')) return '승인된 TOP 설계사만 재심사를 신청할 수 있습니다.';
+  if (message.includes('REVISION_ALREADY_PENDING')) return '이미 재심사 중인 신청이 있습니다.';
+  if (message.includes('INVALID_GA_COMPANY')) return 'GA를 선택해주세요.';
+  return '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';
+}
+
+export interface TopDesignerRevisionInput {
+  jobTitle: string;
+  gaCompanyId: string;
+  branchName?: string;
+  declaredAnnualIncomeKrw?: number;
+  incomeDocPath: string;
+  businessCardPath: string;
+}
+
+/** 재심사 구간(E) - 직급/소속GA/지점/신고연봉. 승인 전까지 공개 화면은 기존 값
+ * 그대로 노출된다(A안 - RPC가 원본 행을 건드리지 않으므로 코드 변경 없이 성립). */
+export async function submitTopDesignerCertificationRevisionAction(input: TopDesignerRevisionInput): Promise<ActionResult> {
+  await requireUser();
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('submit_top_designer_certification_revision', {
+    p_job_title: input.jobTitle.trim(),
+    p_ga_company_id: input.gaCompanyId,
+    p_income_doc_path: input.incomeDocPath,
+    p_business_card_path: input.businessCardPath,
+    p_branch_name: input.branchName?.trim() || null,
+    p_declared_annual_income_krw: input.declaredAnnualIncomeKrw ?? null,
+  });
+  if (error) {
+    await createAdminClient().storage.from('top-designer-income-docs').remove([input.incomeDocPath, input.businessCardPath]);
+    return { success: false, error: describeRevisionError(error.message) };
+  }
+  revalidatePath('/top-designer/edit');
+  return { success: true };
+}
+
 /** "더보기" 버튼 전용 - 클라이언트 컴포넌트에서 다음 페이지를 가져온다. 이 코드베이스는
  * 클라이언트 트리거 데이터 조회를 전부 Server Action으로 처리하고 별도 API 라우트를
  * 쓰지 않는 관례를 따른다. */

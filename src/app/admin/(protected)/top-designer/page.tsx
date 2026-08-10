@@ -79,7 +79,10 @@ export default async function AdminTopDesignerPage({ searchParams }: { searchPar
                     {new Date(item.createdAt).toLocaleDateString('ko-KR')}
                   </p>
                 </div>
-                <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
+                  {item.hasPendingRevision && <Badge variant="warning">재심사 중</Badge>}
+                </div>
               </Link>
             ))
           )}

@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import type { StarTier } from '@/lib/top-designer/labels';
 
 export type TopDesignerStatus = 'pending_review' | 'on_hold' | 'approved' | 'rejected';
+export type TopDesignerRevisionStatus = 'pending_review' | 'on_hold' | 'approved' | 'rejected';
 
 export interface TopDesignerListItem {
   id: string;
@@ -19,6 +20,10 @@ export interface TopDesignerListItem {
   ocrExtractedIncomeKrw: number | null;
   ocrConfidence: number | null;
   createdAt: string;
+  /** 승인된 인증에 대해 재심사 중(pending_review/on_hold)인 수정 제안이 있으면 true -
+   * 공개 화면/랭킹은 기존 승인값 그대로 노출되지만, 관리자 목록에서는 "재심사 중"을
+   * 놓치지 않도록 별도로 표시한다(E, CTO 지시 - 공개상태/심사상태 분리). */
+  hasPendingRevision: boolean;
 }
 
 interface TopDesignerRow {
@@ -45,8 +50,16 @@ async function toListItems(rows: TopDesignerRow[]): Promise<TopDesignerListItem[
   if (rows.length === 0) return [];
   const admin = createAdminClient();
   const gaCompanyIds = Array.from(new Set(rows.map((r) => r.ga_company_id)));
-  const { data: companies } = await admin.from('ga_company').select('id, name').in('id', gaCompanyIds);
+  const [{ data: companies }, { data: pendingRevisions }] = await Promise.all([
+    admin.from('ga_company').select('id, name').in('id', gaCompanyIds),
+    admin
+      .from('top_designer_certification_revisions')
+      .select('certification_id')
+      .in('certification_id', rows.map((r) => r.id))
+      .in('status', ['pending_review', 'on_hold']),
+  ]);
   const companyMap = new Map((companies ?? []).map((c) => [c.id, c.name]));
+  const pendingRevisionIds = new Set((pendingRevisions ?? []).map((r) => r.certification_id as string));
 
   return rows.map((row) => ({
     id: row.id,
@@ -63,6 +76,7 @@ async function toListItems(rows: TopDesignerRow[]): Promise<TopDesignerListItem[
     ocrExtractedIncomeKrw: row.ocr_extracted_income_krw,
     ocrConfidence: row.ocr_confidence,
     createdAt: row.created_at,
+    hasPendingRevision: pendingRevisionIds.has(row.id),
   }));
 }
 
@@ -120,5 +134,56 @@ export async function getTopDesignerCertificationDetail(id: string): Promise<Top
     applicantContact: user?.contact ?? '-',
     documentUrl: signedDoc.data?.signedUrl ?? null,
     businessCardUrl: signedCard.data?.signedUrl ?? null,
+  };
+}
+
+export interface TopDesignerRevisionDetail {
+  id: string;
+  certificationId: string;
+  jobTitle: string;
+  gaCompanyName: string;
+  branchName: string | null;
+  declaredAnnualIncomeKrw: number | null;
+  status: TopDesignerRevisionStatus;
+  reviewReason: string | null;
+  documentUrl: string | null;
+  businessCardUrl: string | null;
+  createdAt: string;
+}
+
+/** 승인된 인증에 재심사 중(또는 가장 최근 처리된) 수정 제안이 있으면 반환한다 -
+ * unique(certification_id)라 인증당 최대 1건이다. 없으면 null(정상 상태 - 수정
+ * 제안이 아예 없는 게 대부분이다). */
+export async function getTopDesignerRevisionForCertification(certificationId: string): Promise<TopDesignerRevisionDetail | null> {
+  const admin = createAdminClient();
+  const { data: row } = await admin
+    .from('top_designer_certification_revisions')
+    .select('*')
+    .eq('certification_id', certificationId)
+    .maybeSingle();
+  if (!row) return null;
+
+  const [{ data: company }, signedDoc, signedCard] = await Promise.all([
+    admin.from('ga_company').select('name').eq('id', row.ga_company_id).maybeSingle(),
+    row.income_doc_storage_path
+      ? admin.storage.from('top-designer-income-docs').createSignedUrl(row.income_doc_storage_path, 600)
+      : Promise.resolve({ data: null }),
+    row.business_card_path
+      ? admin.storage.from('top-designer-income-docs').createSignedUrl(row.business_card_path, 600)
+      : Promise.resolve({ data: null }),
+  ]);
+
+  return {
+    id: row.id,
+    certificationId: row.certification_id,
+    jobTitle: row.job_title,
+    gaCompanyName: company?.name ?? '알 수 없음',
+    branchName: row.branch_name,
+    declaredAnnualIncomeKrw: row.declared_annual_income_krw,
+    status: row.status,
+    reviewReason: row.review_reason,
+    documentUrl: signedDoc.data?.signedUrl ?? null,
+    businessCardUrl: signedCard.data?.signedUrl ?? null,
+    createdAt: row.created_at,
   };
 }

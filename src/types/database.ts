@@ -1262,6 +1262,28 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['top_designer_certifications']['Row']>;
         Relationships: [];
       };
+      top_designer_certification_revisions: {
+        Row: {
+          id: string;
+          certification_id: string;
+          user_id: string;
+          job_title: string;
+          ga_company_id: string;
+          branch_name: string | null;
+          declared_annual_income_krw: number | null;
+          income_doc_storage_path: string | null;
+          business_card_path: string | null;
+          status: 'pending_review' | 'on_hold' | 'approved' | 'rejected';
+          review_reason: string | null;
+          reviewed_by_admin_id: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['top_designer_certification_revisions']['Row']>;
+        Update: Partial<Database['public']['Tables']['top_designer_certification_revisions']['Row']>;
+        Relationships: [];
+      };
       branch_planner_registrations: {
         Row: {
           id: string;
@@ -2118,6 +2140,36 @@ export interface Database {
       admin_review_top_designer_certification: {
         Args: {
           p_certification_id: string;
+          p_decision: string;
+          p_star_tier?: string;
+          p_confirmed_income_krw?: number;
+          p_reason?: string;
+        };
+        Returns: undefined;
+      };
+      update_top_designer_profile: {
+        Args: {
+          p_self_introduction?: string | null;
+          p_career_years?: number | null;
+          p_photo_path?: string | null;
+          p_photo_public?: boolean | null;
+        };
+        Returns: undefined;
+      };
+      submit_top_designer_certification_revision: {
+        Args: {
+          p_job_title: string;
+          p_ga_company_id: string;
+          p_income_doc_path: string;
+          p_business_card_path: string;
+          p_branch_name?: string | null;
+          p_declared_annual_income_krw?: number | null;
+        };
+        Returns: string;
+      };
+      admin_review_top_designer_certification_revision: {
+        Args: {
+          p_revision_id: string;
           p_decision: string;
           p_star_tier?: string;
           p_confirmed_income_krw?: number;

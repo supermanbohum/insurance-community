@@ -81,3 +81,69 @@ export async function reviewTopDesignerCertificationAction(
   revalidatePath('/top-designer');
   return { success: true };
 }
+
+/** E(재심사) 관리자 처리 - 승인/보류/반려/재심사(보류→대기) 4단계는 최초 심사와
+ * 동일한 패턴이지만, 대상이 top_designer_certification_revisions다. 승인 시에만
+ * RPC가 원본 top_designer_certifications를 갱신한다 - 반려/보류는 원본을 건드리지
+ * 않으므로 "반려 시 기존 등급 유지"가 자동으로 성립한다(0091 설계).
+ *
+ * 서류 파기는 최초 심사와 동일한 이유(storage.protect_delete 트리거)로 RPC가 경로만
+ * null로 비우고, 여기서 Storage API로 실제 파일을 지운다. */
+export async function reviewTopDesignerCertificationRevisionAction(
+  revisionId: string,
+  certificationId: string,
+  decision: TopDesignerReviewDecision,
+  options: { starTier?: StarTier; confirmedIncomeKrw?: number; reason?: string } = {}
+): Promise<ActionResult> {
+  if (decision === 'approved' && (!options.starTier || !options.confirmedIncomeKrw)) {
+    return { success: false, error: '별등급과 확정 연봉을 입력해주세요.' };
+  }
+  if ((decision === 'on_hold' || decision === 'rejected') && !options.reason?.trim()) {
+    return { success: false, error: '사유를 입력해주세요.' };
+  }
+
+  const adminSession = await requireAdmin();
+  const supabase = createServerSupabaseClient();
+  const admin = createAdminClient();
+
+  let pathsToPurge: string[] = [];
+  if (decision === 'approved' || decision === 'rejected') {
+    const { data: row } = await admin
+      .from('top_designer_certification_revisions')
+      .select('income_doc_storage_path, business_card_path')
+      .eq('id', revisionId)
+      .maybeSingle();
+    pathsToPurge = [row?.income_doc_storage_path, row?.business_card_path].filter((p): p is string => Boolean(p));
+  }
+
+  const { error } = await supabase.rpc('admin_review_top_designer_certification_revision', {
+    p_revision_id: revisionId,
+    p_decision: decision,
+    p_star_tier: options.starTier,
+    p_confirmed_income_krw: options.confirmedIncomeKrw,
+    p_reason: options.reason?.trim() || undefined,
+  });
+
+  if (error) {
+    return { success: false, error: '처리하지 못했습니다.' };
+  }
+
+  if (pathsToPurge.length > 0) {
+    const { error: purgeError } = await admin.storage.from('top-designer-income-docs').remove(pathsToPurge);
+    if (purgeError) {
+      await admin.from('audit_logs').insert({
+        admin_id: adminSession.id,
+        target_type: 'top_designer_certification_revision',
+        target_id: revisionId,
+        action: 'document_purge_failed',
+        reason_detail: `파일 삭제 실패 - 수동 확인 필요: ${pathsToPurge.join(', ')} (${purgeError.message})`,
+      });
+    }
+  }
+
+  revalidatePath('/admin/top-designer');
+  revalidatePath(`/admin/top-designer/${certificationId}`);
+  revalidatePath('/top-designer');
+  revalidatePath(`/top-designer/${certificationId}`);
+  return { success: true };
+}
