@@ -2193,6 +2193,10 @@ export interface Database {
         Args: { p_limit?: number };
         Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_count: number; registered_count: number }[];
       };
+      get_ga_quality_ranking_by_region: {
+        Args: { p_sido_code: string; p_sigungu_region_id?: string | null; p_limit?: number };
+        Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_count: number; registered_count: number }[];
+      };
       submit_branch_planner_registration: {
         Args: {
           p_branch_id: string;

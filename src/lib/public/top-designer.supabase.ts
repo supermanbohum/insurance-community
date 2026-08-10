@@ -157,6 +157,41 @@ export async function listGaQualityRanking(limit = 10): Promise<GaQualityRanking
   }));
 }
 
+/** ⑨ 우리 동네 순위(오너 지시 "우리동네 제작해 만들어만둬") - listGaQualityRanking과
+ * 같은 점수 체계를 지역(시/도, 선택적으로 시/군/구까지)으로 좁힌 버전. 해석 B -
+ * "그 지역 지점 소속 인증자·등록자의 점수만 합산"(0093, get_ga_quality_ranking_by_region).
+ * 화면 위치/문구는 콘텐츠팀이 정할 예정이라 이 함수는 데이터만 준비해둔다. */
+export async function listGaQualityRankingByRegion(
+  sidoCode: string,
+  sigunguRegionId: string | null,
+  limit = 50
+): Promise<GaQualityRankingRow[]> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await supabase.rpc('get_ga_quality_ranking_by_region', {
+    p_sido_code: sidoCode,
+    p_sigungu_region_id: sigunguRegionId,
+    p_limit: limit,
+  });
+  if (error || !data) return [];
+  return (
+    data as {
+      ga_company_id: string;
+      ga_company_name: string;
+      ga_company_slug: string;
+      score: number;
+      certified_count: number;
+      registered_count: number;
+    }[]
+  ).map((row) => ({
+    gaCompanyId: row.ga_company_id,
+    gaCompanyName: row.ga_company_name,
+    gaCompanySlug: row.ga_company_slug,
+    score: row.score,
+    certifiedCount: row.certified_count,
+    registeredCount: row.registered_count,
+  }));
+}
+
 /** sitemap.xml 전용 - 공개 인증 id/등록일만 가볍게 조회한다. 마이그레이션이 아직
  * 적용되지 않은 배포 환경에서도 sitemap.xml 빌드 전체가 깨지지 않도록 조회 실패 시
  * 빈 배열로 폴백한다(throw하지 않음). */
