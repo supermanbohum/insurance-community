@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { toast } from 'sonner';
 import { Share2 } from 'lucide-react';
-import { loadKakaoSdk } from '@/lib/kakao/loadKakaoSdk';
+import { useKakaoShare } from '@/lib/kakao/useKakaoShare';
 import { cn } from '@/lib/utils';
 
 /**
@@ -30,34 +28,12 @@ export function KakaoShareButton({
   url: string;
   className?: string;
 }) {
-  const [isPending, setIsPending] = useState(false);
-
-  async function handleClick() {
-    setIsPending(true);
-    try {
-      const Kakao = await loadKakaoSdk();
-      Kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title,
-          description,
-          imageUrl,
-          link: { mobileWebUrl: url, webUrl: url },
-        },
-        buttons: [{ title: '자세히 보기', link: { mobileWebUrl: url, webUrl: url } }],
-      });
-    } catch (err) {
-      console.error('[KakaoShareButton] 공유 실패', err);
-      toast.error('카카오톡 공유를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
-    } finally {
-      setIsPending(false);
-    }
-  }
+  const { share, isPending } = useKakaoShare({ title, description, imageUrl, url });
 
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={share}
       disabled={isPending}
       aria-label="카카오톡으로 공유하기"
       className={cn(

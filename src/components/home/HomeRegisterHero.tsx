@@ -3,6 +3,7 @@ import { Megaphone, MessageSquareText, Plus, UserPlus } from 'lucide-react';
 import type { HomeStats } from '@/lib/public/branch';
 import { StatCountUp } from '@/components/home/StatCountUp';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
+import { GlobalShareButton } from '@/components/shared/GlobalShareButton';
 
 /**
  * 헤더에 이미 로고+검색창이 있어(BohomMapHeader) 예전 HeroSearch가 그걸 그대로
@@ -114,6 +115,8 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           <span className="text-[11px] font-bold text-ink-soft">실시간 후기</span>
         </Link>
       </div>
+
+      <GlobalShareButton variant="home" />
 
       <div className="flex flex-col gap-1.5">
         {showBranchNumber ? (

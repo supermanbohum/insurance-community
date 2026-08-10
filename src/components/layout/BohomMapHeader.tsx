@@ -24,6 +24,7 @@ import {
 import { SearchCombobox } from '@/components/search/SearchCombobox';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { AnimatedHeaderBrandMark } from '@/components/brand/AnimatedHeaderBrandMark';
+import { GlobalShareButton } from '@/components/shared/GlobalShareButton';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -165,7 +166,8 @@ export function BohomMapHeader() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <nav className="flex flex-col gap-6">
+              <GlobalShareButton variant="menu" onClick={() => setMenuOpen(false)} />
+              <nav className="mt-1 flex flex-col gap-6">
                 {MENU_GROUPS.map((group) => (
                   <div key={group.label} className="flex flex-col gap-1">
                     <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">{group.label}</p>
