@@ -1,3 +1,3 @@
-export type { SidoGroup, SigunguItem } from './region.supabase';
+export type { SidoGroup, SigunguItem, SigunguRegion } from './region.supabase';
 
-export { listSidoGroups, listSigunguBySido, getRegionById, listAllRegionsForSitemap } from './region.supabase';
+export { listSidoGroups, listSigunguBySido, listAllSigunguRegions, getRegionById, listAllRegionsForSitemap } from './region.supabase';

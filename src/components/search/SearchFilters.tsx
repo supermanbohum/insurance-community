@@ -12,6 +12,7 @@ export function SearchFilters({
   query,
   sort,
   region,
+  sigungu,
   gaIds,
   minPlanners,
   parking,
@@ -22,6 +23,7 @@ export function SearchFilters({
   query: string;
   sort: string;
   region: string;
+  sigungu?: string;
   gaIds: string[];
   minPlanners: number;
   parking: string;
@@ -36,6 +38,7 @@ export function SearchFilters({
     if (query) params.set('q', query);
     if (value !== 'recommended') params.set('sort', value);
     if (region) params.set('region', region);
+    if (sigungu) params.set('sigungu', sigungu);
     if (gaIds.length > 0) params.set('ga', gaIds.join(','));
     if (minPlanners > 0) params.set('minPlanners', String(minPlanners));
     if (parking) params.set('parking', parking);

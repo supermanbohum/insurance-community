@@ -32,6 +32,9 @@ export interface SearchFilterCurrent {
   query: string;
   sort: string;
   region: string;
+  /** 시/군/구 region_id - B2(2단 드릴다운). region 없이는 의미 없다. 지도(map) 등
+   * 아직 드릴다운을 배선하지 않은 화면은 이 필드를 생략할 수 있다. */
+  sigungu?: string;
   gaIds: string[];
   minPlanners: number;
   parking: '' | 'true' | 'false';
@@ -43,17 +46,20 @@ export interface SearchFilterCurrent {
 export function SearchFilterButton({
   current,
   regionOptions,
+  sigunguOptions = [],
   gaOptions,
   basePath = '/search',
 }: {
   current: SearchFilterCurrent;
   regionOptions: { sidoCode: string; sidoName: string }[];
+  sigunguOptions?: { regionId: string; sidoCode: string; sigunguName: string }[];
   gaOptions: { id: string; name: string }[];
   basePath?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [draftRegion, setDraftRegion] = useState(current.region);
+  const [draftSigungu, setDraftSigungu] = useState(current.sigungu ?? '');
   const [draftGaIds, setDraftGaIds] = useState<string[]>(current.gaIds);
   const [draftMinPlanners, setDraftMinPlanners] = useState(current.minPlanners);
   const [draftParking, setDraftParking] = useState<'' | 'true' | 'false'>(current.parking);
@@ -64,6 +70,7 @@ export function SearchFilterButton({
   useEffect(() => {
     if (open) {
       setDraftRegion(current.region);
+      setDraftSigungu(current.sigungu ?? '');
       setDraftGaIds(current.gaIds);
       setDraftMinPlanners(current.minPlanners);
       setDraftParking(current.parking);
@@ -80,6 +87,7 @@ export function SearchFilterButton({
     current.structure,
     current.hasHighIncomePlanners,
     current.plannerTiers,
+    current.sigungu,
   ]);
 
   const activeCount =
@@ -103,6 +111,7 @@ export function SearchFilterButton({
     if (current.query) params.set('q', current.query);
     if (current.sort !== 'recommended') params.set('sort', current.sort);
     if (draftRegion) params.set('region', draftRegion);
+    if (draftRegion && draftSigungu) params.set('sigungu', draftSigungu);
     if (draftGaIds.length > 0) params.set('ga', draftGaIds.join(','));
     if (draftMinPlanners > 0) params.set('minPlanners', String(draftMinPlanners));
     if (draftParking) params.set('parking', draftParking);
@@ -117,6 +126,7 @@ export function SearchFilterButton({
 
   function reset() {
     setDraftRegion('');
+    setDraftSigungu('');
     setDraftGaIds([]);
     setDraftMinPlanners(0);
     setDraftParking('');
@@ -204,15 +214,44 @@ export function SearchFilterButton({
                 <section className="flex flex-col gap-2.5">
                   <h3 className="text-sm font-bold text-ink">지역</h3>
                   <div className="grid grid-cols-4 gap-1.5">
-                    <FilterPill active={draftRegion === ''} onClick={() => setDraftRegion('')}>
+                    <FilterPill
+                      active={draftRegion === ''}
+                      onClick={() => {
+                        setDraftRegion('');
+                        setDraftSigungu('');
+                      }}
+                    >
                       전체
                     </FilterPill>
                     {regionOptions.map((r) => (
-                      <FilterPill key={r.sidoCode} active={draftRegion === r.sidoCode} onClick={() => setDraftRegion(r.sidoCode)}>
+                      <FilterPill
+                        key={r.sidoCode}
+                        active={draftRegion === r.sidoCode}
+                        onClick={() => {
+                          // 시/도를 바꾸면 이전 시/도의 시/군/구 선택은 의미가 없어진다 -
+                          // 매번 새로 드릴다운하게 한다(B2, SPEC-031 §2.5).
+                          setDraftRegion(r.sidoCode);
+                          setDraftSigungu('');
+                        }}
+                      >
                         {r.sidoName.replace(/(특별자치시|특별자치도|광역시|특별시|도)$/, '')}
                       </FilterPill>
                     ))}
                   </div>
+                  {draftRegion && (
+                    <div className="flex flex-wrap gap-1.5 rounded-xl bg-surface-sunken p-2">
+                      <FilterPill active={draftSigungu === ''} onClick={() => setDraftSigungu('')}>
+                        전체
+                      </FilterPill>
+                      {sigunguOptions
+                        .filter((s) => s.sidoCode === draftRegion)
+                        .map((s) => (
+                          <FilterPill key={s.regionId} active={draftSigungu === s.regionId} onClick={() => setDraftSigungu(s.regionId)}>
+                            {s.sigunguName}
+                          </FilterPill>
+                        ))}
+                    </div>
+                  )}
                 </section>
 
                 <section className="flex flex-col gap-2.5">

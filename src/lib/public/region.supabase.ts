@@ -87,6 +87,31 @@ export const listSigunguBySido = cache(async function listSigunguBySido(
   };
 });
 
+export interface SigunguRegion {
+  regionId: string;
+  sidoCode: string;
+  sigunguName: string;
+}
+
+/** B2(오너 지시, 2026-08-10) - 검색 필터의 지역 칩을 시/도→시/군/구 2단 드릴다운으로
+ * 만들기 위해 전국 시/군/구 목록을 한 번에 가져온다. regions 테이블 전체가 229행뿐이라
+ * (listAllRegionsForSitemap과 동일 근거) 필터 시트를 열 때마다 매번 통째로 내려줘도
+ * 무겁지 않다 - 사용자가 시/도를 바꿀 때마다 서버 왕복 없이 클라이언트에서
+ * sidoCode로 걸러 보여준다. "동" 단계는 만들지 않는다(법정동 데이터 미해결,
+ * regions 테이블 자체에 그 레벨이 없다 - 오너 지시 "동 노출 0"). */
+export async function listAllSigunguRegions(): Promise<SigunguRegion[]> {
+  const supabase = createPublicSupabaseClient();
+  const { data, error } = await supabase
+    .from('regions')
+    .select('id, sido_code, sigungu_name')
+    .not('sigungu_code', 'is', null)
+    .order('sort_order');
+  if (error) throw error;
+  return (data ?? [])
+    .filter((r) => r.sigungu_name)
+    .map((r) => ({ regionId: r.id, sidoCode: r.sido_code, sigunguName: r.sigungu_name as string }));
+}
+
 export async function getRegionById(regionId: string) {
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase.from('regions').select('*').eq('id', regionId).maybeSingle();

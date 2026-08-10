@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Search } from 'lucide-react';
 import { listGaFilterOptions, splitRegisteredGaIds } from '@/lib/public/ga-directory';
 import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
-import { listSidoGroups } from '@/lib/public/region';
+import { listSidoGroups, listAllSigunguRegions } from '@/lib/public/region';
 import { BranchCard } from '@/components/branch/BranchCard';
 import { EmptyBranchResults } from '@/components/branch/EmptyBranchResults';
 import { SearchCombobox } from '@/components/search/SearchCombobox';
@@ -33,6 +33,7 @@ export default async function SearchPage({
     q?: string;
     sort?: string;
     region?: string;
+    sigungu?: string;
     ga?: string;
     minPlanners?: string;
     parking?: string;
@@ -46,6 +47,7 @@ export default async function SearchPage({
     ? (searchParams.sort as BranchSortOption)
     : 'recommended';
   const region = searchParams.region?.trim() ?? '';
+  const sigunguParam = searchParams.sigungu?.trim() ?? '';
   const gaIds = searchParams.ga ? searchParams.ga.split(',').filter(Boolean) : [];
   const minPlanners = Number(searchParams.minPlanners) > 0 ? Number(searchParams.minPlanners) : 0;
   const parking: '' | 'true' | 'false' =
@@ -66,12 +68,15 @@ export default async function SearchPage({
   const shouldSearch = Boolean(q) || hasFilters || hasExplicitSort;
   const { registeredIds: registeredGaIds, hasUnregisteredOnly } = splitRegisteredGaIds(gaIds);
 
-  const [branchResults, regions, allGaOptions] = await Promise.all([
+  const [branchResults, regions, allSigunguRegions, allGaOptions] = await Promise.all([
     shouldSearch && !hasUnregisteredOnly
       ? listPublicBranches({
           q: q || undefined,
           sort,
-          sidoCode: region || undefined,
+          // B2 - 시/군/구까지 고른 경우 정확히 그 region_id 하나로 좁힌다(사이드코드
+          // 광역 매칭보다 우선). sigunguParam이 region에 안 속하면 아래에서 무시된다.
+          regionId: sigunguParam || undefined,
+          sidoCode: !sigunguParam && region ? region : undefined,
           gaCompanyIds: registeredGaIds.length > 0 ? registeredGaIds : undefined,
           minPlannerCount: minPlanners || undefined,
           parkingAvailable: parking === 'true' ? true : parking === 'false' ? false : undefined,
@@ -81,22 +86,30 @@ export default async function SearchPage({
         })
       : Promise.resolve([]),
     listSidoGroups(),
+    listAllSigunguRegions(),
     listGaFilterOptions(),
   ]);
+
+  // sigunguParam이 region에 속하지 않는 낡은/조작된 링크면 무시한다(2단 드릴다운이라
+  // 시/도 없이 시/군/구만 오는 조합은 애초에 유효하지 않다).
+  const sigungu = sigunguParam && allSigunguRegions.some((s) => s.regionId === sigunguParam && s.sidoCode === region) ? sigunguParam : '';
 
   const totalCount = branchResults.length;
 
   const gaNameById = new Map(allGaOptions.map((ga) => [ga.id, ga.name]));
   const regionNameByCode = new Map(regions.map((r) => [r.sidoCode, r.sidoName]));
+  const sigunguNameById = new Map(allSigunguRegions.map((s) => [s.regionId, s.sigunguName]));
 
   function paramsWithout(
-    exclude: 'region' | 'ga' | 'minPlanners' | 'parking' | 'structure' | 'highIncome',
+    exclude: 'region' | 'sigungu' | 'ga' | 'minPlanners' | 'parking' | 'structure' | 'highIncome',
     excludeGaId?: string
   ): string {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (sort !== 'recommended') params.set('sort', sort);
     if (region && exclude !== 'region') params.set('region', region);
+    // 시/도를 뺄 때는 그 아래 시/군/구도 같이 뺀다 - 상위 없이 하위만 남는 조합은 없다.
+    if (sigungu && exclude !== 'sigungu' && exclude !== 'region') params.set('sigungu', sigungu);
     const nextGaIds = exclude === 'ga' ? gaIds.filter((id) => id !== excludeGaId) : gaIds;
     if (nextGaIds.length > 0) params.set('ga', nextGaIds.join(','));
     if (minPlanners > 0 && exclude !== 'minPlanners') params.set('minPlanners', String(minPlanners));
@@ -111,7 +124,13 @@ export default async function SearchPage({
 
   const chips: FilterChip[] = [
     ...(region
-      ? [{ key: 'region', label: regionNameByCode.get(region) ?? region, href: `/search?${paramsWithout('region')}` }]
+      ? [
+          {
+            key: 'region',
+            label: sigungu ? `${regionNameByCode.get(region) ?? region} ${sigunguNameById.get(sigungu) ?? ''}` : regionNameByCode.get(region) ?? region,
+            href: `/search?${paramsWithout('region')}`,
+          },
+        ]
       : []),
     ...(structure
       ? [{ key: 'structure', label: structure === 'direct' ? '직영' : '지사', href: `/search?${paramsWithout('structure')}` }]
@@ -153,8 +172,9 @@ export default async function SearchPage({
           />
         </div>
         <SearchFilterButton
-          current={{ query: q, sort, region, gaIds, minPlanners, parking, structure, hasHighIncomePlanners, plannerTiers }}
+          current={{ query: q, sort, region, sigungu, gaIds, minPlanners, parking, structure, hasHighIncomePlanners, plannerTiers }}
           regionOptions={regions}
+          sigunguOptions={allSigunguRegions}
           gaOptions={allGaOptions.map((ga) => ({ id: ga.id, name: ga.name }))}
         />
       </div>
@@ -190,6 +210,7 @@ export default async function SearchPage({
               query={q}
               sort={sort}
               region={region}
+              sigungu={sigungu}
               gaIds={gaIds}
               minPlanners={minPlanners}
               parking={parking}
