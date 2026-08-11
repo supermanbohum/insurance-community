@@ -528,6 +528,34 @@ export function OnboardingForm({
 
       {step === 1 && (
         <>
+          {/* 준비물 안내(콘텐츠 확정 문구). 무엇이 필요한지를 3단계에 가서야 알던 구조가
+              이탈의 원인이라, 시작 지점에 모아 둔다.
+              🔴 순서를 바꾸지 말 것 - "5분이면 끝납니다"가 목록보다 먼저다. 목록이 앞에
+              오면 그 자체가 문턱으로 읽힌다. 각 항목의 "왜" 한 줄과 "필요하지 않은 것"도
+              같은 이유로 뺄 수 없다.
+              🔴 마지막 줄은 약속이라 구현을 확인하고 썼다. 임시저장(0047)은 텍스트 9개
+              필드만 저장하고 사진은 저장하지 않는다. 그래서 "작성하신 내용"이 아니라
+              "작성하신 글"로, "이어서"가 아니라 "다시 오셔서"로 적었다 - 사진까지
+              보관됐다가 이어진다고 읽히면 그건 지킬 수 없는 약속이 된다. */}
+          <Card className="border-brand-200 bg-brand-50/60">
+            <CardContent className="flex flex-col gap-3 pt-5">
+              <p className="text-[15px] font-extrabold tracking-tight text-ink">미리 준비하시면 5분이면 끝납니다</p>
+              <ul className="flex flex-col gap-1.5 text-[13px] text-ink-soft">
+                <li>· 등록자 명함 — 소속과 직급 확인에 사용합니다</li>
+                <li>· 대표 홍보사진 1장 이상</li>
+                <li>· 사무실 사진 5장 이상 — 실제 지점임을 확인하는 자료입니다</li>
+                <li>· 직책</li>
+              </ul>
+              <p className="text-[13px] font-semibold text-ink-soft">
+                사업자등록증과 임대차계약서는 필요하지 않습니다.
+              </p>
+              <p className="text-[13px] text-ink-soft">
+                지금 사진이 없어도 시작하실 수 있습니다 — 작성하신 글은 저장되니, 사진은 나중에 다시 오셔서
+                올리셔도 됩니다.
+              </p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">등록자 정보</CardTitle>
