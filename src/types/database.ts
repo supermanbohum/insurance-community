@@ -1264,6 +1264,25 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['top_designer_certifications']['Row']>;
         Relationships: [];
       };
+      map_external_pois: {
+        Row: {
+          id: string;
+          source: string;
+          external_id: string;
+          name: string;
+          address: string | null;
+          road_address: string | null;
+          phone: string | null;
+          lat: number;
+          lng: number;
+          collected_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['map_external_pois']['Row']>;
+        Update: Partial<Database['public']['Tables']['map_external_pois']['Row']>;
+        Relationships: [];
+      };
       top_designer_certification_revisions: {
         Row: {
           id: string;
@@ -2194,6 +2213,10 @@ export interface Database {
       get_ga_quality_ranking: {
         Args: { p_limit?: number };
         Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_count: number; registered_count: number }[];
+      };
+      admin_upsert_external_pois: {
+        Args: { p_source: string; p_pois: unknown };
+        Returns: number;
       };
       admin_set_branch_pro: {
         Args: { p_branch_id: string; p_until?: string | null };
