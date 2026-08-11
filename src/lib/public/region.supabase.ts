@@ -60,9 +60,13 @@ export async function listSidoGroups(): Promise<SidoGroup[]> {
   for (const row of data ?? []) {
     if (!seen.has(row.sido_code)) seen.set(row.sido_code, row.sido_name);
   }
+  // 🔴 여기서 이름순으로 다시 정렬하지 않는다. 23행이 이미 sort_order로 정렬해
+  // 가져오고(서울 1001 → 경기 2001 → 부산 3001 …), Map은 삽입 순서를 보존하므로
+  // 그 순서가 그대로 유지된다. 예전에 localeCompare로 재정렬하는 줄이 있었는데,
+  // 그 한 줄이 DB 정렬을 통째로 무효화해서 "강원 → 경기 → … → 서울(9번째)"이
+  // 나왔다. 지역 순서는 가나다순이 아니라 서울·경기 우선이 사양이다.
   return Array.from(seen.entries())
-    .map(([sidoCode, sidoName]) => ({ sidoCode, sidoName, branchCount: branchCountBySido.get(sidoCode) ?? 0 }))
-    .sort((a, b) => a.sidoName.localeCompare(b.sidoName, 'ko'));
+    .map(([sidoCode, sidoName]) => ({ sidoCode, sidoName, branchCount: branchCountBySido.get(sidoCode) ?? 0 }));
 }
 
 // generateMetadata와 페이지 컴포넌트가 같은 요청 안에서 각각 호출하므로 react cache()로

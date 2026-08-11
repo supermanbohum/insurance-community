@@ -23,14 +23,15 @@ export function RegionSelect({
     for (const r of regions) {
       if (!seen.has(r.sido_code)) seen.set(r.sido_code, r.sido_name);
     }
-    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1], 'ko'));
+    // 🔴 이름순 재정렬 금지 - regions는 이미 sort_order 순으로 넘어온다(서울·경기 우선).
+    // 여기서 localeCompare로 다시 묶으면 그 순서가 통째로 무효화된다.
+    return Array.from(seen.entries());
   }, [regions]);
 
   const sigunguList = useMemo(
     () =>
-      regions
-        .filter((r) => r.sido_code === sidoCode && r.sigungu_code)
-        .sort((a, b) => a.sigungu_name!.localeCompare(b.sigungu_name!, 'ko')),
+      // 시군구도 sort_order가 이미 ㄱㄴㄷ으로 매겨져 있다(서울: 강남구 1001 … 중랑구 1025).
+      regions.filter((r) => r.sido_code === sidoCode && r.sigungu_code),
     [regions, sidoCode]
   );
 
