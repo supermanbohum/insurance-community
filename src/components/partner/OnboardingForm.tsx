@@ -49,8 +49,10 @@ const PLANNER_COUNT_OPTIONS = [
 
 const TAGLINE_PLACEHOLDER = '예: 신입 정착률이 높은 지점 / 2030 설계사 환영 / DB 지원';
 const MIN_INTRO_LENGTH = 50;
-const MIN_OFFICE_PHOTOS = 3;
-const MAX_OFFICE_PHOTOS = 10;
+// 🔴 승인 함수(review_branch_registration, 0100)가 image_office < 5를 거부한다.
+// 폼이 이보다 느슨하면 3~4장으로 제출은 되는데 승인은 영구히 안 되는 상태가 만들어지고,
+// 사용자는 왜 반려되는지 알 수 없다. 이 값은 DB 검증과 반드시 같아야 한다.
+const MIN_OFFICE_PHOTOS = 5;
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const DOC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
@@ -139,7 +141,6 @@ export function OnboardingForm({
     phone: initialDraft?.registrant?.phone ?? signupContact ?? '',
     branchLabel: initialDraft?.registrant?.branchLabel ?? '',
   });
-  const [leaseContract, setLeaseContract] = useState<File | null>(null);
   const [businessCard, setBusinessCard] = useState<File | null>(null);
   const [gaCompanyId, setGaCompanyId] = useState<string | null>(initialDraft?.gaCompanyId ?? signupGaCompanyId ?? null);
   const gaName = gaOptions.find((g) => g.id === gaCompanyId)?.name ?? '';
@@ -205,7 +206,8 @@ export function OnboardingForm({
   const introRemaining = MIN_INTRO_LENGTH - introText.trim().length;
   const registrantComplete = REGISTRANT_FIELDS.every((f) => registrant[f.key].trim());
   const step1Complete = Boolean(gaName && addressValue.address && tagline.trim() && introText.trim().length >= MIN_INTRO_LENGTH && registrantComplete);
-  const step2Complete = Boolean(leaseContract && businessCard);
+  // 임대차계약서는 더 이상 받지 않는다(오너 지시). 승인도 명함만 본다(0100).
+  const step2Complete = Boolean(businessCard);
   const canSubmit = step1Complete && step2Complete && Boolean(mainPhoto) && officePhotos.length >= MIN_OFFICE_PHOTOS;
 
   function pickMainPhoto(files: FileList | null) {
@@ -238,7 +240,8 @@ export function OnboardingForm({
     if (accepted.length < files.length) {
       toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
     }
-    setOfficePhotos((prev) => [...prev, ...accepted].slice(0, MAX_OFFICE_PHOTOS));
+    // 상한 없음(오너 지시 2026-08-11) - 0099/0100도 상한 검사를 두지 않는다.
+    setOfficePhotos((prev) => [...prev, ...accepted]);
   }
 
   function removeOfficePhoto(index: number) {
@@ -309,7 +312,9 @@ export function OnboardingForm({
       return;
     }
 
-    const totalSteps = (mainPhoto ? 1 : 0) + officePhotos.length + 2 + (video ? 1 : 0);
+    // 서류는 명함 1개다(임대차계약서를 더 이상 받지 않는다). 여기 숫자가 실제 업로드
+    // 횟수보다 크면 진행률이 100%에 도달하지 못하고 멈춘 것처럼 보인다.
+    const totalSteps = (mainPhoto ? 1 : 0) + officePhotos.length + 1 + (video ? 1 : 0);
     setUploadProgress({ done: 0, total: totalSteps });
 
     if (mainPhoto) {
@@ -326,11 +331,6 @@ export function OnboardingForm({
       await uploadPartnerBranchPhotoAction(result.branchId, fd, false, i);
       setUploadProgress((p) => (p ? { done: p.done + 1, total: p.total } : p));
     }
-
-    const leaseFd = new FormData();
-    leaseFd.set('file', leaseContract!);
-    await uploadRegistrationDocumentAction(result.registrationId, 'lease_contract', leaseFd);
-    setUploadProgress((p) => (p ? { done: p.done + 1, total: p.total } : p));
 
     const cardFd = new FormData();
     cardFd.set('file', businessCard!);
@@ -359,7 +359,7 @@ export function OnboardingForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!canSubmit || !mainPhoto || !leaseContract || !businessCard) return;
+    if (!canSubmit || !mainPhoto || !businessCard) return;
     startTransition(runSubmit);
   }
 
@@ -397,11 +397,6 @@ export function OnboardingForm({
       fd.set('file', officePhotos[i]);
       // eslint-disable-next-line no-await-in-loop
       await uploadPartnerBranchPhotoAction(result.branchId, fd, false, i);
-    }
-    if (leaseContract) {
-      const fd = new FormData();
-      fd.set('file', leaseContract);
-      await uploadRegistrationDocumentAction(result.registrationId, 'lease_contract', fd);
     }
     if (businessCard) {
       const fd = new FormData();
@@ -598,30 +593,13 @@ export function OnboardingForm({
               <CardTitle className="text-base">필수 서류</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
+              {/* 임대차계약서 칸을 지웠다(오너 지시). 승인 함수도 명함만 본다(0100).
+                  🔴 남은 칸이 하나뿐이라 2열 그리드를 1열로 되돌린다 - 그대로 두면
+                  명함 칸이 화면 절반만 차지하고 옆이 비어 잘린 것처럼 보인다. */}
               <p className="text-xs text-muted-foreground">
-                임대차계약서와 등록자 명함을 첨부해주세요. 실제 지점 확인 및 운영팀 승인에만 사용되며 외부에 노출되지 않습니다.
+                등록자 명함을 첨부해주세요. 실제 지점 확인 및 운영팀 승인에만 사용되며 외부에 노출되지 않습니다.
               </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <Label>임대차계약서</Label>
-                  {leaseContract ? (
-                    <div className="flex items-center justify-between rounded-xl border border-line px-3 py-2.5 text-sm">
-                      <span className="flex items-center gap-1.5 truncate text-ink-soft">
-                        <FileText className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{leaseContract.name}</span>
-                      </span>
-                      <button type="button" onClick={() => setLeaseContract(null)} aria-label="임대차계약서 삭제">
-                        <X className="h-4 w-4 text-ink-faint" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-4 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600">
-                      <FileText className="h-4 w-4" />
-                      파일 선택 (jpg/png/pdf)
-                      <input type="file" accept={DOC_TYPES.join(',')} className="hidden" onChange={(e) => pickDoc(e.target.files, setLeaseContract)} />
-                    </label>
-                  )}
-                </div>
+              <div className="grid grid-cols-1 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <Label>등록자 명함</Label>
                   {businessCard ? (
@@ -731,7 +709,6 @@ export function OnboardingForm({
               <label
                 className={cn(
                   'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line py-8 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600',
-                  officePhotos.length >= MAX_OFFICE_PHOTOS && 'pointer-events-none opacity-50'
                 )}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -740,7 +717,7 @@ export function OnboardingForm({
                 }}
               >
                 <ImagePlus className="h-6 w-6" />
-                사진을 드래그하거나 눌러서 선택하세요 ({officePhotos.length}/{MAX_OFFICE_PHOTOS})
+                사진을 드래그하거나 눌러서 선택하세요 ({officePhotos.length}장 선택됨)
                 <input
                   type="file"
                   accept={IMAGE_TYPES.join(',')}
