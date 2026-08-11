@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { loadNaverMapsSdk } from '@/lib/naver-maps/loadNaverMapsSdk';
 import type { MapBoundsLike, MapControllerLike } from './mapController';
 import type { MapBranch } from './types';
+import type { ExternalPoi } from '@/lib/public/external-poi.supabase';
 
 const DEFAULT_CENTER: [number, number] = [36.4, 127.9];
 const DEFAULT_ZOOM = 7;
@@ -43,15 +44,35 @@ function pinIconHtml(operationType: 'direct' | 'branch', active: boolean, hasPla
 
 const CLUSTER_TIERS = [36, 42, 48, 54];
 
+/** 클러스터는 이제 "미등록(외부 수집) 지점" 전용이다 - 등록 지점은 클러스터에 넣지
+ * 않고 항상 개별 핀으로 최상위에 그린다(SPEC-037). 지금 등록 지점이 0개고 미등록이
+ * 수천 개가 될 예정이라, 섞으면 등록 1개가 수천 개에 묻힌다.
+ *
+ * 🔴 그래서 클러스터 원은 브랜드색이 아니라 회색이다. 브랜드색을 쓰면 우리가 수집만
+ * 해온 곳이 우리 지점처럼 보인다. */
 function clusterIconHtml(size: number) {
   return `
     <div style="
       display:flex;align-items:center;justify-content:center;
       width:${size}px;height:${size}px;border-radius:9999px;
-      background:#2f6bff;color:#fff;font-weight:800;font-size:${Math.round(size * 0.34)}px;
-      box-shadow:0 3px 10px rgba(47,107,255,0.45),0 0 0 4px rgba(47,107,255,0.16);
-      border:2.5px solid #fff;
+      background:#98A2B3;color:#fff;font-weight:800;font-size:${Math.round(size * 0.34)}px;
+      box-shadow:0 2px 6px rgba(15,23,42,0.2);
+      border:2px solid #fff;
     "><span class="cluster-count"></span></div>`;
+}
+
+/** 미등록 지점 마커 - 회색 무광 도트. 핀(등록)과 형태부터 다른 이유는 색만 다르면
+ * "등급 차"로 읽히기 때문이다(SPEC-037). 테두리·그림자·라벨이 전부 없다 -
+ * 🔴 특히 라벨(상호)은 어느 줌에서도 띄우지 않는다. 우리가 검증하지 않은 실존 상호를
+ * 지도 위에 글자로 박아두면 그 자체가 오용이 된다. */
+const EXTERNAL_DOT_SIZE = 20;
+
+function externalDotHtml() {
+  return `
+    <div style="
+      width:${EXTERNAL_DOT_SIZE}px;height:${EXTERNAL_DOT_SIZE}px;border-radius:9999px;
+      background:#98A2B3;opacity:0.85;
+    "></div>`;
 }
 
 function myLocationHtml() {
@@ -88,8 +109,10 @@ function toBoundsLike(bounds: naver.maps.LatLngBounds): MapBoundsLike {
 
 export function NaverMapView({
   branches,
+  externalPois = [],
   selectedId,
   onSelect,
+  onSelectExternal,
   onBoundsChanged,
   flyToTarget,
   onMapReady,
@@ -98,8 +121,11 @@ export function NaverMapView({
   myLocation,
 }: {
   branches: MapBranch[];
+  /** ⑪ 아직 등록되지 않은(외부 수집) 지점 - 회색 도트로만 그리고 클러스터에 넣는다. */
+  externalPois?: ExternalPoi[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onSelectExternal?: (id: string) => void;
   onBoundsChanged: (bounds: MapBoundsLike, userInitiated: boolean) => void;
   flyToTarget: { id: string; token: number } | null;
   onMapReady?: (controller: MapControllerLike) => void;
@@ -201,8 +227,14 @@ export function NaverMapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 마커 갱신 - branches/selectedId가 바뀔 때마다 클러스터를 통째로 다시 구성한다
-  // (Leaflet 버전과 동일하게 diff 없이 전체 재생성 - 지점 수가 수천 단위가 아니면 충분히 빠르다).
+  // 마커 갱신 - 등록/미등록을 서로 다른 경로로 그린다(SPEC-037).
+  //
+  //   등록(branches)      map에 직접 붙인다. 클러스터에 넣지 않는다.
+  //   미등록(externalPois) 클러스터에만 넣는다.
+  //
+  // 🔴 등록을 클러스터에서 뺀 것이 이 변경의 핵심이다. 예전엔 둘 다 클러스터에 넣었는데,
+  // 미등록이 수천 개가 될 예정이라 그대로 두면 등록 지점 1개가 회색 클러스터 원 안으로
+  // 흡수돼 화면에서 사라진다. 등록은 항상 개별 핀으로, 항상 클러스터 위에 있어야 한다.
   useEffect(() => {
     const map = mapRef.current;
     const cluster = clusterRef.current;
@@ -212,7 +244,6 @@ export function NaverMapView({
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current.clear();
 
-    const markers: naver.maps.Marker[] = [];
     branches.forEach((b) => {
       if (b.lat == null || b.lng == null) return;
       const active = b.id === selectedId;
@@ -220,13 +251,33 @@ export function NaverMapView({
       const marker = new naverNs.maps.Marker({
         position: new naverNs.maps.LatLng(b.lat, b.lng),
         icon: { content: html, size: new naverNs.maps.Size(w, h), anchor: new naverNs.maps.Point(w / 2, h) },
-        zIndex: active ? 1000 : 0,
+        // 클러스터 원(및 회색 도트)보다 항상 위. 같은 좌표에 겹쳐도 등록이 위에 온다.
+        zIndex: active ? 100000 : 10000,
+        map,
       });
       naverNs.maps.Event.addListener(marker, 'click', () => onSelect(b.id));
       markersRef.current.set(b.id, marker);
-      markers.push(marker);
     });
-    cluster.setMarkers(markers);
+
+    const externalMarkers: naver.maps.Marker[] = [];
+    externalPois.forEach((poi) => {
+      const marker = new naverNs.maps.Marker({
+        position: new naverNs.maps.LatLng(poi.lat, poi.lng),
+        icon: {
+          content: externalDotHtml(),
+          size: new naverNs.maps.Size(EXTERNAL_DOT_SIZE, EXTERNAL_DOT_SIZE),
+          // 도트는 핀과 달리 좌표가 원의 중심이다(핀은 뾰족한 끝이 좌표).
+          anchor: new naverNs.maps.Point(EXTERNAL_DOT_SIZE / 2, EXTERNAL_DOT_SIZE / 2),
+        },
+        zIndex: 0,
+      });
+      if (onSelectExternal) {
+        naverNs.maps.Event.addListener(marker, 'click', () => onSelectExternal(poi.id));
+      }
+      markersRef.current.set(`external:${poi.id}`, marker);
+      externalMarkers.push(marker);
+    });
+    cluster.setMarkers(externalMarkers);
     // 벤더링한 MarkerClustering.js는 옵션 키가 markers(복수)인데 changed() 핸들러의
     // switch는 marker(단수)만 매칭해서, setMarkers()만으로는 재렌더링이 트리거되지
     // 않는다(다음 지도 idle 이벤트까지 마커가 화면에 전혀 나타나지 않음). setMap을
@@ -234,7 +285,7 @@ export function NaverMapView({
     cluster.setMap(null);
     cluster.setMap(map);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [branches, selectedId, status]);
+  }, [branches, externalPois, selectedId, status]);
 
   // 현재 위치 마커.
   useEffect(() => {
