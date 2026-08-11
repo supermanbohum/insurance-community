@@ -17,6 +17,10 @@
 --
 -- 🔴 이 마이그레이션이 적용되기 전에는 "작성자 표시만 익명으로 바뀝니다"라는
 -- 고지 문구를 내보내면 안 된다 - 사실이 아닌 개인정보 고지가 된다.
+--
+-- ⚠️ 이 파일은 커밋 후 한 번 수정됐다(운영팀 글 제외 조건 추가). 수정 시점에
+-- 운영 DB에 **미적용 상태임을 pg_proc로 확인**하고 고쳤다 - 이미 적용된
+-- 마이그레이션이었다면 새 파일(0107)을 만들었어야 한다.
 -- =========================================================
 
 create or replace function public.withdraw_kakao_user(p_kakao_user_id text)
@@ -69,21 +73,35 @@ begin
   -- 🔴 여기가 0106에서 고친 부분이다. 글·댓글은 남기고 작성자 이름만 익명화한다.
   -- author_display_name은 작성 시점에 행에 박히는 값이라, 프로필 쪽만 바꾸면
   -- 화면에는 예전 이름이 그대로 보인다.
+  --
+  -- 🔴 운영팀 글(author_name_type = 'admin')은 제외한다. 근거(운영 데이터로 확인):
+  --   - 관리자 글 7건·댓글 3건의 author_display_name은 전부 「보험맵 운영팀」이다.
+  --     사람 이름이 아니라 **조직 표기**라 개인정보가 아니고, 익명화해서 얻는 것이 없다.
+  --   - 그 10건 전부 author_admin_id가 있고 화면에 인증 배지가 붙는다(admin 렌더 경로).
+  --     「탈퇴한 회원」으로 바꾸면 공지가 탈퇴자 글처럼 보여 **공지의 정체성만 깨진다.**
+  --   - 관리자 글도 anonymous_profiles 행을 갖고 그 행에 auth_user_id가 채워져 있어
+  --     (0063·0073), 제외하지 않으면 운영팀 계정이 카카오 연결을 끊는 순간
+  --     과거 공지 전부가 「탈퇴한 회원」이 된다.
+  --
+  -- ⚠️ 잠금 범위: 이 UPDATE는 **탈퇴하는 사용자 본인의 행만** 건드린다(테이블 전체가
+  -- 아니다). author_display_name에 걸린 인덱스는 없어(pg_indexes 조회 확인) 인덱스
+  -- 갱신 비용도 없다.
   update public.posts p set author_display_name = '탈퇴한 회원'
   where p.author_id in (
     select ap.id from public.anonymous_profiles ap where ap.auth_user_id = v_auth_user_id
   )
+  and p.author_name_type <> 'admin'
   and p.author_display_name is distinct from '탈퇴한 회원';
 
   update public.comments c set author_display_name = '탈퇴한 회원'
   where c.author_id in (
     select ap.id from public.anonymous_profiles ap where ap.auth_user_id = v_auth_user_id
   )
+  and c.author_name_type <> 'admin'
   and c.author_display_name is distinct from '탈퇴한 회원';
 
-  -- ⚠️ author_name_type은 건드리지 않는다. 'admin'이면 화면에 인증 배지가 붙는데,
-  -- 그건 운영팀 계정 경로(author_admin_id)라 카카오 탈퇴 대상이 아니다.
-  -- 여기서 타입까지 바꾸면 관리자 글의 표시 규칙을 이 함수가 대신 정하는 셈이 된다.
+  -- ⚠️ author_name_type 자체는 바꾸지 않는다. 표시 규칙(배지 유무)을 이 함수가
+  -- 대신 정하게 되기 때문이다. 여기서는 이름만 바꾼다.
 
   -- 참고용 필드도 함께 맞춰 둔다(화면에는 안 쓰이지만 남겨두면 값이 어긋난다).
   update public.anonymous_profiles
