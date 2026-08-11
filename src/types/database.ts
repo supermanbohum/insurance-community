@@ -701,7 +701,10 @@ export interface Database {
           reason: string | null;
           raw_claims: Record<string, unknown> | null;
           matched_user_id: string | null;
-          outcome: 'withdrawn' | 'already_withdrawn' | 'no_match' | 'error';
+          /** 🔴 'ignored'는 "처리 대상이 아닌 이벤트"(연결·동의 등)다.
+           *  'no_match'("우리 DB에 없는 회원번호")와 섞지 말 것 - 조사 방향이 다르다.
+           *  제약은 0104에서 확장됐다. */
+          outcome: 'withdrawn' | 'already_withdrawn' | 'no_match' | 'ignored' | 'error';
           error_message: string | null;
         };
         Insert: Partial<Database['public']['Tables']['kakao_webhook_events']['Row']>;
