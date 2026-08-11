@@ -1285,6 +1285,19 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['map_external_pois']['Row']>;
         Relationships: [];
       };
+      map_external_poi_suppressions: {
+        Row: {
+          id: string;
+          source: string;
+          external_id: string;
+          reason: string | null;
+          suppressed_by_admin_id: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['map_external_poi_suppressions']['Row']>;
+        Update: Partial<Database['public']['Tables']['map_external_poi_suppressions']['Row']>;
+        Relationships: [];
+      };
       top_designer_certification_revisions: {
         Row: {
           id: string;
@@ -2215,6 +2228,14 @@ export interface Database {
       get_ga_quality_ranking: {
         Args: { p_limit?: number };
         Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_count: number; registered_count: number }[];
+      };
+      admin_suppress_external_poi: {
+        Args: { p_source: string; p_external_id: string; p_reason?: string };
+        Returns: undefined;
+      };
+      admin_unsuppress_external_poi: {
+        Args: { p_source: string; p_external_id: string };
+        Returns: undefined;
       };
       admin_upsert_external_pois: {
         Args: { p_source: string; p_pois: unknown };

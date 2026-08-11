@@ -39,6 +39,9 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin', label: '대시보드', icon: LayoutDashboard, exact: true },
   { href: '/admin/ga', label: 'GA 관리', icon: Building2, badgeKey: 'ga' },
   { href: '/admin/branches', label: '지점 관리', icon: MapPin },
+  // ⑪ - 지도에만 뜨는 미등록 지점의 표시 중단 처리. 팝업이 "바로 내려드립니다"라고
+  // 약속하므로 운영팀이 즉시 찾아갈 수 있어야 한다(지점 관리 바로 아래에 둔다).
+  { href: '/admin/map-pois', label: '지도 미등록 지점', icon: MapPin },
   { href: '/admin/change-requests', label: '변경 요청', icon: ClipboardCheck, badgeKey: 'branchCreate' },
   { href: '/admin/planners', label: '고소득 설계사 (Legacy)', icon: Award },
   { href: '/admin/planner-market', label: '설계사 마켓', icon: Users2, badgeKey: 'planner' },
