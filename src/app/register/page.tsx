@@ -13,7 +13,11 @@ export const metadata: Metadata = {
   // ⚠️ "무료 등록"은 남긴다. 지점 등록 자체가 무료인 것은 사실이라 거짓이 아니다.
   // ⚠️ 다른 화면(홈 히어로·설계사 게이트·지도 카드)의 "6개월 무료"는 지시 대상이
   //    아니라 그대로 둔다 - 오너가 등록 페이지만 지정했다.
-  title: '우리 지점 무료 등록 — 선착순 100개',
+  // 🔴 「무료 등록」 → 「등록 — 6개월 0원」(콘텐츠 확정 2026-08-11). 가격 블록을 넣기로
+  // 한 순간 「무료」가 거짓이 됐다 - 6개월 조건부인데 제목은 조건 없는 무료를 말했다.
+  // "이후 월 4,900원"은 제목에 넣지 않는다: 제목이 담을 것은 "조건이 있다"는 신호이고
+  // 조건의 내용은 본문 가격 블록이 담는다. 25자라 탭·검색결과·카톡 미리보기 다 안 잘린다.
+  title: '우리 지점 등록 — 6개월 0원, 선착순 100개',
   description: '보험맵에 지점을 등록하면 지점 상세 페이지, 조회수, 채용공고까지 한 번에 노출됩니다. 지금 신청하면 선착순 100개 안에 들어갑니다.',
   alternates: { canonical: '/register' },
 };
@@ -154,10 +158,54 @@ export default function RegisterIntroPage() {
           ))}
         </section>
 
+        {/* ─────────────────────────────────────────────────────────────
+            SPEC-041 §③ 요금 표시 (디자인 v2 확정 · 랜딩 전용 규격 = 완료화면의 0.7배)
+
+            2줄 구조이고 순서·문구가 고정이다:
+              1행  월 4,900원(취소선)  0원      ← 「0원」만 펄스
+              2행  6개월간 0원 · 이후 월 4,900원  ← 🔴 절대 움직이지 않는다
+
+            🔴 2행을 지우거나 줄이지 말 것. 「0원」과 겹쳐 보여 중복처럼 읽히지만
+               반복이 아니라 조건부 재진술이다. 지우면 "6개월간 무엇인지"와
+               "6개월 뒤 얼마인지"가 화면에서 사라져, 청구서가 첫 대면이 된다.
+            🔴 2행의 「0원」도 지우지 말 것. 지우면 "6개월간 · 이후 월 4,900원"이 되어
+               6개월간 무엇인지가 사라진다(CTO 확정).
+            🔴 같은 숫자 4,900의 위계를 3축으로 분리해 뒀다 - 크기(28 vs 20)·취소선(有 vs 無)·
+               색(#98A2B3 vs #48546b). 1행은 "원래 값", 2행은 "6개월 뒤 실제 낼 값"이라
+               같은 무게로 보이면 혼동된다. 하나만 달라도 구분이 약해진다.
+            🔴 애니메이션은 「0원」 하나에만 건다. 2행까지 움직이면 가장 읽혀야 할 정보가
+               가장 안 읽힌다. prefers-reduced-motion에서는 반드시 정지한다(멀미·전정기관).
+            ───────────────────────────────────────────────────────────── */}
+        <section className="flex flex-col gap-1">
+          <style>{`
+@keyframes price-pulse { from { transform: scale(1.00); } to { transform: scale(1.06); } }
+.price-free {
+  /* inline 요소에는 transform이 안 걸린다 - inline-block을 빼면 애니메이션이 조용히 죽는다 */
+  display: inline-block;
+  /* 왼쪽 기준으로 커져야 취소선과의 정렬이 흔들리지 않는다(중앙 기준이면 좌우로 떤다) */
+  transform-origin: left center;
+  animation: price-pulse 2.4s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) { .price-free { animation: none; } }
+          `}</style>
+          <p className="flex items-baseline gap-2">
+            <span className="text-[28px] font-bold leading-none text-[#98A2B3] [text-decoration-thickness:3px] line-through">
+              월 4,900원
+            </span>
+            <span className="price-free text-[40px] font-extrabold leading-none text-[#2472EC]">0원</span>
+          </p>
+          <p className="text-[20px] font-semibold leading-snug text-[#48546b]">
+            6개월간 0원 · 이후 월 4,900원
+          </p>
+        </section>
+
         <section className="sticky bottom-4 pt-2">
           <HeroCtaButton
             href="/partner/register"
-            label="무료로 등록하기"
+            // 🔴 「무료로 등록하기」 → 「지금 등록하기」(콘텐츠 확정). 바로 위 가격 블록이
+            // 「0원」을 40px로 말하고 있어 버튼이 또 "무료"라고 하면 중복이고, 버튼은
+            // 조건 없는 무료를, 블록은 조건부를 말해 서로 부딪힌다. CTA는 행동만 말한다.
+            label="지금 등록하기"
             icon={<MapPinned className="h-6 w-6" strokeWidth={2.5} />}
             gradientClassName="from-brand-500 via-brand-600 to-brand-800"
             glowColor="rgba(37,99,235,0.45)"
