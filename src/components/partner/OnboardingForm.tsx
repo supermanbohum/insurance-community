@@ -63,6 +63,10 @@ const DRAFT_AUTOSAVE_DEBOUNCE_MS = 1500;
 // (CTO 지시) - 이 상수 하나만 true로 바꾸면 배포 없이 바로 켤 수 있는 구조로 만들어뒀다.
 const ALLOW_INCOMPLETE_SUBMIT = false;
 
+// 오너 지정 5개, 순서 그대로. 임의로 늘리거나 순서를 바꾸지 말 것.
+const OTHER_TITLE = '기타(직접 입력)';
+const TITLE_OPTIONS = ['대표', '본부장', '사업단장', '지점장', OTHER_TITLE] as const;
+
 const REGISTRANT_FIELDS = [
   { key: 'name', label: '등록자 성함' },
   { key: 'title', label: '직책' },
@@ -155,6 +159,13 @@ export function OnboardingForm({
   const [tagline, setTagline] = useState(initialDraft?.tagline ?? '');
   const [introText, setIntroText] = useState(initialDraft?.introText ?? '');
   const [plannerCount, setPlannerCount] = useState<number | ''>(initialDraft?.plannerCount ?? '');
+  // 🔴 임시저장을 이어서 열 때, 저장된 직책이 목록에 없으면(예전에 자유 입력으로 저장된
+  // 값이거나 "기타"로 넣은 값) select가 빈칸이 되면서 사용자가 이미 적어둔 직책이
+  // 사라진 것처럼 보인다. 그런 값은 "기타"로 열어 입력칸에 그대로 남겨준다.
+  const [titleIsCustom, setTitleIsCustom] = useState(() => {
+    const saved = initialDraft?.registrant?.title ?? '';
+    return Boolean(saved) && !TITLE_OPTIONS.includes(saved as (typeof TITLE_OPTIONS)[number]);
+  });
   const [amenities, setAmenities] = useState<Record<AmenityOption['key'], boolean>>({
     parkingAvailable: initialDraft?.amenities?.parkingAvailable ?? false,
     visitConsultAvailable: initialDraft?.amenities?.visitConsultAvailable ?? false,
@@ -458,17 +469,58 @@ export function OnboardingForm({
                 <GaSearchSelect options={gaOptions} value={gaCompanyId} onChange={setGaCompanyId} placeholder="소속 GA를 검색하세요" />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {REGISTRANT_FIELDS.map((field) => (
-                  <div key={field.key} className="flex flex-col gap-1.5">
-                    <Label htmlFor={`onb-registrant-${field.key}`}>{field.label}</Label>
-                    <Input
-                      id={`onb-registrant-${field.key}`}
-                      value={registrant[field.key]}
-                      onChange={(e) => setRegistrant((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                      required
-                    />
-                  </div>
-                ))}
+                {REGISTRANT_FIELDS.map((field) =>
+                  field.key === 'title' ? (
+                    // 직책은 오너가 정한 5개 중에서 고른다(자유 입력이면 표기가 제각각이라
+                    // 나중에 집계도 검증도 안 된다). "기타"만 직접 입력을 열어준다.
+                    // 저장은 그대로 registrant.title 한 값으로 간다 - DB 컬럼은 그대로다.
+                    <div key={field.key} className="flex flex-col gap-1.5">
+                      <Label htmlFor="onb-registrant-title">{field.label}</Label>
+                      <select
+                        id="onb-registrant-title"
+                        value={titleIsCustom ? OTHER_TITLE : registrant.title}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          if (next === OTHER_TITLE) {
+                            setTitleIsCustom(true);
+                            setRegistrant((prev) => ({ ...prev, title: '' }));
+                          } else {
+                            setTitleIsCustom(false);
+                            setRegistrant((prev) => ({ ...prev, title: next }));
+                          }
+                        }}
+                        className="h-10 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none focus:border-brand-300"
+                        required
+                      >
+                        <option value="">선택해주세요</option>
+                        {TITLE_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                      {titleIsCustom && (
+                        <Input
+                          aria-label="직책 직접 입력"
+                          placeholder="직책을 입력해주세요"
+                          value={registrant.title}
+                          onChange={(e) => setRegistrant((prev) => ({ ...prev, title: e.target.value }))}
+                          required
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <div key={field.key} className="flex flex-col gap-1.5">
+                      <Label htmlFor={`onb-registrant-${field.key}`}>{field.label}</Label>
+                      <Input
+                        id={`onb-registrant-${field.key}`}
+                        value={registrant[field.key]}
+                        onChange={(e) => setRegistrant((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  )
+                )}
               </div>
             </CardContent>
           </Card>
@@ -533,6 +585,11 @@ export function OnboardingForm({
                     </button>
                   ))}
                 </div>
+                {/* 🔴 오너 확정 문구. 부드럽게 다듬지 말 것 - 허위 기재의 결과를
+                    분명히 말하는 것이 이 문장의 목적이다. */}
+                <p className="text-xs text-muted-foreground">
+                  사실과 맞지 않은 정보 기재 시 지점 폐쇄 및 사이트 차단 등 불이익이 있을 수 있습니다
+                </p>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -703,7 +760,7 @@ export function OnboardingForm({
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <p className="text-xs text-muted-foreground">
-                대표사진과 별도로, 지점 상세페이지에서만 노출되는 사무실 사진을 최소 {MIN_OFFICE_PHOTOS}장 이상 등록해주세요. (권장 5~10장)
+                대표사진과 별도로, 지점 상세페이지에서만 노출되는 사무실 사진을 최소 {MIN_OFFICE_PHOTOS}장 이상 등록해주세요.
               </p>
 
               <label
@@ -750,6 +807,11 @@ export function OnboardingForm({
               )}
               <p className={cn('text-xs', officePhotos.length >= MIN_OFFICE_PHOTOS ? 'text-brand-600' : 'text-destructive')}>
                 {officePhotos.length}/{MIN_OFFICE_PHOTOS}장 이상 필요
+              </p>
+              {/* 🔴 오너 확정 문구(표기만 "올릴 수 록" → "올릴수록"으로 교정, 내용은 그대로).
+                  상한을 지운 자리에 "많이 올리면 좋다"는 이유를 대신 둔다. */}
+              <p className="text-xs text-muted-foreground">
+                실제 사무실 사진을 많이 올릴수록 조회율이 높습니다
               </p>
             </CardContent>
           </Card>
