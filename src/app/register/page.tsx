@@ -64,10 +64,10 @@ export default function RegisterIntroPage() {
           <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600">
             지점 등록 · 선착순 100개
           </span>
+          {/* 오너 지정 표기(2026-08-11). "등록(선점)하세요"의 괄호는 그대로 둔다.
+              바로 위 「지점 등록 · 선착순 100개」 뱃지는 지시 대상이 아니라 유지한다. */}
           <h1 className="text-[28px] font-extrabold leading-tight text-ink">
-            6개월 무료로
-            <br />
-            우리 지점을 등록하세요
+            우리 지점을 등록(선점)하세요
           </h1>
           <p className="text-sm leading-relaxed text-ink-soft">
             보험맵은 전국 GA 지점 정보를 모으는 플랫폼입니다.

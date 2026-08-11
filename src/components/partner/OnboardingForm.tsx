@@ -802,6 +802,10 @@ export function OnboardingForm({
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
+              {/* 🔴 "예시)"가 없으면 이 4칸이 "이 네 장을 올려야 한다"는 요구로 읽힌다.
+                  상담 공간이 없는 지점은 여기서 막혔다고 판단하고 나간다.
+                  칸 안의 라벨(간판·외관·내부·상담 공간)은 지시 대상이 아니라 그대로 둔다. */}
+              <p className="text-xs font-semibold text-ink-faint">예시)</p>
               <div className="grid grid-cols-4 gap-2">
                 {PHOTO_GUIDE_FRAMES.map((frame) => (
                   <div key={frame} className="flex flex-col items-center gap-1 rounded-xl border border-dashed border-brand-200 bg-white py-3 text-center">
