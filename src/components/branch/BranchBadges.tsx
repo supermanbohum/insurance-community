@@ -27,11 +27,13 @@ const PRO_BLUE = '#2472EC';
 
 export type BranchBadgeSize = 'list' | 'detail';
 
-/** 스펙 §크기 - 목록 20px / 상세 24px. "뱃지 간 크기 차등 금지"라 이 두 값을 모든
- * 뱃지가 공유한다(PRO만 더 크거나 작게 두지 않는다). */
+/** 디자인 발송본(SPEC-035 §1) CSS를 그대로 옮긴 값이다 - 이 두 크기 외에는 금지.
+ *   상세  height 24px / font 12px / padding 3px 9px
+ *   목록  height 20px / font 11px / padding 2px 8px
+ * 위아래 패딩은 고정 높이 + inline-flex 중앙정렬이 대신하므로 좌우만 지정한다. */
 const SIZE_CLASS: Record<BranchBadgeSize, string> = {
-  list: 'h-5 px-1.5 text-[11px]',
-  detail: 'h-6 px-2 text-[13px]',
+  list: 'h-5 px-2 text-[11px]',
+  detail: 'h-6 px-[9px] text-[12px]',
 };
 
 /** PRO 뱃지 - "PRO" 워드마크만. 별·체크·왕관·트로피 등 심볼은 전면 금지다.
@@ -42,7 +44,9 @@ export function ProBadge({ size = 'list', className }: { size?: BranchBadgeSize;
     <span
       style={{ backgroundColor: PRO_BLUE }}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-md font-extrabold tracking-wide text-white',
+        // radius 7px·letter-spacing .06em은 디자인 발송본 CSS 그대로다(rounded-md=6px는
+        // 근사치라 쓰지 않는다). 사각 라운드 = 태그이지 필/칩이 아니라는 게 형태 구분의 핵심.
+        'inline-flex shrink-0 items-center justify-center rounded-[7px] font-extrabold tracking-[0.06em] text-white',
         SIZE_CLASS[size],
         className
       )}

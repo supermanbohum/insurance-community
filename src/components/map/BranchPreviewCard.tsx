@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { BadgeCheck, Briefcase, Building2, ChevronRight, Eye, MapPin, MessageCircle, X } from 'lucide-react';
 import { avatarGradient, cn } from '@/lib/utils';
 import { SafeBranchImage } from '@/components/shared/SafeBranchImage';
-import { BranchBadges } from '@/components/branch/BranchBadges';
 import type { MapBranch } from './types';
 
 export function BranchPreviewCard({ branch, onClose }: { branch: MapBranch; onClose: () => void }) {
@@ -36,10 +35,10 @@ export function BranchPreviewCard({ branch, onClose }: { branch: MapBranch; onCl
             {branch.operationType === 'direct' ? '직영' : '지사'}
           </span>
         </p>
-        <p className="flex items-center gap-1.5 text-sm font-bold text-ink">
-          <span className="min-w-0 truncate">{branch.name}</span>
-          <BranchBadges isPro={branch.isPro} size="list" />
-        </p>
+        {/* 디자인 발송본은 노출 화면을 "지점 상세 + 지점 목록·검색 결과 카드" 둘로 한정하고
+            지도 마커 계열에는 개입을 금지했다 - 마커 클릭 시 뜨는 이 팝업 카드는 그 둘 중
+            어느 쪽도 아니라고 보고 PRO 뱃지를 넣지 않는다(옆 지점 목록에는 붙는다). */}
+        <p className="truncate text-sm font-bold text-ink">{branch.name}</p>
         {branch.tagline && <p className="truncate text-[11px] font-bold text-brand-600">✨ {branch.tagline}</p>}
         <div className="mt-0.5 flex items-center gap-2 text-[11px] text-ink-faint">
           <span className="flex min-w-0 items-center gap-0.5 truncate">
