@@ -75,7 +75,24 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getSession();
 
   if (!session) {
-    // 🔴 봇은 건너뛴다. getSession()은 위에서 이미 돌렸으므로 기존 세션을 가진
+    // 🔴 발급은 "진짜 페이지 이동"에서만 한다.
+    //
+    // 이게 이 파일의 가장 중요한 줄이다. 예전에는 세션 없는 모든 요청에 발급했는데,
+    // Next.js는 한 번의 방문에도 RSC 요청과 <Link> 프리페치를 여러 건 함께 보낸다.
+    // 그 요청들은 아직 쿠키가 없는 상태로 동시에 출발하므로, **방문자 1명이
+    // 익명 계정을 여러 개 만들었다.** 프로필 생성량이 방문 기록의 약 2.8배였던
+    // 이유가 이것이다(8/11 실측: 프로필 2,755 vs 방문 967).
+    //
+    // 실측으로 확인한 것: RSC 헤더만 붙여 요청해도 새 세션 쿠키가 내려왔다.
+    // 문서 요청 / RSC 요청 / prefetch 요청 3종 모두 각각 계정을 만들고 있었다.
+    //
+    // 첫 진입은 반드시 문서 요청이고 클라이언트 내비게이션은 그 뒤에 오므로,
+    // 여기서 걸러도 사용자가 세션을 못 받는 경우는 생기지 않는다.
+    if (request.headers.get('rsc') || request.headers.get('next-router-prefetch')) {
+      return response;
+    }
+
+    // 🔴 봇도 건너뛴다. getSession()은 위에서 이미 돌렸으므로 기존 세션을 가진
     // 요청의 토큰 갱신에는 영향이 없다 - 여기서 막는 것은 "신규 발급"뿐이다.
     const userAgent = request.headers.get('user-agent') ?? '';
     if (!userAgent || BOT_UA.test(userAgent)) {
