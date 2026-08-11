@@ -5,8 +5,8 @@ import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { SITE_CONFIG } from '@/lib/config/site';
 
 export const metadata: Metadata = {
-  title: '우리 지점 설계사 등록 — 완전 무료',
-  description: '소속 지점을 연결하고 설계사로 등록하세요. 명함은 필수, 소득증빙은 선택입니다.',
+  title: '우리 지점 설계사 등록',
+  description: '소속 지점에 내 이름을 올리고, 인증 등급으로 지점 점수를 함께 쌓습니다. 설계사 본인이 직접 등록하며, 지점 연결이 필수입니다.',
   alternates: { canonical: '/branch-planner-register' },
 };
 
@@ -15,22 +15,51 @@ export const metadata: Metadata = {
  * 설계사 등록하기도 우리지점등록하기처럼 누르면 1차 설명글 나왔음 해". /register,
  * /top-designer-register와 동일 골격(배지-헤드-요건카드-CTA), (main) 레이아웃 밖에
  * 둬서 헤더/푸터 없이 독립적으로 뜬다. 명함·소득증빙 같은 민감 서류를 받는 폼이
- * 설명 없이 바로 열리면 안 된다는 원칙(TOP 설계사도 오늘 아침 f7bfd72로 동일하게
- * 통일)을 그대로 따른다.
+ * 설명 없이 바로 열리면 안 된다는 원칙(TOP 설계사도 f7bfd72로 동일하게 통일)을 따른다.
  *
- * 문안은 콘텐츠팀 확정본 도착 전 임시 텍스트다(CTO 지시 - "틀만 먼저 만들고 임시
- * 텍스트로 진행"). 확정본이 오면 본문만 교체한다.
+ * 문안은 콘텐츠팀 확정본(2026-08-11)이다. 이 페이지의 핵심 임무는 설계사Market과의
+ * 차이를 갈라주는 것 - 둘 다 "설계사 등록"으로 읽혀서, 이직하려는 사람이 여기로
+ * 잘못 들어오는 걸 막아야 한다.
  */
 const REQUIREMENT_STEPS = [
-  { icon: MapPinned, title: '소속 지점 연결', desc: '보험맵에 등록된 지점을 검색해 연결합니다. 지점이 없으면 지점장님께 먼저 등록을 요청할 수 있어요.' },
-  { icon: FileText, title: '명함 제출 (필수)', desc: '소속과 직급을 확인하기 위한 서류입니다.' },
-  { icon: ShieldCheck, title: '소득증빙 (선택)', desc: '원천징수영수증을 함께 제출하면 TOP 설계사 인증도 신청할 수 있어요.' },
+  {
+    icon: FileText,
+    title: '명함 (필수)',
+    desc: '소속과 직급을 확인하기 위해 필요합니다.',
+  },
+  {
+    icon: ShieldCheck,
+    title: '원천징수영수증 (선택)',
+    desc: '첨부하시면 TOP 설계사 인증을 함께 신청할 수 있습니다. 주민등록번호는 가리고 올려주세요. 서류는 심사에만 사용하고, 심사가 끝나면 즉시 파기합니다.',
+  },
 ];
 
-const TRUST_CARDS = [
-  { icon: Gift, label: '완전 무료', desc: '등록·유지 전 과정에 비용이 없습니다.' },
-  { icon: UserPlus, label: '본인이 직접 등록', desc: '지점장이 아니라 설계사 본인이 등록합니다.' },
-  { icon: Award, label: 'TOP 설계사로 이어집니다', desc: '소득증빙까지 마치면 TOP 설계사 인증도 신청할 수 있어요.' },
+/** 소득증빙 첨부 여부에 따라 결과가 갈리는 지점 - 첨부를 강요하지 않되(등록은 그대로
+ * 된다) 무엇을 얻고 무엇을 못 얻는지 미리 알려 나중에 "몰랐다"가 안 나오게 한다. */
+const ATTACH_OUTCOMES = [
+  {
+    label: '첨부하시면',
+    desc: '심사를 거쳐 TOP 설계사 인증이 함께 진행됩니다. 별도로 신청하실 필요가 없습니다. 승인되면 별등급(⭐1억 ~ ⭐⭐⭐⭐5억)이 표시됩니다.',
+  },
+  {
+    label: '첨부하지 않으셔도',
+    desc: "등록은 그대로 됩니다. 다만 TOP 설계사 인증은 신청할 수 없고, 지점 점수에는 '1억 미만'으로 집계됩니다. 인증은 나중에 언제든 추가할 수 있습니다.",
+  },
+];
+
+const AFTER_REGISTER = [
+  '소속 지점 페이지에 함께 표시됩니다.',
+  '등록과 인증 등급이 그 지점의 우수GA 점수에 반영됩니다.',
+  '심사는 운영팀이 확인한 뒤 처리해 드립니다.',
+];
+
+/** 설계사Market과의 차이 - 콘텐츠가 표 형태를 권장했다. 모바일에서 4열 표는 못 읽으므로
+ * 항목별 2열 대비(왼쪽=이 페이지, 오른쪽=마켓)로 세로로 쌓는다(내용은 그대로). */
+const MARKET_COMPARISON = [
+  { key: '무엇', here: '지금 소속된 지점의 구성원으로 등록', market: '이직을 위한 개인 프로필 등록' },
+  { key: '지점 연결', here: '필수', market: '필요 없음' },
+  { key: '어디에 보이나', here: '소속 지점 페이지에 함께 표시', market: '설계사Market 목록' },
+  { key: '지점 점수', here: '등록·인증 등급이 반영', market: '반영되지 않음' },
 ];
 
 export default function BranchPlannerRegisterIntroPage() {
@@ -44,23 +73,62 @@ export default function BranchPlannerRegisterIntroPage() {
 
       <main className="mx-auto flex max-w-xl flex-col gap-8 px-5 pb-16 pt-4">
         <section className="flex flex-col items-center gap-3 text-center">
-          <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600">
-            우리 지점 설계사 등록 · 완전 무료
-          </span>
-          <h1 className="text-[26px] font-extrabold leading-tight text-ink">
-            내가 속한 지점,
-            <br />
-            내 이름으로 함께 올립니다
-          </h1>
+          <h1 className="text-[26px] font-extrabold leading-tight text-ink">우리 지점 설계사 등록</h1>
           <p className="text-sm leading-relaxed text-ink-soft">
-            설계사 본인이 직접 등록합니다. 소속 지점을 연결하면
-            <br />
-            지점 페이지에 설계사님이 함께 표시됩니다.
+            소속 지점에 내 이름을 올리고, 인증 등급으로 지점 점수를 함께 쌓습니다.
+          </p>
+        </section>
+
+        {/* 가장 먼저 읽혀야 하는 2줄 - 이 페이지에서 가장 흔한 오해 두 가지(지점장이
+            대신 등록 / 지점 없이도 등록)를 히어로 바로 아래에서 미리 끊는다. */}
+        <section className="flex flex-col gap-2">
+          <div className="flex items-start gap-2.5 rounded-2xl border border-brand-200 bg-brand-50/60 p-3.5">
+            <UserPlus className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+            <p className="text-sm leading-relaxed text-ink-soft">
+              <strong className="font-bold text-ink">설계사 본인이 직접 등록합니다</strong> — 지점장님이 대신 등록하는 기능이 아닙니다.
+            </p>
+          </div>
+          <div className="flex items-start gap-2.5 rounded-2xl border border-brand-200 bg-brand-50/60 p-3.5">
+            <MapPinned className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+            <p className="text-sm leading-relaxed text-ink-soft">
+              <strong className="font-bold text-ink">소속 지점이 보험맵에 등록되어 있어야 합니다</strong> — 지점 연결이 필수입니다.
+            </p>
+          </div>
+        </section>
+
+        {/* 이 페이지의 핵심 임무 - 설계사Market과 헷갈려서 이직 희망자가 여기로 오는 걸 막는다. */}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-base font-extrabold text-ink">두 가지 등록은 목적이 다릅니다.</h2>
+          <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+            {MARKET_COMPARISON.map(({ key, here, market }, i) => (
+              <div key={key} className={i > 0 ? 'border-t border-surface-sunken' : ''}>
+                <p className="bg-surface-sunken px-4 py-1.5 text-[11px] font-bold text-ink-faint">{key}</p>
+                <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row">
+                  <p className="flex-1 text-xs leading-relaxed text-ink">
+                    <span className="font-bold text-brand-700">우리 지점 설계사 등록</span>
+                    <br />
+                    {here}
+                  </p>
+                  <p className="flex-1 text-xs leading-relaxed text-ink-faint">
+                    <span className="font-bold">설계사Market</span>
+                    <br />
+                    {market}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs leading-relaxed text-ink-soft">
+            이직을 알아보고 계신다면{' '}
+            <Link href="/planner-market/search" className="font-bold text-brand-600 underline underline-offset-2">
+              설계사Market
+            </Link>
+            을 이용해 주세요. 이 페이지는 <strong className="font-bold text-ink">지금 소속된 지점에 내 이름을 올리는 곳</strong>입니다.
           </p>
         </section>
 
         <section className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
-          <div className="bg-brand-700 px-4 py-2.5 text-sm font-bold text-white">어떻게 등록하나요</div>
+          <div className="bg-brand-700 px-4 py-2.5 text-sm font-bold text-white">준비물</div>
           {REQUIREMENT_STEPS.map(({ icon: Icon, title, desc }, i) => (
             <div key={title} className={`flex items-start gap-3 px-4 py-3 ${i > 0 ? 'border-t border-surface-sunken' : ''}`}>
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-xs font-bold text-brand-700">
@@ -78,9 +146,9 @@ export default function BranchPlannerRegisterIntroPage() {
         </section>
 
         <section className="flex flex-col gap-3">
-          {TRUST_CARDS.map(({ icon: Icon, label, desc }) => (
+          {ATTACH_OUTCOMES.map(({ label, desc }) => (
             <div key={label} className="flex items-start gap-3 rounded-2xl border border-line bg-white p-4 shadow-card">
-              <Icon className="h-5 w-5 shrink-0 text-brand-500" />
+              <ShieldCheck className="h-5 w-5 shrink-0 text-brand-500" />
               <div>
                 <p className="text-sm font-bold text-ink">{label}</p>
                 <p className="text-xs leading-relaxed text-ink-faint">{desc}</p>
@@ -89,17 +157,30 @@ export default function BranchPlannerRegisterIntroPage() {
           ))}
         </section>
 
+        <section className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-4 shadow-card">
+          <p className="flex items-center gap-1.5 text-sm font-bold text-ink">
+            <Award className="h-4 w-4 text-brand-500" />
+            등록하면
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {AFTER_REGISTER.map((line) => (
+              <li key={line} className="flex items-start gap-2 text-xs leading-relaxed text-ink-faint">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-400" />
+                {line}
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <section className="sticky bottom-4 pt-2">
           <HeroCtaButton
             href="/branch-planner/register"
-            label="무료로 등록하기"
+            label="등록하기"
             icon={<UserPlus className="h-6 w-6" strokeWidth={2.5} />}
             gradientClassName="from-brand-500 via-brand-600 to-brand-800"
             glowColor="rgba(37,99,235,0.45)"
           />
-          <p className="mt-2 text-center text-[11px] text-ink-faint">
-            명함은 필수, 소득증빙은 선택입니다. 미제출 시에도 등록되지만 TOP 인증은 받을 수 없습니다.
-          </p>
+          <p className="mt-2 text-center text-[11px] text-ink-faint">등록은 무료입니다.</p>
         </section>
       </main>
     </div>
