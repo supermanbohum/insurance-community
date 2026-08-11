@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { BadgeCheck, Briefcase, Building2, ChevronRight, Eye, MapPin, MessageCircle, X } from 'lucide-react';
 import { avatarGradient, cn } from '@/lib/utils';
 import { SafeBranchImage } from '@/components/shared/SafeBranchImage';
+import { BranchBadges } from '@/components/branch/BranchBadges';
 import type { MapBranch } from './types';
 
 export function BranchPreviewCard({ branch, onClose }: { branch: MapBranch; onClose: () => void }) {
@@ -35,7 +36,10 @@ export function BranchPreviewCard({ branch, onClose }: { branch: MapBranch; onCl
             {branch.operationType === 'direct' ? '직영' : '지사'}
           </span>
         </p>
-        <p className="truncate text-sm font-bold text-ink">{branch.name}</p>
+        <p className="flex items-center gap-1.5 text-sm font-bold text-ink">
+          <span className="min-w-0 truncate">{branch.name}</span>
+          <BranchBadges isPro={branch.isPro} size="list" />
+        </p>
         {branch.tagline && <p className="truncate text-[11px] font-bold text-brand-600">✨ {branch.tagline}</p>}
         <div className="mt-0.5 flex items-center gap-2 text-[11px] text-ink-faint">
           <span className="flex min-w-0 items-center gap-0.5 truncate">

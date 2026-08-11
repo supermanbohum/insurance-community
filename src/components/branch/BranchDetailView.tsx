@@ -27,6 +27,7 @@ import { BranchPillTags } from '@/components/branch/BranchPillTags';
 import { BranchFavoriteButton } from '@/components/branch/BranchFavoriteButton';
 import { KakaoShareButton } from '@/components/shared/KakaoShareButton';
 import { BranchLocationMap } from '@/components/branch/BranchLocationMap';
+import { BranchBadges } from '@/components/branch/BranchBadges';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { getDefaultConfig, type Device, type SectionConfig } from '@/lib/design/sections';
 import { cn } from '@/lib/utils';
@@ -163,6 +164,8 @@ export function BranchDetailView({
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <h1 className="text-xl font-extrabold tracking-tight text-ink">{data.name}</h1>
+            {/* SPEC-035 v2 - 상세는 24px 사이즈. 지점명 바로 우측 인라인이 유일한 위치다. */}
+            <BranchBadges isPro={data.isPro ?? false} size="detail" />
             <span
               className={cn(
                 'rounded-full px-2 py-0.5 text-[11px] font-semibold',

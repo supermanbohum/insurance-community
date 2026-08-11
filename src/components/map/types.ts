@@ -17,4 +17,6 @@ export interface MapBranch {
   contactClickCount: number;
   tagline: string | null;
   plannerBadgeTotal: number;
+  /** PRO 뱃지 노출 여부(SPEC-035 v2, 0094) - 지도 팝업도 스펙이 지정한 노출 위치다. */
+  isPro: boolean;
 }

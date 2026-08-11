@@ -75,6 +75,7 @@ export default async function MapPage({
     name: b.name,
     gaCompanyName: b.gaCompanyName,
     isGaVerified: b.isGaVerified,
+    isPro: b.isPro,
     sidoName: b.sidoName,
     sigunguName: b.sigunguName,
     address: b.address,

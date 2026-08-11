@@ -44,6 +44,9 @@ export function BranchLocationMap({
     name: branchName,
     gaCompanyName,
     isGaVerified: false,
+    // 상세페이지 안의 위치 지도는 이미 그 지점 페이지 안이라(제목 옆에 PRO 뱃지가 이미
+    // 떠 있다) 핀 카드에서 한 번 더 반복하지 않는다.
+    isPro: false,
     sidoName: null,
     sigunguName: null,
     address: address ?? '',

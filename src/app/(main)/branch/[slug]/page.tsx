@@ -62,6 +62,7 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
 
   const data: BranchPreviewData = {
     name: branch.name,
+    isPro: branch.isPro,
     slug: branch.slug,
     managerName: branch.managerName,
     address: branch.address,

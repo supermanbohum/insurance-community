@@ -57,7 +57,8 @@ function toSummary(
   logoBaseUrl: string,
   contactClickCount: number,
   tagline: string | null,
-  plannerBadge: { total: number; topTier: PlannerIncomeTier | null } = { total: 0, topTier: null }
+  plannerBadge: { total: number; topTier: PlannerIncomeTier | null } = { total: 0, topTier: null },
+  isPro = false
 ): PublicBranchSummary {
   const mainImage = row.branch_media?.find((m) => m.media_type === 'image_main');
   return {
@@ -75,6 +76,7 @@ function toSummary(
     viewCount: row.organic_view_count + row.imported_view_count + row.correction_view_count,
     isRecommended: row.is_recommended,
     hasNewOpenBadge: row.has_new_open_badge,
+    isPro,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     gaBranchCount: Array.isArray(row.ga_company?.ga_branch) ? row.ga_company!.ga_branch.length : 0,
@@ -239,10 +241,12 @@ export async function listPublicBranches(options: {
   // 넣으면 그 마이그레이션을 실행하기 전 배포에서 목록 조회 자체가 전부 깨진다. 컬럼이
   // 아직 없어도 나머지 지점 데이터는 정상 동작해야 하므로 각각 best-effort로 분리 조회한다.
   const ids = rows.map((r) => r.id);
-  const [clickCounts, taglines, plannerBadges] = await Promise.all([
+  // pro_until(0094)도 같은 이유로 분리 조회한다 - 뱃지 하나 때문에 목록 전체가 깨지면 안 된다.
+  const [clickCounts, taglines, plannerBadges, proUntils] = await Promise.all([
     fetchOptionalColumn<number>(supabase, ids, 'contact_click_count'),
     fetchOptionalColumn<string>(supabase, ids, 'tagline'),
     fetchPlannerBadgeTotals(supabase, ids),
+    fetchOptionalColumn<string>(supabase, ids, 'pro_until'),
   ]);
 
   return rows.map((row) =>
@@ -252,9 +256,16 @@ export async function listPublicBranches(options: {
       logoBaseUrl,
       clickCounts.get(row.id) ?? 0,
       taglines.get(row.id) ?? null,
-      plannerBadges.get(row.id) ?? { total: 0, topTier: null }
+      plannerBadges.get(row.id) ?? { total: 0, topTier: null },
+      isProUntilActive(proUntils.get(row.id) ?? null)
     )
   );
+}
+
+/** PRO 뱃지 노출 판정(0094) - 만료 시각이 아직 안 지났는지만 본다. 만료된 순간
+ * 조회 시점에 자동으로 false가 되므로 "만료 시 조용히 제거"에 별도 처리가 필요 없다. */
+export function isProUntilActive(proUntil: string | null): boolean {
+  return proUntil !== null && new Date(proUntil).getTime() > Date.now();
 }
 
 export interface BranchSearchResultLite {
@@ -333,6 +344,8 @@ export interface BranchDetail {
   id: string;
   slug: string;
   name: string;
+  /** PRO 뱃지 노출 여부(0094) - 목록(PublicBranchSummary.isPro)과 동일 기준. */
+  isPro: boolean;
   managerName: string | null;
   address: string;
   addressDetail: string | null;
@@ -470,6 +483,9 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
     // 마이그레이션 미적용 - 빈 배열 유지.
   }
 
+  // 목록과 같은 이유로 분리 조회(0094 미적용 배포에서도 상세페이지가 깨지지 않아야 한다).
+  const proUntils = await fetchOptionalColumn<string>(supabase, [branch.id], 'pro_until');
+
   let plannerBadges: { tier: PlannerIncomeTier; count: number }[] = [];
   try {
     const { data: badgeRows, error: badgeError } = await supabase.rpc('get_branch_planner_badge_summary', {
@@ -485,6 +501,7 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
     id: branch.id,
     slug: branch.slug,
     name: branch.name,
+    isPro: isProUntilActive(proUntils.get(branch.id) ?? null),
     managerName: branch.manager_name,
     address: branch.address,
     addressDetail: branch.address_detail,

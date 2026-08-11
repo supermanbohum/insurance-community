@@ -5,6 +5,7 @@ import { BadgeCheck, MapPin, Eye, MessageCircle, Building2, RefreshCw } from 'lu
 import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
 import { HighlightText } from '@/components/search/HighlightText';
+import { BranchBadges } from '@/components/branch/BranchBadges';
 import { INCOME_TIER_BADGE } from '@/lib/planners/tier';
 import { SafeBranchImage } from '@/components/shared/SafeBranchImage';
 
@@ -91,8 +92,14 @@ export function BranchCard({
             {branch.operationType === 'direct' ? '직영' : '지사'}
           </span>
         </p>
-        <p className="truncate text-[15px] font-bold leading-tight text-ink">
-          <HighlightText text={branch.name} query={highlightQuery} />
+        {/* 지점명 우측 인라인 - SPEC-035 v2가 정한 유일한 뱃지 위치다(카드 테두리·배경·
+            정렬에는 개입하지 않는다). 이름만 줄어들고 뱃지는 안 줄어들게 min-w-0/truncate를
+            이름 쪽에만 준다. */}
+        <p className="flex items-center gap-1.5 text-[15px] font-bold leading-tight text-ink">
+          <span className="min-w-0 truncate">
+            <HighlightText text={branch.name} query={highlightQuery} />
+          </span>
+          <BranchBadges isPro={branch.isPro} size="list" />
         </p>
         {branch.tagline && (
           <p className="truncate text-[11px] font-bold text-brand-600">✨ {branch.tagline}</p>

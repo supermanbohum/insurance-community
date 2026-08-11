@@ -455,6 +455,8 @@ export interface Database {
           is_recommended: boolean;
           recommended_rank: number | null;
           has_new_open_badge: boolean;
+          /** PRO 뱃지 만료 시각(0094). now()보다 미래면 PRO 표시. 🔴 정렬·랭킹 금지. */
+          pro_until: string | null;
           status: GaStatus;
           registration_status: GaBranchRegistrationStatus;
           status_reason: GaBranchStatusReason | null;
@@ -2193,6 +2195,10 @@ export interface Database {
         Args: { p_limit?: number };
         Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_count: number; registered_count: number }[];
       };
+      admin_set_branch_pro: {
+        Args: { p_branch_id: string; p_until?: string | null };
+        Returns: undefined;
+      };
       get_ga_quality_ranking_by_region: {
         Args: { p_sido_code: string; p_sigungu_region_id?: string | null; p_limit?: number };
         Returns: { ga_company_id: string; ga_company_name: string; ga_company_slug: string; score: number; certified_count: number; registered_count: number }[];
@@ -2568,6 +2574,9 @@ export interface PublicBranchSummary {
   isRecommended: boolean;
   /** 광고상품 "신규오픈배지" 구매+승인+기간내 여부 (0037/0048). */
   hasNewOpenBadge: boolean;
+  /** PRO 뱃지 노출 여부 - ga_branch.pro_until이 아직 안 지났는지(0094). 운영팀 수동
+   * 부여이고 결제 연동은 없다. 🔴 정렬·랭킹에는 절대 쓰지 않는다(오너 확정). */
+  isPro: boolean;
   createdAt: string;
   updatedAt: string;
   gaBranchCount: number;

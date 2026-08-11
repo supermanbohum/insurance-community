@@ -36,6 +36,10 @@ export interface SiblingBranchItem {
 
 export interface BranchPreviewData {
   name: string;
+  /** PRO 뱃지 노출 여부(SPEC-035 v2, 0094). 관리자 미리보기(디자인 편집기/지점 편집
+   * 워크스페이스)는 실제 PRO 상태를 흉내 낼 이유가 없어 이 필드를 넘기지 않는다 -
+   * 그래서 optional이다(미지정 = 미노출). 공개 상세페이지만 실제 값을 넘긴다. */
+  isPro?: boolean;
   slug: string;
   managerName: string | null;
   address: string;

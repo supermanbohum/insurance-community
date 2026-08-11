@@ -7,6 +7,7 @@ import { Trash2 } from 'lucide-react';
 import {
   setBranchInsurersAction,
   setBranchRecommendedAction,
+  setBranchProAction,
   setBranchStatusAction,
   getBranchDeleteImpactAction,
   deleteBranchAction,
@@ -43,6 +44,29 @@ export function BranchExposureTab({
   const [insurerIds, setInsurerIds] = useState(initialInsurerIds);
   const [deleteImpact, setDeleteImpact] = useState<BranchDeleteImpact | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  // <input type="date">가 요구하는 YYYY-MM-DD로 잘라 넣는다(저장 시 그 날의 끝으로 보정).
+  const [proUntilDate, setProUntilDate] = useState(branch.pro_until ? branch.pro_until.slice(0, 10) : '');
+
+  function handleSavePro() {
+    // 만료일을 "그 날까지 유효"로 읽히게 하루의 끝(23:59:59.999)으로 맞춘다 - 날짜만
+    // 받으면 자정이 되어 사용자가 고른 당일에 이미 꺼진 것처럼 보인다.
+    const until = new Date(`${proUntilDate}T23:59:59.999`).toISOString();
+    startTransition(async () => {
+      const result = await setBranchProAction(branch.id, until);
+      if (result.success) toast.success('PRO 뱃지를 적용했습니다.');
+      else toast.error(result.error);
+    });
+  }
+
+  function handleClearPro() {
+    startTransition(async () => {
+      const result = await setBranchProAction(branch.id, null);
+      if (result.success) {
+        setProUntilDate('');
+        toast.success('PRO 뱃지를 해제했습니다.');
+      } else toast.error(result.error);
+    });
+  }
 
   function handleStatusToggle(checked: boolean) {
     startTransition(async () => {
@@ -110,6 +134,48 @@ export function BranchExposureTab({
         <CardContent className="flex items-center gap-3">
           <Switch checked={branch.is_recommended} onCheckedChange={handleRecommendedToggle} disabled={isPending} />
           <span className="text-sm">{branch.is_recommended ? '추천중' : '미지정'}</span>
+        </CardContent>
+      </Card>
+
+      {/* ⑧ PRO 뱃지(SPEC-035 v2) - 결제 연동 없이 운영팀이 직접 기간을 넣는다.
+          🔴 정렬·랭킹·검색 순서에는 전혀 영향이 없다(오너 확정 "상위 노출 차별 없음") -
+          지점명 우측에 표기만 된다. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">PRO 뱃지</CardTitle>
+          <CardDescription>
+            지점명 우측에 PRO 태그가 표시됩니다. 검색·랭킹 순서에는 영향을 주지 않습니다. 만료일이 지나면 안내 없이 자동으로
+            사라집니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">만료일</span>
+            <input
+              type="date"
+              value={proUntilDate}
+              onChange={(e) => setProUntilDate(e.target.value)}
+              className="rounded-md border px-2 py-1.5 text-sm"
+            />
+            <Button onClick={handleSavePro} disabled={isPending || !proUntilDate} size="sm">
+              적용
+            </Button>
+            {branch.pro_until && (
+              <Button onClick={handleClearPro} disabled={isPending} size="sm" variant="outline">
+                해제
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            현재 상태:{' '}
+            {branch.pro_until && new Date(branch.pro_until).getTime() > Date.now() ? (
+              <span className="font-semibold text-foreground">
+                PRO 표시중 (~{new Date(branch.pro_until).toLocaleDateString('ko-KR')})
+              </span>
+            ) : (
+              '미표시'
+            )}
+          </p>
         </CardContent>
       </Card>
 

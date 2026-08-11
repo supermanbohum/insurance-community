@@ -164,6 +164,20 @@ export async function setBranchRecommendedAction(
   return { success: true };
 }
 
+/** PRO 뱃지 수동 부여/해제(⑧, SPEC-035 v2, 0094) - 결제 연동이 없어(토스 심사 중)
+ * 운영팀이 직접 기간을 넣는다. until이 null이면 해제. 만료는 별도 처리가 필요 없다 -
+ * pro_until이 지나면 조회 시점에 자동으로 뱃지가 사라진다("만료 시 조용히 제거"). */
+export async function setBranchProAction(branchId: string, until: string | null): Promise<ActionResult> {
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('admin_set_branch_pro', {
+    p_branch_id: branchId,
+    p_until: until,
+  });
+  if (error) return { success: false, error: '처리하지 못했습니다.' };
+  revalidateBranch(branchId);
+  return { success: true };
+}
+
 export async function setBranchInsurersAction(branchId: string, insurerIds: string[]): Promise<ActionResult> {
   const supabase = createServerSupabaseClient();
   const { error } = await supabase.rpc('set_branch_insurers', {
