@@ -1,5 +1,5 @@
 -- =========================================================
--- 0099_branch_main_photo_multiple.sql (파일명은 0099_branch_main_photo_up_to_three.sql 유지)
+-- 0099_branch_main_photo_unlimited.sql
 --
 -- ⚠️ 작성 후 사양 변경(오너 지시)으로 적용 전 재작성했다. 적용 이력 없음 -
 -- pg_proc으로 운영 함수에 MAIN_PHOTO_ALREADY_EXISTS가 그대로 남아 있는 것을 확인했다
