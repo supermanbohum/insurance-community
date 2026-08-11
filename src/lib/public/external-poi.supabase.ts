@@ -16,10 +16,26 @@ export interface ExternalPoi {
   name: string;
   address: string | null;
   roadAddress: string | null;
-  /** null = 수집되지 않음. 화면에서 「연락처 기재 안 함」으로 표시한다. */
+  /** null = 수집되지 않음. 화면에서 「공개된 연락처 없음」으로 표시한다(콘텐츠 확정본
+   * - 「연락처 기재 안 함」은 행위 주어가 지점으로 읽혀 미세 폄하가 남는다). */
   phone: string | null;
+  /** null이면 [네이버 지도에서 보기] CTA를 아예 렌더하지 않는다(0096). 없는 링크를
+   * 버튼으로 만들지 않아 "눌렀는데 없더라"가 구조적으로 불가능하다. */
+  placeUrl: string | null;
+  /** 출처 표기 문구를 소스별로 다르게 쓰기 위해 그대로 내보낸다(sourceLabel 참고). */
+  source: string;
   lat: number;
   lng: number;
+}
+
+/** 출처 표기 - 수집 경로에 따라 문구가 달라진다(콘텐츠 확정).
+ * API로 받은 데이터를 "지도에 공개된 정보"라고 쓰면 출처를 잘못 말하는 것이 된다.
+ *
+ * ⚠️ 네이버 오픈API를 채택하면 이용약관이 표기 문구·위치를 지정하고 있을 수 있고,
+ * 그 경우 약관 규정이 이 문구보다 우선한다(콘텐츠 확인). 채택 확정 시 약관 확인 후 교체. */
+export function sourceLabel(source: string): string {
+  if (source === 'naver_local_api') return '네이버 지역검색';
+  return '네이버 지도에 공개된 정보';
 }
 
 export interface MapBounds {
@@ -39,7 +55,7 @@ export async function listExternalPoisInBounds(bounds: MapBounds, limit = 500): 
     const supabase = createPublicSupabaseClient();
     const { data, error } = await supabase
       .from('map_external_pois')
-      .select('id, name, address, road_address, phone, lat, lng')
+      .select('id, source, name, address, road_address, phone, place_url, lat, lng')
       .gte('lat', bounds.minLat)
       .lte('lat', bounds.maxLat)
       .gte('lng', bounds.minLng)
@@ -48,10 +64,12 @@ export async function listExternalPoisInBounds(bounds: MapBounds, limit = 500): 
     if (error) throw error;
     return (data ?? []).map((row) => ({
       id: row.id as string,
+      source: row.source as string,
       name: row.name as string,
       address: (row.address as string | null) ?? null,
       roadAddress: (row.road_address as string | null) ?? null,
       phone: (row.phone as string | null) ?? null,
+      placeUrl: (row.place_url as string | null) ?? null,
       lat: row.lat as number,
       lng: row.lng as number,
     }));

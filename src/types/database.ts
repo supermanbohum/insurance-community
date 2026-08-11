@@ -1273,6 +1273,8 @@ export interface Database {
           address: string | null;
           road_address: string | null;
           phone: string | null;
+          /** 0096 - null이면 [네이버 지도에서 보기] CTA를 렌더하지 않는다. */
+          place_url: string | null;
           lat: number;
           lng: number;
           collected_at: string;
