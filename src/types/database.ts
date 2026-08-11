@@ -705,6 +705,10 @@ export interface Database {
            *  'no_match'("우리 DB에 없는 회원번호")와 섞지 말 것 - 조사 방향이 다르다.
            *  제약은 0104에서 확장됐다. */
           outcome: 'withdrawn' | 'already_withdrawn' | 'no_match' | 'ignored' | 'error';
+          /** 0105 - 검증 실패 건에만 채운다. 수신 본문 앞 500자와 Content-Type.
+           *  실패 코드만으로는 "카카오가 다른 걸 보냈다"와 "우리 파싱이 틀렸다"가 안 갈린다. */
+          raw_body_prefix: string | null;
+          content_type: string | null;
           error_message: string | null;
         };
         Insert: Partial<Database['public']['Tables']['kakao_webhook_events']['Row']>;

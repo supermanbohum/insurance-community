@@ -34,6 +34,14 @@ export async function POST(request: Request) {
   if (!verified.ok) {
     // 🔴 검증 실패도 남긴다. 남기지 않으면 "안 온 것"과 "와서 튕긴 것"이 같은 모양이라
     // 콘솔에 웹훅을 등록했는지조차 확인할 수 없다.
+    //
+    // 🔴 실패 코드만으로는 원인이 안 갈린다. 'MALFORMED_JWT' 하나로는
+    //   (가) 카카오가 우리가 기대하는 형식을 안 보냈다
+    //   (나) 우리 파싱이 틀렸다
+    // 를 구분할 수 없다. 그래서 받은 원문 앞부분과 Content-Type을 함께 남긴다(0105).
+    // 앞 500자만 남기는 이유: 이 엔드포인트는 공개돼 있어 아무나 임의 본문을 POST할 수
+    // 있고, 통째로 쌓으면 로그가 외부 입력 저장소가 된다. JWT는 헤더가 앞에 오므로
+    // 앞부분이면 판별에 충분하다.
     await admin.from('kakao_webhook_events').insert({
       kakao_user_id: null,
       reason: null,
@@ -41,6 +49,8 @@ export async function POST(request: Request) {
       matched_user_id: null,
       outcome: 'error',
       error_message: verified.error,
+      raw_body_prefix: rawBody.slice(0, 500),
+      content_type: request.headers.get('content-type'),
     });
     // RFC8935가 요구하는 형식. 카카오가 이 본문을 그대로 콘솔에 보여준다.
     return NextResponse.json(
