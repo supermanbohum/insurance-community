@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowDown, ArrowUp, Camera, FileText, ImagePlus, ScanFace, Star, VideoIcon, X } from 'lucide-react';
@@ -25,6 +25,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BranchDetailView } from '@/components/branch/BranchDetailView';
+import type { BranchPreviewData } from '@/components/branch/types';
 import { triggerHaptic } from '@/lib/native/haptics';
 import { cn } from '@/lib/utils';
 
@@ -138,6 +140,7 @@ export function OnboardingForm({
   const [showDraftBanner, setShowDraftBanner] = useState(hasDraft);
   const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [showPreview, setShowPreview] = useState(false);
 
   const [registrant, setRegistrant] = useState<Record<(typeof REGISTRANT_FIELDS)[number]['key'], string>>({
     name: initialDraft?.registrant?.name ?? '',
@@ -213,6 +216,75 @@ export function OnboardingForm({
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registrant, gaCompanyId, regionId, addressValue, tagline, introText, plannerCount, amenities, links]);
+
+  // 미리보기용 변환. 공개 상세와 같은 컴포넌트에 넘길 수 있도록 아직 저장 전인 폼
+  // 상태를 BranchPreviewData 모양으로 맞춘다(관리자 BranchEditWorkspace와 같은 패턴).
+  // 🔴 사진은 File이라 URL이 없다 - objectURL로 만들되, 미리보기를 열었을 때만
+  // 만들고 닫거나 사진이 바뀌면 revoke한다. 안 그러면 사진을 고칠 때마다 blob이
+  // 쌓여 긴 세션에서 메모리를 계속 먹는다.
+  const previewMedia = useMemo(() => {
+    if (!showPreview) return [];
+    const items: { id: string; type: 'image_main' | 'image_office'; source: 'external'; url: string }[] = [];
+    if (mainPhoto) items.push({ id: 'preview-main', type: 'image_main', source: 'external', url: URL.createObjectURL(mainPhoto) });
+    officePhotos.forEach((f, i) => {
+      items.push({ id: `preview-office-${i}`, type: 'image_office', source: 'external', url: URL.createObjectURL(f) });
+    });
+    return items;
+  }, [showPreview, mainPhoto, officePhotos]);
+
+  useEffect(() => {
+    return () => {
+      previewMedia.forEach((m) => URL.revokeObjectURL(m.url));
+    };
+  }, [previewMedia]);
+
+  // 미리보기를 열 때 한 번만 고정한다. 매 렌더마다 new Date()를 만들면 값이 계속
+  // 바뀌어 불필요한 리렌더가 난다.
+  const previewNow = useMemo(() => new Date().toISOString(), [showPreview]);
+  const previewRegion = regions.find((r) => r.id === regionId);
+  const previewData: BranchPreviewData = {
+    name: registrant.branchLabel || '(지점명 미입력)',
+    slug: 'preview',
+    managerName: null,
+    address: addressValue.address,
+    addressDetail: addressValue.addressDetail || null,
+    sidoName: previewRegion?.sido_name ?? null,
+    sigunguName: previewRegion?.sigungu_name ?? null,
+    gaBranchCount: 0,
+    lat: addressValue.lat,
+    lng: addressValue.lng,
+    introText: introText || null,
+    educationInfo: null,
+    welfareInfo: null,
+    dbSupportInfo: null,
+    settlementSupportInfo: null,
+    atmosphereInfo: null,
+    plannerCount: plannerCount === '' ? null : plannerCount,
+    parkingAvailable: amenities.parkingAvailable,
+    visitConsultAvailable: amenities.visitConsultAvailable,
+    newRecruitTraining: amenities.newRecruitTraining,
+    experiencedHire: amenities.experiencedHire,
+    dbSupport: amenities.dbSupport,
+    settlementSupport: amenities.settlementSupport,
+    businessHours: null,
+    tagline: tagline || null,
+    // 등록 폼에서 받지 않는 값들이라 중립값을 쓴다. 승인 후 운영팀이 정한다.
+    operationType: 'branch',
+    isHeadquarters: false,
+    updatedAt: previewNow,
+    gaCompanyName: gaName,
+    gaCompanyLogoUrl: null,
+    isGaVerified: false,
+    media: previewMedia,
+    // 연락처/취급보험사/채용은 등록 폼에서 받지 않는다 - 승인 후 파트너 화면에서 넣는다.
+    // 여기서 가짜로 채우면 "미리보기에는 있었는데 공개되면 없다"가 된다.
+    contacts: [],
+    links: [],
+    insurerNames: [],
+    activeRecruits: [],
+    siblingBranches: [],
+    plannerBadges: [],
+  };
 
   const introRemaining = MIN_INTRO_LENGTH - introText.trim().length;
   const registrantComplete = REGISTRANT_FIELDS.every((f) => registrant[f.key].trim());
@@ -851,6 +923,9 @@ export function OnboardingForm({
               이전
             </Button>
             <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowPreview((v) => !v)} disabled={isPending}>
+                {showPreview ? '미리보기 닫기' : '미리보기'}
+              </Button>
               {ALLOW_INCOMPLETE_SUBMIT && !canSubmit && (
                 <Button type="button" variant="outline" disabled={isPending} onClick={() => startTransition(runSaveIncomplete)}>
                   사진 없이 우선 등록하기
@@ -867,6 +942,21 @@ export function OnboardingForm({
           </div>
           {!canSubmit && !isPending && (
             <p className="text-center text-xs text-muted-foreground">대표사진 1장과 사무실사진 {MIN_OFFICE_PHOTOS}장 이상을 등록해주세요.</p>
+          )}
+
+          {/* 🔴 공개 지점 상세와 "같은 컴포넌트"를 쓴다(BranchDetailView, variant="preview").
+              따로 만들면 실제 공개 화면과 어긋나서 미리보기의 의미가 없어진다 -
+              관리자 지점 편집(BranchEditWorkspace)이 이미 쓰는 방식 그대로다.
+              사진은 아직 업로드 전이라 File을 objectURL로 만들어 넘긴다. */}
+          {showPreview && (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-muted-foreground">
+                승인되면 이렇게 공개됩니다. 아직 제출 전이며, 이 화면은 저장되지 않습니다.
+              </p>
+              <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-white p-4">
+                <BranchDetailView data={previewData} variant="preview" />
+              </div>
+            </div>
           )}
         </>
       )}
