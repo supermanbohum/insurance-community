@@ -842,6 +842,9 @@ export async function resubmitBranchRegistrationAction(registrationId: string, b
     // RPC가 올리는 예외를 사용자 언어로 옮긴다. 모르는 코드는 일반 문구로 떨어뜨린다.
     const map: Record<string, string> = {
       REGISTRATION_NOT_FOUND: '등록 요청을 찾을 수 없습니다.',
+      // 같은 GA 소속이어도 제출자 본인만 재제출할 수 있다(반려 사유를 읽을 수 있는
+      // 사람과 범위를 맞췄다). 막다른 길로 두지 않도록 누구에게 부탁해야 하는지 알린다.
+      NOT_REGISTRATION_OWNER: '이 등록을 제출한 담당자만 다시 제출할 수 있습니다. 처음 등록하신 분께 요청해주세요.',
       NOT_AUTHORIZED_FOR_BRANCH: '이 지점의 등록 요청을 다시 제출할 권한이 없습니다.',
       ALREADY_PENDING: '이미 심사 중입니다.',
       ALREADY_APPROVED: '이미 승인된 등록입니다.',

@@ -19,6 +19,13 @@
 --
 -- 방향 A(ga_admin_users.ga_company_id를 null로 밀어 처음부터 새로 등록)는 기각했다.
 -- 반려 사유를 고치라고 해놓고 고칠 대상을 지우는 셈이라, 사진·소개글이 전부 사라진다.
+--
+-- ---------------------------------------------------------
+-- 적용 전 수정(2026-08-11). pg_proc 확인 결과 미적용이었다(rpc_exists = 0).
+-- RPC 권한(GA 단위)이 RLS SELECT 범위(제출자 본인)보다 넓어, 반려 사유를 볼 수 없는
+-- 사람이 재제출할 수 있었다. 사유를 모르고 다시 내면 같은 이유로 또 반려된다 -
+-- 기능이 아니라 무한 루프다. 두 범위를 좁은 쪽(제출자 본인)으로 맞춘다.
+-- 나중에 RLS를 GA 단위로 넓히려면 이 RPC도 함께 넓혀야 한다 - 한쪽만 바꾸면 다시 어긋난다.
 -- =========================================================
 
 create or replace function public.resubmit_branch_registration(p_registration_id uuid)
@@ -35,8 +42,28 @@ begin
     raise exception 'REGISTRATION_NOT_FOUND';
   end if;
 
-  -- 🔴 p_registration_id를 그대로 믿지 않는다. 남의 반려 건을 되살릴 수 있으면 안 된다.
-  -- add_branch_media가 쓰는 것과 같은 소유권 헬퍼를 재사용한다(판정 기준을 한 곳에 둔다).
+  -- 🔴 검사 1 - 제출자 "본인"인가.
+  -- branch_registrations의 SELECT RLS 정책과 똑같은 조건을 쓴다. 조건을 맞추는 것이
+  -- 이 검사의 목적이므로 pg_policy 원문을 그대로 옮겼다(is_active = true 포함 -
+  -- 이걸 빠뜨리면 비활성화된 관리자가 사유는 못 읽으면서 재제출은 할 수 있게 된다).
+  --
+  -- 운영 정책 원문(2026-08-11 pg_policy 조회):
+  --   exists (select 1 from ga_admin_users ga
+  --           where ga.auth_user_id = auth.uid()
+  --             and ga.is_active = true
+  --             and ga.id = branch_registrations.submitted_by_ga_admin_id)
+  if not exists (
+    select 1 from public.ga_admin_users ga
+    where ga.auth_user_id = auth.uid()
+      and ga.is_active = true
+      and ga.id = v_reg.submitted_by_ga_admin_id
+  ) then
+    raise exception 'NOT_REGISTRATION_OWNER';
+  end if;
+
+  -- 🔴 검사 2 - 그 지점의 GA 관리자인가. 위 검사로 갈음하지 않고 함께 둔다.
+  -- 두 검사가 갈리는 상황이 곧 "권한 범위가 어긋났다"는 신호라, 예외명을 분리해야
+  -- 나중에 무엇 때문에 막혔는지 알 수 있다. add_branch_media와 같은 헬퍼를 쓴다.
   if not public.is_ga_admin_for_branch(v_reg.branch_id) then
     raise exception 'NOT_AUTHORIZED_FOR_BRANCH';
   end if;
