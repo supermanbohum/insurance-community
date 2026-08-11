@@ -687,6 +687,24 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['site_visits']['Row']>;
         Relationships: [];
       };
+      /** 0103 - 카카오 계정 상태 변경 웹훅 수신 로그. 서비스롤 전용(RLS 정책 없음).
+       *  🔴 매칭 실패(no_match)와 검증 실패(error)도 남는다 - 그래야 "안 온 것"과
+       *  "와서 튕긴 것"을 구분할 수 있다. */
+      kakao_webhook_events: {
+        Row: {
+          id: string;
+          received_at: string;
+          kakao_user_id: string | null;
+          reason: string | null;
+          raw_claims: Record<string, unknown> | null;
+          matched_user_id: string | null;
+          outcome: 'withdrawn' | 'already_withdrawn' | 'no_match' | 'error';
+          error_message: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['kakao_webhook_events']['Row']>;
+        Update: Partial<Database['public']['Tables']['kakao_webhook_events']['Row']>;
+        Relationships: [];
+      };
       ga_admin_users: {
         Row: {
           id: string;
@@ -2034,6 +2052,12 @@ export interface Database {
       resubmit_branch_registration: {
         Args: { p_registration_id: string };
         Returns: void;
+      };
+      /** 0103 - 카카오 연결 해제 웹훅 수신 시 탈퇴 처리. 서비스롤 전용.
+       *  반환: { outcome: 'withdrawn'|'already_withdrawn'|'no_match', user_id: string|null } */
+      withdraw_kakao_user: {
+        Args: { p_kakao_user_id: string };
+        Returns: { outcome: string; user_id: string | null };
       };
       list_my_branch_registrations: {
         Args: Record<string, never>;
