@@ -1,21 +1,34 @@
 -- =========================================================
--- 0099_branch_main_photo_up_to_three.sql
--- 지점 등록 폼 개편 ① - 대표 홍보사진을 1장에서 최대 3장까지 허용한다(오너 지시).
+-- 0099_branch_main_photo_multiple.sql (파일명은 0099_branch_main_photo_up_to_three.sql 유지)
 --
--- 대표 홍보사진 = 메인·지도·우수GA·인기GA·신규GA 등 목록성 화면에 나가는 사진이고,
--- 사무실 사진(image_office)과는 쓰임이 다르다. 지금은 정확히 1장만 허용된다.
+-- ⚠️ 작성 후 사양 변경(오너 지시)으로 적용 전 재작성했다. 적용 이력 없음 -
+-- pg_proc으로 운영 함수에 MAIN_PHOTO_ALREADY_EXISTS가 그대로 남아 있는 것을 확인했다
+-- (즉 이 파일의 이전 내용은 어느 DB에도 반영되지 않았다). 「기존 마이그레이션 불변」
+-- 규칙의 목적이 파일과 DB의 괴리 방지인데, 괴리가 생길 대상 자체가 없어 새 번호로
+-- 즉시 뒤집는 것보다 이 자리에서 고치는 편이 이력이 깨끗하다.
 --
--- 🔴 아래 함수는 0021 파일의 설명("첫 이미지=main, 나머지=office로 자동 배정")과
--- 다르다 - 그 뒤 어느 시점에 "호출부가 타입을 명시하고, image_main은 유일성 검사로
--- 막는" 방식으로 교체됐다. 이 마이그레이션은 파일이 아니라 **운영 DB의 현재 정의**
--- (pg_get_functiondef)를 원본으로 삼아 그대로 옮기고 필요한 곳만 고쳤다.
--- 파일 주석을 믿고 고쳤으면 존재하지 않는 로직을 수정할 뻔했다.
+-- 지점 등록 폼 개편 ① - 대표 홍보사진을 여러 장 허용한다.
+--   변경 전 사양   1~3장 (상한 3)
+--   최종 사양      1장 이상, 상한 없음   ← 오너가 상한을 전부 없앴다
 --
--- 바뀐 곳은 두 군데뿐이다:
---   1) image_main 유일성 검사(exists) → 3장 상한 검사(count >= 3)
---   2) image_main의 sort_order를 항상 0으로 두던 것 → 대표들 사이에서 0,1,2로 증가
---      (여러 장이 전부 0이면 목록에서 어느 게 첫 장인지 정할 수 없다)
--- 나머지 줄은 현재 정의 그대로다.
+-- 대표 홍보사진 = 메인·지도·우수GA·인기GA·신규GA 목록에 나가는 사진이다.
+-- 현재 운영 함수는 image_main이 이미 있으면 MAIN_PHOTO_ALREADY_EXISTS로 막아 정확히
+-- 1장만 허용한다. 그 검사를 제거한다.
+--
+-- 🔴 상한 검사를 넣지 않는다. 던질 일이 없는 예외를 남기면 화면 쪽에서 그 문구를
+-- 계속 관리해야 하므로 MAIN_PHOTO_LIMIT_EXCEEDED도 만들지 않는다.
+--
+-- 🔴 sort_order를 0 고정에서 증가로 바꾼다. 여러 장이 전부 0이면 "첫 장"을 정할 수
+-- 없는데, 카드 자리(메인·지도·우수GA 등)는 하나뿐이라 첫 장을 확정해야 한다.
+--   카드류      sort_order가 가장 작은 1장만 사용
+--   지점 상세    전체를 순회
+-- 이 규칙 덕분에 대표 사진 장수에 상한이 없어도 목록 레이아웃이 깨지지 않는다.
+--
+-- image_office 쪽은 손대지 않는다(현행 coalesce(max+1, 1) 유지).
+--
+-- 함수 본문은 파일이 아니라 운영 DB의 현재 정의(pg_get_functiondef)를 그대로 옮기고
+-- 위 두 곳만 고쳤다 - 0021 파일 주석("첫 이미지=main 자동 배정")은 실제 운영 함수와
+-- 달랐다. 파일을 믿었으면 존재하지 않는 로직을 고칠 뻔했다.
 -- =========================================================
 
 create or replace function public.add_branch_media(
@@ -43,15 +56,8 @@ begin
   end if;
 
   if p_media_type = 'image_main' then
-    -- 대표 홍보사진은 최대 3장. 예외명을 MAIN_PHOTO_ALREADY_EXISTS에서 바꾼 이유는
-    -- 이제 "이미 있다"가 아니라 "상한을 넘었다"가 실제 사유이기 때문이다 -
-    -- 화면이 사용자에게 보여줄 문구도 달라진다.
-    if (
-      select count(*) from public.branch_media
-      where branch_id = p_branch_id and media_type = 'image_main'
-    ) >= 3 then
-      raise exception 'MAIN_PHOTO_LIMIT_EXCEEDED';
-    end if;
+    -- 장수 제한 없음. 호출부가 지정한 타입을 그대로 신뢰한다.
+    -- 카드류가 쓸 "첫 장"을 정할 수 있도록 0,1,2…로 증가시킨다.
     select coalesce(max(sort_order) + 1, 0) into v_final_sort_order
     from public.branch_media
     where branch_id = p_branch_id and media_type = 'image_main';
@@ -72,7 +78,7 @@ end;
 $function$;
 
 -- ---------------------------------------------------------
--- 확인 쿼리
+-- 확인 쿼리 - 적용 후 원문으로 확인한다.
+--   기대: MAIN_PHOTO_ALREADY_EXISTS 없음, image_main도 coalesce(max+1, 0)
 -- ---------------------------------------------------------
--- select branch_id, media_type, sort_order from public.branch_media
--- where media_type = 'image_main' order by branch_id, sort_order;
+-- select pg_get_functiondef(oid) from pg_proc where proname = 'add_branch_media';
