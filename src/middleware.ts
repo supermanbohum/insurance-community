@@ -88,7 +88,18 @@ export async function middleware(request: NextRequest) {
     //
     // 첫 진입은 반드시 문서 요청이고 클라이언트 내비게이션은 그 뒤에 오므로,
     // 여기서 걸러도 사용자가 세션을 못 받는 경우는 생기지 않는다.
-    if (request.headers.get('rsc') || request.headers.get('next-router-prefetch')) {
+    //
+    // 🔴 `rsc` / `next-router-prefetch` 헤더로 판정하면 안 된다. Next.js가 그
+    // 헤더들을 미들웨어 도달 전에 소비해버려서 여기서는 보이지 않는다 - 실제로
+    // 미들웨어가 받는 헤더는 accept/host/user-agent/x-forwarded-* 뿐이었다.
+    // (이 방식으로 한 번 배포했다가 효과가 0인 것을 확인하고 고쳤다.)
+    // accept와 sec-fetch-dest는 도달하고, 두 요청을 정확히 가른다:
+    //   문서 요청  accept: text/html,...        sec-fetch-dest: document
+    //   RSC 요청   accept: text/x-component     sec-fetch-dest: empty
+    const accept = request.headers.get('accept') ?? '';
+    const fetchDest = request.headers.get('sec-fetch-dest');
+    const isDocumentNavigation = fetchDest ? fetchDest === 'document' : accept.includes('text/html');
+    if (!isDocumentNavigation) {
       return response;
     }
 
