@@ -15,14 +15,18 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+// 🔴 라벨은 "실제로 어디에 뜨는가"로 적는다. 예전 라벨은 pc_left를 "현재 유일하게
+// 실제 노출됨"이라고 했는데, pc_left 지면은 W-051로 폐지돼 지금은 아무 데도 안 뜬다.
+// 그 라벨을 믿고 올리면 소재가 어디에도 안 나온다.
+// 지금 화면에 연결된 지면은 mobile_list_middle 하나뿐이다(SPEC-040, 홈 「우수 GA」 위).
 const SLOT_OPTIONS: { value: BannerSlot; label: string }[] = [
-  { value: 'pc_left', label: 'PC 좌측 (현재 유일하게 실제 노출됨)' },
+  { value: 'mobile_list_middle', label: '홈 · 우수 GA 위 (전 기기, 335×112 / 소재 670×224)' },
+  { value: 'pc_left', label: 'PC 좌측 (지면 폐지됨 - 노출 안 됨)' },
   { value: 'pc_top', label: 'PC 상단 (미연동)' },
   { value: 'pc_right', label: 'PC 우측 (미연동)' },
   { value: 'pc_list_middle', label: 'PC 목록 중간 (미연동)' },
   { value: 'pc_detail_bottom', label: 'PC 상세 하단 (미연동)' },
   { value: 'mobile_top', label: '모바일 상단 (미연동)' },
-  { value: 'mobile_list_middle', label: '모바일 목록 중간 (미연동)' },
   { value: 'mobile_detail_bottom', label: '모바일 상세 하단 (미연동)' },
   { value: 'mobile_sticky_bottom', label: '모바일 하단 고정 (미연동)' },
 ];
@@ -54,7 +58,7 @@ export function BannerForm({ initial }: { initial: AdminBannerRow | null }) {
   const [pcImagePath, setPcImagePath] = useState(initial?.pcImagePath ?? null);
   const [mobileImagePath, setMobileImagePath] = useState(initial?.mobileImagePath ?? null);
   const [linkUrl, setLinkUrl] = useState(initial?.linkUrl ?? '');
-  const [slot, setSlot] = useState<BannerSlot>(initial?.slot ?? 'pc_left');
+  const [slot, setSlot] = useState<BannerSlot>(initial?.slot ?? 'mobile_list_middle');
   const [startAt, setStartAt] = useState(isoToLocalInput(initial?.startAt ?? null));
   const [endAt, setEndAt] = useState(isoToLocalInput(initial?.endAt ?? null));
   const [priority, setPriority] = useState(String(initial?.priority ?? 0));

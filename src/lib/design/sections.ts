@@ -34,6 +34,9 @@ export const HOME_SECTIONS: SectionDef[] = [
     textFields: [{ key: 'ctaLabel', label: 'CTA 버튼 문구', default: '우리 지점 등록하기' }],
   },
   { key: 'quickMenu', label: '빠른 메뉴 (내 주변/지도/지역별/회사별)' },
+  // SPEC-040 광고 지면. 게재 소재가 없으면 지면 자체가 렌더되지 않으므로, 여기서
+  // visible=true여도 빈 박스가 생기지는 않는다.
+  { key: 'adSlot', label: '광고 지면' },
   { key: 'popularGa', label: '인기 GA' },
   { key: 'latest', label: '신규 등록' },
   { key: 'topDesignerRanking', label: 'TOP 설계사 랭킹' },

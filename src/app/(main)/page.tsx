@@ -2,12 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronRight, MapPin } from 'lucide-react';
 import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
+import { listActiveBanners } from '@/lib/public/banners';
 import { getPageLayoutConfig } from '@/lib/design/layout';
 import { getActiveHomeOpenBanner } from '@/lib/admin/home-banner';
 import { listTopDesignerHomeRanking, listGaQualityRanking } from '@/lib/public/top-designer.supabase';
 import { HOME_SECTIONS, type Device } from '@/lib/design/sections';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { HomeOpenBanner } from '@/components/home/HomeOpenBanner';
+import { HomeAdSlot } from '@/components/home/HomeAdSlot';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
@@ -100,7 +102,7 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [gaQuality, latest, stats, layoutConfig, openBanner, topDesignerRanking] = await Promise.all([
+  const [gaQuality, latest, stats, layoutConfig, openBanner, topDesignerRanking, adBanners] = await Promise.all([
     // "인기 GA"(조회수) → "우수 GA"(TOP 설계사 등급 합산 점수)로 대체(오너 지시 ⑤).
     listGaQualityRanking(10),
     listPublicBranches({ sort: 'newest', limit: 10 }),
@@ -110,13 +112,23 @@ export default async function HomePage() {
     // 콘텐츠팀 임계 원칙(N>10에서만 순위 강조) 판별용으로 1건 더 받아온다 - 실제
     // 렌더링은 컴포넌트 안에서 10건까지만 자른다.
     listTopDesignerHomeRanking(11),
+    // SPEC-040 광고 지면. public_banners 뷰가 is_active·게재기간을 이미 걸러주므로
+    // 여기서는 슬롯만 좁힌다. 🔴 슬롯 값 'mobile_list_middle'은 0001의 레거시
+    // 이름이다 - 지면은 PC/모바일 구분 없이 같은 자리에 뜬다. enum 값을 늘리는
+    // 마이그레이션 대신 이름을 그대로 쓰고, 관리자 화면 라벨을 실제 위치로 고쳤다.
+    listActiveBanners('mobile_list_middle'),
   ]);
+
+  // priority 내림차순 정렬된 목록의 첫 건만 쓴다 - 지면이 하나라 회전은 없다.
+  const adBanner = adBanners[0] ?? null;
 
   const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '우리 지점 등록하기';
 
   const nodesByKey: Record<(typeof HOME_SECTIONS)[number]['key'], React.ReactNode> = {
     hero: <HomeRegisterHero stats={stats} ctaLabel={ctaLabel} />,
     quickMenu: <QuickMenuGrid />,
+    // 🔴 소재가 없으면 null - 빈 지면을 그리지 않는다(SPEC-004 §3, pc_left 폐지 사유).
+    adSlot: adBanner ? <HomeAdSlot banner={adBanner} /> : null,
     popularGa: (
       <Section
         title="🏅 우수 GA"
@@ -183,7 +195,10 @@ export default async function HomePage() {
           <HomeOpenBanner banner={openBanner} />
         </div>
       )}
-      {HOME_SECTIONS.map((def) => (
+      {/* 🔴 노드가 null인 섹션은 래퍼째 건너뛴다. ResponsiveSection은 children이
+          비어도 margin-bottom(기본 28px)을 가진 div를 그리므로, 광고 소재가 없을 때
+          홈에 28px짜리 빈 틈이 생긴다 - 빈 지면을 안 그리기로 한 결정이 무의미해진다. */}
+      {HOME_SECTIONS.filter((def) => nodesByKey[def.key] !== null).map((def) => (
         <ResponsiveSection
           key={def.key}
           sectionKey={def.key}

@@ -46,7 +46,10 @@ export type PlannerCertificationStatus = 'pending_review' | 'approved' | 'reject
 export type PlannerCertificationHistoryEventType = 'initial_approval' | 'renewal_approval' | 'rejection';
 export type PlannerApplicationSource = 'partner' | 'public';
 export type VerificationDocumentOwnerType = 'planner_certification' | 'planner_badge';
-/** banners.slot (0001) - PC/모바일 × 위치별 광고 슬롯. 현재 실제로 연동된 것은 pc_left뿐이다. */
+/** banners.slot (0001) - PC/모바일 × 위치별 광고 슬롯.
+ * 🔴 지금 실제로 화면에 연동된 값은 mobile_list_middle 하나다(홈 「우수 GA」 위, SPEC-040).
+ * 이름은 0001의 레거시라 "모바일"이 붙어 있지만 지면은 전 기기 공통이다.
+ * pc_left는 예전에 연동돼 있었으나 W-051로 지면이 폐지됐다. */
 export type BannerSlot =
   | 'pc_top'
   | 'pc_left'

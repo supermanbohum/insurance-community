@@ -7,18 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const SLOT_LABEL: Record<string, string> = {
   pc_top: 'PC 상단',
-  pc_left: 'PC 좌측',
+  pc_left: 'PC 좌측(폐지)',
   pc_right: 'PC 우측',
   pc_list_middle: 'PC 목록 중간',
   pc_detail_bottom: 'PC 상세 하단',
   mobile_top: '모바일 상단',
-  mobile_list_middle: '모바일 목록 중간',
+  mobile_list_middle: '홈 · 우수 GA 위',
   mobile_detail_bottom: '모바일 상세 하단',
   mobile_sticky_bottom: '모바일 하단 고정',
 };
 
-/** 광고 배너 관리 - 실제로 화면에 연동된 슬롯은 PC 좌측(pc_left, 2xl 이상)뿐이다.
- * 나머지 슬롯은 값만 저장 가능하고 아직 노출 로직은 없다(WEB_MASTER_ROADMAP.md 참고). */
+/** 광고 배너 관리 - 실제로 화면에 연동된 지면은 홈 「🏅 우수 GA」 위 하나뿐이다
+ * (slot=mobile_list_middle, SPEC-040). 나머지 슬롯은 값만 저장되고 노출 로직이 없다.
+ * 🔴 pc_left(PC 좌측)는 예전에 연동돼 있었으나 W-051로 지면 자체가 폐지됐다 -
+ * 여기에 올려도 아무 데도 안 뜬다. */
 export default async function AdminBannersPage() {
   const banners = await listBanners();
   const now = new Date();
@@ -28,7 +30,10 @@ export default async function AdminBannersPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">광고 배너 관리</h1>
-          <p className="text-sm text-muted-foreground">현재 홈 화면 PC 좌측(2xl 이상 초광폭 화면)에만 실제로 노출됩니다.</p>
+          <p className="text-sm text-muted-foreground">
+            실제 노출되는 지면은 <strong>홈 · 우수 GA 위</strong> 하나입니다. 소재 670×224(표시 335×112),
+            게재 기간 안이고 활성 상태인 배너 중 우선순위가 가장 높은 1건만 뜹니다. 소재가 없으면 지면 자체가 그려지지 않습니다.
+          </p>
         </div>
         <Button asChild>
           <Link href="/admin/banners/new">배너 등록</Link>
