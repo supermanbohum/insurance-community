@@ -539,6 +539,8 @@ export function OnboardingForm({
               보관됐다가 이어진다고 읽히면 그건 지킬 수 없는 약속이 된다. */}
           <Card className="border-brand-200 bg-brand-50/60">
             <CardContent className="flex flex-col gap-3 pt-5">
+              {/* 🔴 오너 확정(2026-08-11): 사진 가이드의 "3분"과 다르지만 통일하지 말 것.
+                  5분은 등록 전체 과정, 3분은 사진 촬영만이다. 오너 원문 "둘다 각각 냅둬". */}
               <p className="text-[15px] font-extrabold tracking-tight text-ink">미리 준비하시면 5분이면 끝납니다</p>
               <ul className="flex flex-col gap-1.5 text-[13px] text-ink-soft">
                 <li>· 등록자 명함 — 소속과 직급 확인에 사용합니다</li>
@@ -814,6 +816,8 @@ export function OnboardingForm({
                   </div>
                 ))}
               </div>
+              {/* 🔴 오너 확정(2026-08-11): 준비물 안내의 "5분"과 다르지만 통일하지 말 것.
+                  5분은 등록 전체 과정, 3분은 사진 촬영만을 가리킨다. 오너 원문 "둘다 각각 냅둬". */}
               <p className="text-center text-sm font-semibold text-brand-700">지금 계신 사무실에서 3분이면 됩니다.</p>
             </CardContent>
           </Card>

@@ -44,6 +44,12 @@ export function NewBranchCard({ branch }: { branch: PublicBranchSummary }) {
 
       <div className="flex flex-1 flex-col gap-1.5 px-3 pb-3 pt-1.5">
         <p className="truncate text-[15px] font-bold text-ink">{branch.name}</p>
+        {/* 한 줄 소개(오너 지시 2026-08-11) - 지점명 아래 빈 자리에 함께 보여준다.
+            🔴 값이 없으면 요소 자체를 렌더하지 않는다. 빈 span을 두면 여백만 남아
+            오너가 지적한 "비어 있는 공간"이 그대로 남는다. */}
+        {branch.tagline && (
+          <p className="truncate text-[11px] font-medium text-brand-600">✨ {branch.tagline}</p>
+        )}
         <div className="flex items-center justify-between gap-1.5">
           <span className="flex min-w-0 items-center gap-1 truncate rounded-full bg-surface-sunken px-2 py-0.5 text-[10px] font-medium text-ink-soft">
             <MapPin className="h-3 w-3 shrink-0" />

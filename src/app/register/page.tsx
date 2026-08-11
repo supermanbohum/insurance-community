@@ -46,6 +46,9 @@ const PREVIEW_EXAMPLE = {
   gaCompanyName: '○○금융파트너스',
   isGaVerified: true,
   branchName: '○○지점',
+  // 등록 폼의 "한 줄 소개"가 카드에 이렇게 나온다는 것을 보여주는 자리다.
+  // 🔴 예시만 바꾸면 안 된다 - 실제 카드(NewBranchCard 등)에도 같이 나와야 한다.
+  tagline: '○○역 5분 · 신입 교육 전담',
   sidoName: '서울특별시',
   sigunguName: '○○구',
 };
@@ -105,6 +108,7 @@ export default function RegisterIntroPage() {
                 {PREVIEW_EXAMPLE.gaCompanyName}
               </div>
               <p className="text-base font-bold text-ink">{PREVIEW_EXAMPLE.branchName}</p>
+              <p className="truncate text-xs font-medium text-brand-600">✨ {PREVIEW_EXAMPLE.tagline}</p>
               <p className="text-xs text-ink-faint">
                 {PREVIEW_EXAMPLE.sidoName} {PREVIEW_EXAMPLE.sigunguName}
               </p>
