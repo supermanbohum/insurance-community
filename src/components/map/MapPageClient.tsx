@@ -136,7 +136,7 @@ export function MapPageClient({
             {visibleBranches.map((b) => (
               <MapBranchListItem key={b.id} branch={b} active={b.id === selectedId} onClick={() => handleSelectFromList(b.id)} />
             ))}
-            {visibleBranches.length === 0 && <EmptyBranchResults title="이 화면 범위에는 등록된 지점이 아직 없습니다" compact />}
+            {visibleBranches.length === 0 && <EmptyBranchResults icon="pin" title="이 화면 범위에는 등록된 지점이 아직 없습니다" compact />}
           </div>
         </aside>
 
@@ -219,7 +219,7 @@ export function MapPageClient({
                     onClick={() => handleSelectFromList(b.id)}
                   />
                 ))}
-                {visibleBranches.length === 0 && <EmptyBranchResults title="이 화면 범위에는 등록된 지점이 아직 없습니다" compact />}
+                {visibleBranches.length === 0 && <EmptyBranchResults icon="pin" title="이 화면 범위에는 등록된 지점이 아직 없습니다" compact />}
               </div>
             </div>
           )}

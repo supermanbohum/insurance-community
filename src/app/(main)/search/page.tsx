@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Search } from 'lucide-react';
 import { listGaFilterOptions, splitRegisteredGaIds } from '@/lib/public/ga-directory';
 import { listPublicBranches, type BranchSortOption } from '@/lib/public/branch';
 import { listSidoGroups, listAllSigunguRegions } from '@/lib/public/region';
@@ -25,6 +24,12 @@ export const metadata: Metadata = {
 
 const VALID_SORTS: BranchSortOption[] = ['recommended', 'newest', 'views'];
 const PLANNER_TIER_LABELS: Record<number, string> = { 30: '30명 이상', 50: '50명 이상', 100: '100명 이상', 300: '300명 이상' };
+
+/** 0건 카드에 검색어를 인용할 때만 쓴다 - 긴 질의를 그대로 넣으면 제목이 여러 줄로
+ * 늘어나 카드가 무너진다(SPEC-038 C②). 인용 자체는 유지해야 사용자가 무엇으로 찾았는지 안다. */
+function truncateQuery(value: string) {
+  return value.length > 20 ? `${value.slice(0, 20)}…` : value;
+}
 
 export default async function SearchPage({
   searchParams,
@@ -95,6 +100,9 @@ export default async function SearchPage({
   const sigungu = sigunguParam && allSigunguRegions.some((s) => s.regionId === sigunguParam && s.sidoCode === region) ? sigunguParam : '';
 
   const totalCount = branchResults.length;
+  // 사이트 전체 공개 지점 수 - 빈 상태 문구를 "데이터가 없다"와 "내 조건이 안 맞는다"로
+  // 가르는 기준(SPEC-038). regions에 이미 시/도별 집계가 들어 있어 추가 조회가 없다.
+  const siteBranchCount = regions.reduce((sum, group) => sum + group.branchCount, 0);
 
   const gaNameById = new Map(allGaOptions.map((ga) => [ga.id, ga.name]));
   const regionNameByCode = new Map(regions.map((r) => [r.sidoCode, r.sidoName]));
@@ -182,18 +190,41 @@ export default async function SearchPage({
       <SearchFilterChips chips={chips} />
 
       {!shouldSearch ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line py-20 text-ink-faint">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-500">
-            <Search className="h-6 w-6" strokeWidth={1.5} />
-          </span>
-          <p className="text-sm">지점명 또는 소속 회사명을 검색하거나 필터를 사용해보세요.</p>
-        </div>
+        // SPEC-038 B - 검색어·필터 없이 들어온 첫 화면.
+        // 🔴 여기서 "검색하거나 필터를 사용해보세요"라고만 안내하면, 등록된 지점이 0인
+        // 오픈 직후에는 거짓 안내가 된다(무엇을 검색해도 계속 0건이라 사용자가 자기
+        // 검색어 탓으로 오해한다). 그래서 전국 지점 수로 갈라 문장을 바꾼다 -
+        // regions는 listSidoGroups() 결과라 시/도별 branchCount가 이미 들어 있어
+        // 추가 조회 없이 합계만 내면 된다(/region 화면과 완전히 같은 집계 기준).
+        siteBranchCount === 0 ? (
+          <EmptyBranchResults
+            icon="building"
+            title="아직 등록된 지점이 없습니다"
+            description="보험맵은 지금 첫 지점들을 모으고 있습니다. 지금 등록하면 지도의 첫 자리를 가져갑니다."
+            secondaryAction={{ label: '지도에서 보기', href: '/map' }}
+          />
+        ) : (
+          <EmptyBranchResults
+            icon="search"
+            title="어떤 지점을 찾으시나요?"
+            description="지점명이나 소속 회사명을 검색하거나, 필터로 지역·규모를 좁혀 보십시오."
+            primaryAction={{ label: '지도에서 보기', href: '/map' }}
+            secondaryAction={{ label: '우리 지점 등록하기', href: '/register' }}
+          />
+        )
       ) : totalCount === 0 ? (
+        // SPEC-038 C - 질의/필터를 걸었는데 0건.
+        // 필터가 걸려 있으면 "조건을 지우는 것"이 1순위 해법이라 그쪽을 solid로 올린다.
         <EmptyBranchResults
-          title={q && !hasFilters ? `"${q}"에 대한 검색 결과가 아직 없습니다` : '해당 조건으로 등록된 지점이 아직 없습니다'}
-          nudge="우리 지점이 첫 번째가 될 수 있습니다 — 지역 1호 지점으로 등록하세요"
-          registerLabel="무료로 등록하기"
+          icon="search"
+          title={q && !hasFilters ? `"${truncateQuery(q)}"에 대한 검색 결과가 아직 없습니다` : '해당 조건으로 등록된 지점이 아직 없습니다'}
+          description={
+            hasFilters
+              ? '필터를 지우고 다시 찾아보시거나, 우리 지점을 직접 등록하실 수 있습니다.'
+              : '찾으시는 지점이 아직 등록되지 않았을 수 있습니다. 직접 등록하실 수 있습니다.'
+          }
           secondaryAction={hasFilters ? { label: '필터 초기화', href: q ? `/search?q=${encodeURIComponent(q)}` : '/search' } : { label: '지도에서 보기', href: '/map' }}
+          emphasize={hasFilters ? 'secondary' : 'primary'}
         />
       ) : (
         <>

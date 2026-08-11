@@ -68,7 +68,12 @@ function BranchListOrEmpty({
 }) {
   if (branches.length === 0) {
     return (
-      <EmptyBranchResults title={`${sidoName}에 등록된 지점이 아직 없습니다`} secondaryAction={{ label: '지도에서 보기', href: '/map' }} />
+      <EmptyBranchResults
+        icon="pin"
+        title={`${sidoName}에 등록된 지점이 아직 없습니다`}
+        description={`보험맵은 지금 전국에서 지점 등록을 받고 있습니다. ${sidoName} 1호 자리가 비어 있습니다.`}
+        secondaryAction={{ label: '지도에서 보기', href: '/map' }}
+      />
     );
   }
   return (
