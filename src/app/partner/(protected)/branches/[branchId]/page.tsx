@@ -14,6 +14,7 @@ import {
 } from '@/lib/admin/branch';
 import { getGaCompanyById } from '@/lib/admin/ga';
 import { PartnerBranchEditForm } from '@/components/partner/PartnerBranchEditForm';
+import { BranchRejectionNotice } from '@/components/partner/BranchRejectionNotice';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default async function PartnerBranchDetailPage({ params }: { params: { branchId: string } }) {
@@ -24,7 +25,19 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
   }
 
   const supabase = createServerSupabaseClient();
-  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media, { data: openRegistrationRows }] = await Promise.all([
+  // 반려된 신규등록 건 - 사유(review_reason)를 재제출 "전에" 보여줘야 한다(0101).
+  // RLS가 제출자 본인에게만 열어주므로 서비스롤 없이 그대로 조회한다.
+  const rejectedRegistrationPromise = supabase
+    .from('branch_registrations')
+    .select('id, status, review_reason')
+    .eq('branch_id', branch.id)
+    .eq('request_type', 'create')
+    .eq('status', 'rejected')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media, { data: openRegistrationRows }, { data: rejectedRegistration }] = await Promise.all([
     getGaCompanyById(branch.ga_company_id),
     listRegions(),
     listInsurers(),
@@ -33,6 +46,7 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
     getBranchRecruits(branch.id),
     getBranchMedia(branch.id),
     supabase.rpc('get_open_branch_update', { p_branch_id: branch.id }),
+    rejectedRegistrationPromise,
   ]);
 
   const activeRecruit = recruits.find((r) => r.is_active) ?? null;
@@ -48,7 +62,10 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
             {branch.registration_status === 'pending'
               ? '신규 등록 후 운영팀 승인 대기 중입니다.'
               : branch.registration_status === 'rejected'
-                ? '등록이 반려되었습니다. 정보를 수정해 다시 제출해주세요.'
+                ? // 사유와 재제출 버튼은 아래 BranchRejectionNotice가 맡는다. 여기서 다시
+                  // "수정해 다시 제출해주세요"라고 쓰면 같은 안내가 두 번 나오고, 정작
+                  // 누를 버튼은 아래에 있어 사용자가 위에서 방법을 찾다 만다.
+                  '등록이 반려되었습니다.'
                 : '공개 중인 지점입니다.'}
           </p>
         </div>
@@ -59,6 +76,24 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
           <BarChart3 className="h-3.5 w-3.5" /> 성과 보기
         </Link>
       </div>
+
+      {branch.registration_status === 'rejected' && rejectedRegistration && (
+        <BranchRejectionNotice
+          registrationId={rejectedRegistration.id}
+          branchId={branch.id}
+          reason={rejectedRegistration.review_reason}
+        />
+      )}
+
+      {branch.registration_status === 'pending' && (
+        // 재제출 직후 사용자가 "눌렸나?"를 확인할 곳이 필요하다. 이 문구가 없으면
+        // 반려 카드가 사라진 것만 보이고 무슨 일이 일어났는지 알 수 없다.
+        <Card className="border-blue-300 bg-blue-50">
+          <CardContent className="pt-4 text-sm text-blue-900">
+            운영팀이 심사 중입니다. 심사 중에도 내용을 계속 수정할 수 있고, 운영팀은 항상 최신 내용을 검토합니다.
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-amber-300 bg-amber-50">
         <CardContent className="pt-4 text-sm text-amber-900">

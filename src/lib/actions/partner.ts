@@ -817,3 +817,41 @@ export async function createPartnerBranchAction(input: {
   revalidatePath('/partner/branches');
   return { success: true };
 }
+
+/** 반려된 지점 등록을 다시 심사받는다(0101).
+ *
+ * 🔴 이건 신규 기능이 아니라 화면이 이미 한 약속을 이행하는 것이다. 반려 상태 화면이
+ * "정보를 수정해 다시 제출해주세요"라고 안내하는데 다시 제출할 경로가 없었다. 지금까지
+ * 안 터진 이유는 실사용 반려 건이 없었기 때문이고, 한 명이라도 반려되는 순간 드러난다.
+ *
+ * 🔴 호출 전에 화면이 반려 사유를 먼저 보여줘야 한다 - RPC가 review_reason을 null로
+ * 지우기 때문에, 누른 뒤에는 무엇을 고쳐야 했는지 확인할 방법이 사라진다. */
+export async function resubmitBranchRegistrationAction(registrationId: string, branchId: string): Promise<ActionResult> {
+  const partner = await requirePartner();
+  if (!partner.ga_company_id) {
+    return { success: false, error: '등록된 GA가 없습니다.' };
+  }
+
+  const supabase = createServerSupabaseClient();
+  // 소유권은 RPC 안에서 is_ga_admin_for_branch로 다시 확인한다(판정 기준을 DB 한 곳에 둔다).
+  const { error } = await supabase.rpc('resubmit_branch_registration', {
+    p_registration_id: registrationId,
+  });
+
+  if (error) {
+    // RPC가 올리는 예외를 사용자 언어로 옮긴다. 모르는 코드는 일반 문구로 떨어뜨린다.
+    const map: Record<string, string> = {
+      REGISTRATION_NOT_FOUND: '등록 요청을 찾을 수 없습니다.',
+      NOT_AUTHORIZED_FOR_BRANCH: '이 지점의 등록 요청을 다시 제출할 권한이 없습니다.',
+      ALREADY_PENDING: '이미 심사 중입니다.',
+      ALREADY_APPROVED: '이미 승인된 등록입니다.',
+      NOT_REJECTED: '반려된 등록만 다시 제출할 수 있습니다.',
+    };
+    const known = Object.keys(map).find((code) => error.message.includes(code));
+    return { success: false, error: known ? map[known] : '재제출에 실패했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  revalidatePath('/partner/branches');
+  revalidatePath(`/partner/branches/${branchId}`);
+  return { success: true };
+}

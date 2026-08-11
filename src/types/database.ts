@@ -2030,6 +2030,11 @@ export interface Database {
         Args: { p_registration_id: string; p_decision: string; p_reason?: string | null };
         Returns: void;
       };
+      /** 0101 - 반려된 지점 등록을 심사 대기로 되돌린다(파트너 본인). */
+      resubmit_branch_registration: {
+        Args: { p_registration_id: string };
+        Returns: void;
+      };
       list_my_branch_registrations: {
         Args: Record<string, never>;
         Returns: Database['public']['Tables']['branch_registrations']['Row'][];
