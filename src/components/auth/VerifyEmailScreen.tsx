@@ -9,9 +9,9 @@ import type { AuthProviderType } from '@/types/database';
 
 const RESEND_COOLDOWN_MS = 30_000;
 
+// 구글은 웹에서 제거됐다. 라벨만 남겨두면 언젠가 다시 노출된다.
 const PROVIDER_LABEL: Record<string, string> = {
   kakao: '카카오',
-  google: 'Google',
 };
 
 /**
@@ -77,7 +77,7 @@ export function VerifyEmailScreen({
       ) : (
         <>
           <p className="text-sm text-ink-faint">
-            {PROVIDER_LABEL[provider] ?? '간편'} 계정에는 이메일 인증 절차가 없습니다.
+            {PROVIDER_LABEL[provider] ?? '소셜'} 계정에는 이메일 인증 절차가 없습니다.
             <br />
             이메일로 새로 가입하시면 지점·프로필 등록과 댓글을 바로 이용하실 수 있습니다.
           </p>
