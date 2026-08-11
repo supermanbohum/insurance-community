@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Award, Trophy } from 'lucide-react';
+import { Award, Trophy, UserPlus } from 'lucide-react';
 import { listGaQualityRanking, listGaQualityRankingByRegion } from '@/lib/public/top-designer.supabase';
 import { listSidoGroups, listAllSigunguRegions } from '@/lib/public/region';
 import { GaQualityCard } from '@/components/home/carousel/GaQualityCard';
@@ -44,10 +44,15 @@ export default async function GaRankingPage({ searchParams }: { searchParams: { 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
       <div>
+        {/* 이름 확정(콘텐츠, CTO 승인) - "우리 동네 순위"는 무엇의 순위인지 모호해
+            지점 순위로 읽힌다. "우수GA의 지역판"임이 이름에서 드러나야 한다. */}
         <h1 className="text-xl font-bold">🏅 {regionLabel ? `${regionLabel} 우수 GA` : '우수 GA'}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          TOP 인증 등급을 중심으로, 등록된 설계사 수까지 합산한 점수 순위입니다.
-          {regionLabel && ' 전국 점수가 아니라 이 지역 소속 인증·등록만 반영합니다.'}
+          {regionLabel
+            ? // B 해석을 부제에 명시한다 - "여기 지점 하나 있는 전국 1등 GA"가 아니라는 걸
+              // 사용자가 읽어서 알 수 있어야 한다.
+              '이 지역 지점에 소속된 설계사들의 점수만 합산한 순위입니다'
+            : 'TOP 인증 등급을 중심으로, 등록된 설계사 수까지 합산한 점수 순위입니다.'}
         </p>
         <p className="mt-1 text-xs text-ink-faint">
           조회수 기준 랭킹은{' '}
@@ -63,27 +68,43 @@ export default async function GaRankingPage({ searchParams }: { searchParams: { 
       {gaQuality.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-amber-200 bg-amber-50/50 py-14 text-center">
           <Trophy className="h-10 w-10 text-amber-500" />
+          {/* 콘텐츠 확정 빈 상태 - "왜 비었나"를 설명하는 대신 선점 프레임("첫 점수를
+              만드는 GA가 이 지역 1위")으로 바꾸고, 다음 행동 2개로 막다른 길을 없앴다. */}
           <p className="text-base font-bold text-ink">
-            {regionLabel ? `${regionLabel}에 아직 점수가 없습니다` : '우수 GA 1위 자리가 비어 있습니다'}
+            {regionLabel ? `${regionLabel}에는 아직 순위가 없습니다` : '우수 GA 1위 자리가 비어 있습니다'}
           </p>
-          <p className="max-w-xs text-sm text-muted-foreground">
+          <p className="max-w-sm text-sm text-muted-foreground">
             {regionLabel
-              ? // 지역 데이터가 없다고 "이 지역은 GA가 없다"로 오해되지 않게 이유를 그대로 말한다
-                // (CTO 지시 - "우리 동네는 왜 비어있냐"는 오해 방지). 전국 랭킹도 아직 0건인
-                // 지금은 특히 필요하다.
-                '아직 이 지역 소속으로 TOP 인증을 받거나 등록한 설계사가 없어서입니다. 첫 번째로 등록하면 1위로 시작합니다.'
+              ? '이 지역 지점에 소속된 설계사가 등록되면 점수가 쌓이기 시작합니다. 첫 점수를 만드는 GA가 이 지역 1위로 시작합니다.'
               : '첫 점수를 만드는 GA가 1위로 시작합니다. 소속 설계사의 TOP 인증 등급과 등록 인원이 점수가 됩니다.'}
           </p>
-          {/* CTA가 TOP 인증만 가리키지만 실제로는 ③ 등록만으로도 1점이 붙어 1위가 될
-              수 있다 - 콘텐츠팀이 남긴 예약 사항: ③ 폼 배포 시 이 CTA를 다시 검토한다
-              (통보 예정). 지금은 TOP 인증만 실제로 신청 가능한 경로라 단일 CTA로 둔다. */}
-          <Link
-            href="/top-designer-register"
-            className="mt-1 flex items-center gap-1.5 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600"
-          >
-            <Award className="h-4 w-4" />
-            무료로 TOP 인증 신청하기
-          </Link>
+          {regionLabel ? (
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+              <Link
+                href="/branch-planner-register"
+                className="flex items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-700"
+              >
+                <UserPlus className="h-4 w-4" />
+                우리 지점 설계사 등록
+              </Link>
+              <Link
+                href="/ga-ranking"
+                className="rounded-full border border-brand-600 px-5 py-2.5 text-sm font-bold text-brand-600 transition-colors hover:bg-[#F0F6FF]"
+              >
+                전국 순위 보기
+              </Link>
+            </div>
+          ) : (
+            /* 전국 빈 상태는 기존 CTA 유지 - TOP 인증만 실제로 신청 가능한 경로다.
+               ③ 폼 배포 시 이 CTA를 다시 검토하기로 콘텐츠팀과 예약돼 있다. */
+            <Link
+              href="/top-designer-register"
+              className="mt-1 flex items-center gap-1.5 rounded-full bg-amber-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-600"
+            >
+              <Award className="h-4 w-4" />
+              무료로 TOP 인증 신청하기
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

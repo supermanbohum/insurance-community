@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, MapPin } from 'lucide-react';
 import { listPublicBranches, getHomeStats } from '@/lib/public/branch';
 import { getPageLayoutConfig } from '@/lib/design/layout';
 import { getActiveHomeOpenBanner } from '@/lib/admin/home-banner';
@@ -40,12 +40,16 @@ function Section({
   moreHref,
   moreLabel = '더보기',
   moreVariant = 'default',
+  secondary,
   children,
 }: {
   title: string;
   subtitle?: string;
   moreHref: string;
   moreLabel?: string;
+  /** 섹션 헤더의 보조 칩(현재 우수GA의 [우리 동네 보기] 하나뿐) - 별도 대형 섹션을
+   * 만들지 않고 기존 섹션에서 같은 목록의 필터로 들어가게 한다(CTO 확정). */
+  secondary?: { href: string; label: string };
   /** 'gold' = TOP 인증류 CTA(디자인 SPEC-036 §2) - 인증 언어를 다른 섹션의 파랑
    * CTA와 시각적으로 분리해 "이건 증명이 필요한 다른 종류의 행동"임을 알린다. */
   moreVariant?: 'default' | 'gold';
@@ -60,6 +64,18 @@ function Section({
       <div className="flex flex-col">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="whitespace-nowrap text-[17px] font-extrabold tracking-tight text-ink">{title}</h2>
+          <span className="flex shrink-0 items-center gap-1.5">
+            {secondary && (
+              <Link
+                href={secondary.href}
+                // 색 규칙(CTO 확정): 골드는 인증 언어(TOP 인증) 전용, 그 외 탐색 액션은
+                // 전부 블루다. 회색은 이 체계 밖이라 쓰지 않는다.
+                className="flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-brand-600 px-3 text-[13px] font-bold text-brand-600 transition-colors hover:bg-[#F0F6FF]"
+              >
+                <MapPin className="h-3.5 w-3.5" />
+                {secondary.label}
+              </Link>
+            )}
           <Link
             href={moreHref}
             className={cn(
@@ -72,6 +88,7 @@ function Section({
             {moreLabel}
             <ChevronRight className="h-3.5 w-3.5" />
           </Link>
+          </span>
         </div>
         {subtitle && (
           <p className="mt-1.5 w-full text-[13px] font-medium leading-[1.55] text-ink-faint [word-break:keep-all]">{subtitle}</p>
@@ -113,6 +130,9 @@ export default async function HomePage() {
         moreHref={gaQuality.length === 0 ? '/top-designer-register' : '/ga-ranking'}
         moreLabel={gaQuality.length === 0 ? 'TOP 인증 신청' : '더보기'}
         moreVariant={gaQuality.length === 0 ? 'gold' : 'default'}
+        // ⑨ 진입점 - 홈에는 이 칩 하나만 둔다. 전 지역 0건인 지금 대형 섹션을 신설하면
+        // 빈 화면 면적만 늘어난다(CTO 확정).
+        secondary={{ href: '/ga-ranking', label: '우리 동네 보기' }}
       >
         {gaQuality.length === 0 ? (
           <EmptyRow text="첫 점수를 만드는 GA가 1위로 시작합니다." />
