@@ -6,6 +6,7 @@ import { MessageCircle, Link2, Plus } from 'lucide-react';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { useKakaoShare } from '@/lib/kakao/useKakaoShare';
 import { SITE_URL } from '@/lib/seo/config';
+import { SITE_SHARE_IMAGE_URL } from '@/lib/kakao/siteShareContent';
 import { recordBranchPlannerGateEventAction } from '@/lib/actions/branch-planner-registrations';
 
 /** 지점 미연결 하드 게이트(오너 승인, 콘텐츠 확정본, 2026-08-10) - "막는 화면"이 아니라
@@ -21,7 +22,10 @@ export function BranchPlannerGate() {
   const { share, isPending } = useKakaoShare({
     title: '보험맵에 우리 지점을 등록해주세요',
     description: '설계사님이 보험맵에서 지점을 찾고 있어요. 지금 등록하면 이 지역 1호 자리와 6개월 무료를 함께 가져갑니다.',
-    imageUrl: `${SITE_URL}/opengraph-image`,
+    // 🔴 공용 상수를 쓴다. 여기에 `${SITE_URL}/opengraph-image`를 직접 적으면
+    // 소재 교체 시 이 호출부만 버전이 안 올라가 카카오가 옛 이미지를 계속 쓴다
+    // (2026-08-11 사고). 버전 규칙은 siteShareContent.ts 주석 참고.
+    imageUrl: SITE_SHARE_IMAGE_URL,
     url: forwardUrl,
   });
 
