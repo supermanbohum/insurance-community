@@ -53,15 +53,6 @@ const AFTER_REGISTER = [
   '심사는 운영팀이 확인한 뒤 처리해 드립니다.',
 ];
 
-/** 설계사Market과의 차이 - 콘텐츠가 표 형태를 권장했다. 모바일에서 4열 표는 못 읽으므로
- * 항목별 2열 대비(왼쪽=이 페이지, 오른쪽=마켓)로 세로로 쌓는다(내용은 그대로). */
-const MARKET_COMPARISON = [
-  { key: '무엇', here: '지금 소속된 지점의 구성원으로 등록', market: '이직을 위한 개인 프로필 등록' },
-  { key: '지점 연결', here: '필수', market: '필요 없음' },
-  { key: '어디에 보이나', here: '소속 지점 페이지에 함께 표시', market: '설계사Market 목록' },
-  { key: '지점 점수', here: '등록·인증 등급이 반영', market: '반영되지 않음' },
-];
-
 export default function BranchPlannerRegisterIntroPage() {
   return (
     <div className="min-h-screen bg-surface">
@@ -96,28 +87,12 @@ export default function BranchPlannerRegisterIntroPage() {
           </div>
         </section>
 
-        {/* 이 페이지의 핵심 임무 - 설계사Market과 헷갈려서 이직 희망자가 여기로 오는 걸 막는다. */}
+        {/* 🔴 이 페이지의 핵심 임무 - 설계사Market과 헷갈려서 이직 희망자가 여기로 오는 걸
+            막는다. 임무는 그대로이고 수단만 바뀌었다: 예전에는 4행짜리 비교표로 두 등록의
+            차이를 설명했는데, 오너 지시(2026-08-11)로 표를 걷어내고 아래 두 문장만 남겼다.
+            표가 하던 구분을 이 문장이 이미 하고 있다 - 표는 같은 말을 네 줄로 늘린 것이었다.
+            🔴 표가 없다고 되살리지 말 것. 지운 게 아니라 문장으로 대체한 것이다. */}
         <section className="flex flex-col gap-3">
-          <h2 className="text-base font-extrabold text-ink">두 가지 등록은 목적이 다릅니다.</h2>
-          <div className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
-            {MARKET_COMPARISON.map(({ key, here, market }, i) => (
-              <div key={key} className={i > 0 ? 'border-t border-surface-sunken' : ''}>
-                <p className="bg-surface-sunken px-4 py-1.5 text-[11px] font-bold text-ink-faint">{key}</p>
-                <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row">
-                  <p className="flex-1 text-xs leading-relaxed text-ink">
-                    <span className="font-bold text-brand-700">우리 지점 설계사 등록</span>
-                    <br />
-                    {here}
-                  </p>
-                  <p className="flex-1 text-xs leading-relaxed text-ink-faint">
-                    <span className="font-bold">설계사Market</span>
-                    <br />
-                    {market}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
           <p className="text-xs leading-relaxed text-ink-soft">
             이직을 알아보고 계신다면{' '}
             <Link href="/planner-market/search" className="font-bold text-brand-600 underline underline-offset-2">

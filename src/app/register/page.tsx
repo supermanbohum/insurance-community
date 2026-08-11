@@ -122,8 +122,19 @@ export default function RegisterIntroPage() {
                 {PREVIEW_EXAMPLE.isGaVerified && <BadgeCheck className="h-3.5 w-3.5" />}
                 {PREVIEW_EXAMPLE.gaCompanyName}
               </div>
-              <p className="text-base font-bold text-ink">{PREVIEW_EXAMPLE.branchName}</p>
-              <p className="truncate text-xs font-medium text-brand-600">✨ {PREVIEW_EXAMPLE.tagline}</p>
+              {/* 🔴 한 줄 소개는 지점명 "오른쪽 같은 줄"이다(오너 지시 2026-08-11).
+                  아래 줄로 내리지 말 것 - 오너가 지적한 것이 지점명 옆의 빈 공간이었다.
+                  폭 배분: 지점명이 우선이라 최대 65%까지 가져가고, 소개가 남은 자리를 받아
+                  좁으면 말줄임된다. 🔴 둘 다 truncate를 유지할 것 - 한쪽만 주면 긴 지점명일 때
+                  반대쪽이 폭 0으로 밀려 통째로 사라진다.
+                  🔴 소개가 없으면 요소 자체를 렌더하지 않는다. 빈 요소를 두면 오너가 지적한
+                  "오른쪽이 비어 있다"가 그대로 남는다. */}
+              <p className="flex items-baseline gap-1 text-base font-bold text-ink">
+                <span className="min-w-0 max-w-[65%] shrink-0 truncate">{PREVIEW_EXAMPLE.branchName}</span>
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-brand-600">
+                  ✨ {PREVIEW_EXAMPLE.tagline}
+                </span>
+              </p>
               <p className="text-xs text-ink-faint">
                 {PREVIEW_EXAMPLE.sidoName} {PREVIEW_EXAMPLE.sigunguName}
               </p>
