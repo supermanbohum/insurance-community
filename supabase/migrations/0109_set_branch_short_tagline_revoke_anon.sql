@@ -1,0 +1,64 @@
+-- =========================================================
+-- 0109_set_branch_short_tagline_revoke_anon.sql
+-- 0108의 `revoke ... from public`이 의도한 만큼 지우지 못한 것을 바로잡는다.
+--
+-- 🔴 0108은 이미 적용됐다. 그래서 0108 파일을 고치지 않고 새 번호로 만든다
+--    (적용 여부로 갈리는 기준 - CTO_WEB_GUIDEBOOK 12장).
+--
+-- ---------------------------------------------------------
+-- 무엇이 어긋났나
+-- ---------------------------------------------------------
+-- 0108에 이렇게 썼다:
+--     revoke all on function public.set_branch_short_tagline(uuid, text) from public;
+--     grant execute on function public.set_branch_short_tagline(uuid, text) to authenticated;
+--
+-- 적용 후 실제 권한(pg_proc.proacl 직접 조회, 2026-08-13):
+--     postgres=X | anon=X | authenticated=X | service_role=X
+--                  ^^^^^ 남아 있다
+--
+-- PUBLIC 의사 롤(`=X`)은 지워졌다. 그런데 `anon`은 안 지워졌다.
+--
+-- 🔴 이유: Supabase는 함수가 만들어지는 시점에 `anon`에게 **직접 grant**를 준다.
+-- `revoke ... from public`은 **PUBLIC 의사 롤만** 지우고 직접 grant는 건드리지 않는다.
+-- 둘은 다른 것이다 - PUBLIC은 "모두"라는 뜻의 특수 롤이고, anon은 실재하는 롤이다.
+--
+-- ⚠️ **이 사실은 앞으로 만드는 모든 RPC에 걸린다.** 새 함수에서 권한을 좁힐 때는
+--    반드시 `from public, anon, authenticated` 처럼 **롤을 직접 적는다.**
+--
+-- ---------------------------------------------------------
+-- 같은 저장소에 이미 정답이 있었다
+-- ---------------------------------------------------------
+-- 0103/0106의 withdraw_kakao_user는 `from public, anon, authenticated`로 썼고,
+-- 그 결과가 실제로 다르다(같은 날 같은 방법으로 조회한 값):
+--
+--     withdraw_kakao_user        postgres=X | service_role=X            ← 깨끗하다
+--     set_branch_short_tagline   postgres=X | anon=X | authenticated=X  ← 0108, 약한 쪽
+--
+-- 한 저장소 안에서 두 패턴이 갈려 있었고 0108이 약한 쪽을 골랐다.
+--
+-- ---------------------------------------------------------
+-- 왜 고치나 - 악용 경로라서가 아니다
+-- ---------------------------------------------------------
+-- `set_branch_short_tagline`은 자기 방어가 있다. 플랫폼 관리자가 아니면
+-- `is_ga_admin_for_branch()`를 통과해야 하고 익명 세션은 거기서 막힌다.
+-- **지금 뚫려 있는 것이 아니다.**
+--
+-- 고치는 이유는 **의도한 권한과 실제 권한이 다르기 때문**이다. 0108의 주석과
+-- 마이그레이션은 「authenticated만 실행할 수 있다」고 말하는데 실물은 아니다.
+-- 다음 사람이 그 주석을 읽고 판단한다 - 문서가 실물과 다른 상태를 남기지 않는다.
+-- =========================================================
+
+revoke all on function public.set_branch_short_tagline(uuid, text) from anon;
+
+-- 의도를 다시 한 번 못 박아 둔다(0108의 grant는 그대로 유효하다).
+grant execute on function public.set_branch_short_tagline(uuid, text) to authenticated;
+
+-- ---------------------------------------------------------
+-- 확인 쿼리
+-- ---------------------------------------------------------
+-- select proname, array_to_string(proacl, ' | ')
+--   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--  where n.nspname = 'public' and p.proname = 'set_branch_short_tagline';
+--
+-- 기대값: postgres=X | authenticated=X | service_role=X
+--        🔴 anon=X 이 없어야 하고, PUBLIC(`=X`)도 없어야 한다.
