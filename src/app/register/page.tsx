@@ -60,6 +60,9 @@ const PREVIEW_EXAMPLE = {
   // 등록 폼의 "한 줄 소개"가 카드에 이렇게 나온다는 것을 보여주는 자리다.
   // 🔴 예시만 바꾸면 안 된다 - 실제 카드(NewBranchCard 등)에도 같이 나와야 한다.
   tagline: '○○역 5분 · 신입 교육 전담',
+  // 🔴 tagline과 다른 문구여야 한다. 예시가 같은 말을 두 번 하면 등록자가
+  // "잘라서 쓰는 칸"으로 오해한다(오너 확정: 따로 받는 문구다).
+  shortTagline: '신입 환영',
   sidoName: '서울특별시',
   sigunguName: '○○구',
 };
@@ -127,19 +130,21 @@ export default function RegisterIntroPage() {
                 {PREVIEW_EXAMPLE.isGaVerified && <BadgeCheck className="h-3.5 w-3.5" />}
                 {PREVIEW_EXAMPLE.gaCompanyName}
               </div>
-              {/* 🔴 한 줄 소개는 지점명 "오른쪽 같은 줄"이다(오너 지시 2026-08-11).
-                  아래 줄로 내리지 말 것 - 오너가 지적한 것이 지점명 옆의 빈 공간이었다.
-                  폭 배분: 지점명이 우선이라 최대 65%까지 가져가고, 소개가 남은 자리를 받아
-                  좁으면 말줄임된다. 🔴 둘 다 truncate를 유지할 것 - 한쪽만 주면 긴 지점명일 때
-                  반대쪽이 폭 0으로 밀려 통째로 사라진다.
-                  🔴 소개가 없으면 요소 자체를 렌더하지 않는다. 빈 요소를 두면 오너가 지적한
-                  "오른쪽이 비어 있다"가 그대로 남는다. */}
+              {/* 🔴 두 소개는 서로 다른 문구다(오너 확정 2026-08-12).
+                    지점명 오른쪽  short_tagline  작게 · 9자 이내 · 선택 입력
+                    지점명 아래    tagline              원래 자리 · 길이 제한 그대로
+                  자른 것이 아니라 따로 받는다 - 같은 말이 두 번 보이면 오른쪽에 넣을 이유가 없다.
+                  🔴 short_tagline이 없으면 오른쪽을 그냥 비운다. 대체 텍스트·placeholder 금지 -
+                  오너가 지적한 게 "오른쪽이 비어 보인다"였는데 빈 요소를 그리면 그대로 남는다.
+                  ⚠️ 한 번 실패한 자리다: tagline을 오른쪽으로 옮겼더니 190px 카드에서 5글자만
+                  보였다. 짧은 문구를 따로 받는 게 그 결론이다. */}
               <p className="flex items-baseline gap-1 text-base font-bold text-ink">
                 <span className="min-w-0 max-w-[65%] shrink-0 truncate">{PREVIEW_EXAMPLE.branchName}</span>
-                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-brand-600">
-                  ✨ {PREVIEW_EXAMPLE.tagline}
+                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-brand-600">
+                  {PREVIEW_EXAMPLE.shortTagline}
                 </span>
               </p>
+              <p className="truncate text-[11px] font-medium text-brand-600">✨ {PREVIEW_EXAMPLE.tagline}</p>
               <p className="text-xs text-ink-faint">
                 {PREVIEW_EXAMPLE.sidoName} {PREVIEW_EXAMPLE.sigunguName}
               </p>

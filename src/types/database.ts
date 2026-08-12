@@ -449,6 +449,9 @@ export interface Database {
           settlement_support: boolean | null;
           business_hours: string | null;
           tagline: string | null;
+          /** 지점명 오른쪽에 작게 붙는 짧은 소개(0107, 9자 이내·선택).
+           *  🔴 tagline(지점명 아래 한 줄 소개)과 다른 문구다 - 자른 것이 아니다. */
+          short_tagline: string | null;
           contact_click_count: number;
           operation_type: GaOperationType;
           is_headquarters: boolean;
@@ -2673,6 +2676,9 @@ export interface PublicBranchSummary {
   kakaoContactHref: string | null;
   contactClickCount: number;
   tagline: string | null;
+  /** 지점명 오른쪽 짧은 소개(0107). 미입력이거나 마이그레이션 미적용이면 null이고,
+   *  그때는 카드 오른쪽을 그냥 비운다(대체 텍스트 금지). */
+  shortTagline: string | null;
   /** 승인+만료 전인 고소득 설계사 인원수 합계. 배지 노출 여부 판단용(0이면 미노출). */
   plannerBadgeTotal: number;
   /** 보유한 등급 중 가장 높은 등급(3>2>1) - 카드에 대표로 보여줄 배지 하나를 고를 때 사용. */

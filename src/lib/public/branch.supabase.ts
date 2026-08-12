@@ -57,6 +57,7 @@ function toSummary(
   logoBaseUrl: string,
   contactClickCount: number,
   tagline: string | null,
+  shortTagline: string | null,
   plannerBadge: { total: number; topTier: PlannerIncomeTier | null } = { total: 0, topTier: null },
   isPro = false
 ): PublicBranchSummary {
@@ -88,6 +89,7 @@ function toSummary(
     kakaoContactHref: toKakaoHref(row.branch_contacts),
     contactClickCount,
     tagline,
+    shortTagline,
     plannerBadgeTotal: plannerBadge.total,
     plannerTopTier: plannerBadge.topTier,
   };
@@ -242,9 +244,11 @@ export async function listPublicBranches(options: {
   // 아직 없어도 나머지 지점 데이터는 정상 동작해야 하므로 각각 best-effort로 분리 조회한다.
   const ids = rows.map((r) => r.id);
   // pro_until(0094)도 같은 이유로 분리 조회한다 - 뱃지 하나 때문에 목록 전체가 깨지면 안 된다.
-  const [clickCounts, taglines, plannerBadges, proUntils] = await Promise.all([
+  const [clickCounts, taglines, shortTaglines, plannerBadges, proUntils] = await Promise.all([
     fetchOptionalColumn<number>(supabase, ids, 'contact_click_count'),
     fetchOptionalColumn<string>(supabase, ids, 'tagline'),
+    // 0107 미적용 구간에서는 빈 Map이 와서 오른쪽이 비는 게 정상 동작이다.
+    fetchOptionalColumn<string>(supabase, ids, 'short_tagline'),
     fetchPlannerBadgeTotals(supabase, ids),
     fetchOptionalColumn<string>(supabase, ids, 'pro_until'),
   ]);
@@ -256,6 +260,7 @@ export async function listPublicBranches(options: {
       logoBaseUrl,
       clickCounts.get(row.id) ?? 0,
       taglines.get(row.id) ?? null,
+      shortTaglines.get(row.id) ?? null,
       plannerBadges.get(row.id) ?? { total: 0, topTier: null },
       isProUntilActive(proUntils.get(row.id) ?? null)
     )

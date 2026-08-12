@@ -43,21 +43,25 @@ export function NewBranchCard({ branch }: { branch: PublicBranchSummary }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 px-3 pb-3 pt-1.5">
-        {/* 🔴 한 줄 소개는 지점명 "오른쪽 같은 줄"이다(오너 지시 2026-08-11).
-            아래 줄로 내리지 말 것 - 오너가 지적한 것이 지점명 옆의 빈 공간이었다.
-            폭 배분: 지점명이 우선이라 최대 65%까지 가져가고, 소개가 남은 자리를 받아
-            좁으면 말줄임된다. 🔴 둘 다 truncate를 유지할 것 - 한쪽만 주면 긴 지점명일 때
-            반대쪽이 폭 0으로 밀려 통째로 사라진다.
-            🔴 소개가 없으면 요소 자체를 렌더하지 않는다. 빈 요소를 두면 오너가 지적한
-            "오른쪽이 비어 있다"가 그대로 남는다. */}
+        {/* 🔴 두 소개는 서로 다른 문구다(오너 확정 2026-08-12).
+              지점명 오른쪽  short_tagline  작게 · 9자 이내 · 선택 입력
+              지점명 아래    tagline        원래 자리 · 길이 제한 그대로
+            자른 것이 아니라 따로 받는다 - 같은 말이 두 번 보이면 오른쪽에 넣을 이유가 없다.
+            🔴 short_tagline이 없으면 오른쪽을 그냥 비운다. 대체 텍스트·placeholder 금지 -
+            오너가 지적한 게 "오른쪽이 비어 보인다"였는데 빈 요소를 그리면 그대로 남는다.
+            ⚠️ 한 번 실패한 자리다: tagline을 오른쪽으로 옮겼더니 190px 카드에서 5글자만
+            보였다. 짧은 문구를 따로 받는 게 그 결론이다. */}
         <p className="flex items-baseline gap-1 text-[15px] font-bold text-ink">
           <span className="min-w-0 max-w-[65%] shrink-0 truncate">{branch.name}</span>
-          {branch.tagline && (
-            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-brand-600">
-              ✨ {branch.tagline}
+          {branch.shortTagline && (
+            <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-brand-600">
+              {branch.shortTagline}
             </span>
           )}
         </p>
+        {branch.tagline && (
+          <p className="truncate text-[11px] font-medium text-brand-600">✨ {branch.tagline}</p>
+        )}
         <div className="flex items-center justify-between gap-1.5">
           <span className="flex min-w-0 items-center gap-1 truncate rounded-full bg-surface-sunken px-2 py-0.5 text-[10px] font-medium text-ink-soft">
             <MapPin className="h-3 w-3 shrink-0" />
