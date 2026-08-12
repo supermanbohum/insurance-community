@@ -5,11 +5,20 @@ import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { STICKY_BOTTOM_SAFE } from '@/lib/design/safe-area';
 import { cn } from '@/lib/utils';
 import { SITE_CONFIG } from '@/lib/config/site';
+import { pageOpenGraph } from '@/lib/seo/config';
+
+// 🔴 og:title/og:description은 아래 title/description에서 자동으로 만들어지지 않는다.
+// 안 적으면 루트 layout의 「보험맵」이 그대로 나간다(운영에서 확인). 한쪽만 고치지 말 것 -
+// 제목을 바꾸면 공유 카드 문구도 같이 바뀌어야 한다.
+const META_TITLE = '설계사 무료 등록 — 지점이 나를 찾습니다';
+const META_DESCRIPTION =
+  '보험맵에 프로필을 등록하면 관리자가 먼저 연락합니다. 실명·소속·연락처는 공개되지 않고, 연락처는 동의한 경우에만 전달되며 언제든 철회할 수 있습니다.';
 
 export const metadata: Metadata = {
-  title: '설계사 무료 등록 — 지점이 나를 찾습니다',
-  description: '보험맵에 프로필을 등록하면 관리자가 먼저 연락합니다. 실명·소속·연락처는 공개되지 않고, 연락처는 동의한 경우에만 전달되며 언제든 철회할 수 있습니다.',
+  title: META_TITLE,
+  description: META_DESCRIPTION,
   alternates: { canonical: '/planner-register' },
+  openGraph: pageOpenGraph({ title: META_TITLE, description: META_DESCRIPTION, path: '/planner-register' }),
 };
 
 /**

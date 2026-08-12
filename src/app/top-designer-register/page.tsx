@@ -5,11 +5,20 @@ import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { STICKY_BOTTOM_SAFE } from '@/lib/design/safe-area';
 import { cn } from '@/lib/utils';
 import { SITE_CONFIG } from '@/lib/config/site';
+import { pageOpenGraph } from '@/lib/seo/config';
+
+// 🔴 og:title/og:description은 아래 title/description에서 자동으로 만들어지지 않는다.
+// 안 적으면 루트 layout의 「보험맵」이 그대로 나간다(운영에서 확인). 한쪽만 고치지 말 것 -
+// 제목을 바꾸면 공유 카드 문구도 같이 바뀌어야 한다.
+const META_TITLE = 'TOP 설계사 인증 — 완전 무료';
+const META_DESCRIPTION =
+  '국세청 원천징수영수증으로 연봉을 인증하고 운영팀 심사를 통과하면, 인증 배지와 함께 나만의 상세 페이지가 열립니다.';
 
 export const metadata: Metadata = {
-  title: 'TOP 설계사 인증 — 완전 무료',
-  description: '국세청 원천징수영수증으로 연봉을 인증하고 운영팀 심사를 통과하면, 인증 배지와 함께 나만의 상세 페이지가 열립니다.',
+  title: META_TITLE,
+  description: META_DESCRIPTION,
   alternates: { canonical: '/top-designer-register' },
+  openGraph: pageOpenGraph({ title: META_TITLE, description: META_DESCRIPTION, path: '/top-designer-register' }),
 };
 
 /**

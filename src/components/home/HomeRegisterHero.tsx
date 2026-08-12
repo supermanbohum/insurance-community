@@ -65,8 +65,10 @@ function StatChip({ emoji, label, value, unit }: { emoji: string; label: string;
 
 /** 임계값 미만일 때 숫자 대신 보여주는 CTA 카드 - 긴 판(2줄)/짧은 판(1줄)을 둘 다
  * 렌더링해두고 뷰포트 폭으로 전환한다(별도 클라이언트 JS 없이 반응형 처리).
- * href가 없으면 클릭할 수 없는 정보성 카드로 렌더링한다 - 설계사 통계 카드가
- * 이 경우다(③ 완료 전까지는 홈에서 설계사마켓으로 보낼 유효한 링크가 없다,
+ * href가 없으면 클릭할 수 없는 정보성 카드로 렌더링한다.
+ * ⚠️ 2026-08-13부터 두 카드 모두 href가 있다 - 설계사 카드도 /branch-planner-register로
+ * 연결됐다. href 없는 분기는 남겨 두지만 지금 그 경로를 타는 호출부는 없다.
+ * (옛 메모: ③ 완료 전까지는 홈에서 설계사마켓으로 보낼 유효한 링크가 없었다,
  * 오너 지시: 홈→마켓 경로 전부 제거, 마켓은 햄버거 메뉴에서만). */
 function ReplacementCard({
   href,
@@ -108,6 +110,30 @@ function ReplacementCard({
  * 카드 자체가 사라지므로 remaining이 90 아래로 내려가는 걸 실제로 보게 될 일은
  * 없다 - 0 밑으로 내려가지 않게 막아만 둔다(방어적 처리, 정상 동작에선 안 걸림). */
 const EARLY_BIRD_TOTAL_SLOTS = 100;
+
+/**
+ * 「(선착순 N개 지점)」 - 괄호 구간을 통째로 묶는다.
+ *
+ * 🔴 `whitespace-nowrap`이 없으면 좁은 폭에서 괄호 안이 쪼개진다(디자인 라이브 실측):
+ *     375  … (선착순 100 / 개 지점)      숫자만 떨어진다
+ *     360  … (선착순 / 100개 지점)       괄호 안이 갈라진다
+ *     320  … 무료(선 / 착순 100개 지점)  단어 중간이 잘린다 - 한글은 word-break가 normal이라
+ *                                        글자 사이 어디서나 끊긴다
+ *
+ * ⚠️ 비용이 0이다. 이 문구는 어차피 좁은 폭에서 2줄이라 **줄 수·높이가 같고**
+ * (2줄 · 38.5px) 끊기는 자리만 우리가 고르는 것이다. PC(640+)는 어떤 폭에서도 1줄이라
+ * nowrap이 있어도 무해하다 - 그래서 두 변형에 같이 건다.
+ *
+ * `break-keep`(word-break: keep-all)은 안전망이다. 없어도 위 결과가 나오지만, 앞쪽
+ * 「6개월 무료」가 단어 중간에서 끊기는 것을 막아 준다.
+ */
+function EarlyBirdSlots({ remaining }: { remaining: number }) {
+  return (
+    <span className="whitespace-nowrap break-keep">
+      (선착순 <StatCountUp value={remaining} />개 지점)
+    </span>
+  );
+}
 
 export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
   const showBranchNumber = stats.branchCount >= HOME_STAT_THRESHOLDS.branch;
@@ -171,16 +197,27 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           <ReplacementCard
             href="/register"
             longLines={[
-              '지점장님의 지역은 아직 비어 있습니다',
+              // 🔴 「지점장님의 지역」이라고 개인화하면 안 된다 - 이 카드가 뜨는 조건은
+              // **전국 전체 지점 수**(branchCount < 10)이고 지역을 보지 않는다. 지점이
+              // 있는 지역의 지점장에게도 "당신 지역은 비어 있다"고 말하게 된다.
+              // 오너가 조건을 바꾸는 대신 문구를 조건에 맞추는 쪽으로 확정했다(2026-08-13).
+              // ⚠️ 아랫줄 「지역 1호 지점을 선점하세요」의 「지역」은 그대로 둔다 - 그건
+              // 사실 주장이 아니라 권유고, 오너가 고른 문구다.
+              '지금까지 등록된 지점이 없습니다',
               // "6개월 무료(선착순 N개)"는 진행 중인 실제 이벤트(event_popups, 상시 노출)에
               // 맞춘 문구다 - 해당 프로모션이 종료되면 이 문구도 함께 걷어내야 한다. N은
               // 더는 고정 100이 아니라 실시간 잔여 슬롯이다(오너 지시 ⑦).
               <>
-                <strong className="text-brand-600">지역 1호 지점으로 등록하세요</strong> — 6개월 무료(선착순{' '}
-                <StatCountUp value={earlyBirdSlotsRemaining} />개 지점)
+                <strong className="text-brand-600">지역 1호 지점으로 등록하세요</strong> — 6개월 무료
+                <EarlyBirdSlots remaining={earlyBirdSlotsRemaining} />
               </>,
             ]}
-            shortLine={<strong className="text-brand-600">지역 1호 지점을 선점하세요</strong>}
+            shortLine={
+              <>
+                <strong className="text-brand-600">지역 1호 지점을 선점하세요</strong> — 6개월 무료
+                <EarlyBirdSlots remaining={earlyBirdSlotsRemaining} />
+              </>
+            }
           />
         )}
 
@@ -190,6 +227,10 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           </div>
         ) : (
           <ReplacementCard
+            // 🔴 링크가 없으면 「등록해보세요」라고 말하는 카드가 안 눌린다. 바로 위
+            // 쌍둥이 카드(지점)는 /register로 연결돼 있어 **비대칭이 버그로 읽힌다**
+            // (콘텐츠·CTO 상신 → 승인 2026-08-13). 도착지는 이 카드가 가리키는 등록이다.
+            href="/branch-planner-register"
             longLines={[
               '지점장님이 설계사님을 찾고 있어요',
               // 「등록해보세요」 단독은 어느 등록인지 안 갈린다 - 이 사이트에는 등록이 셋이다
