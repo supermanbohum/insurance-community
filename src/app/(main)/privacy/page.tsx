@@ -2,10 +2,19 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPageLayout, LegalSection, LegalList, LegalTable } from '@/components/legal/LegalPageLayout';
 
+import { pageOpenGraph } from '@/lib/seo/config';
+
+// 🔴 og:title/og:description은 아래 title/description에서 자동으로 만들어지지 않는다.
+// 안 적으면 루트 layout의 「보험맵」이 그대로 나간다(운영에서 확인). 한쪽만 고치지 말 것 -
+// 제목을 바꾸면 공유 카드 문구도 같이 바뀌어야 한다.
+const META_TITLE = '개인정보처리방침';
+const META_DESCRIPTION = '보험맵 개인정보처리방침';
+
 export const metadata: Metadata = {
-  title: '개인정보처리방침',
-  description: '보험맵 개인정보처리방침',
+  title: META_TITLE,
+  description: META_DESCRIPTION,
   alternates: { canonical: '/privacy' },
+  openGraph: pageOpenGraph({ title: META_TITLE, description: META_DESCRIPTION, path: '/privacy' }),
 };
 
 const EFFECTIVE_DATE = '2026년 7월 29일';

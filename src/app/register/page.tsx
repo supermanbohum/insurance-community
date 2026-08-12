@@ -3,8 +3,16 @@ import Link from 'next/link';
 import { BadgeCheck, Eye, Megaphone, MapPinned } from 'lucide-react';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { SITE_CONFIG } from '@/lib/config/site';
+import { pageOpenGraph } from '@/lib/seo/config';
 
 export const dynamic = 'force-dynamic';
+
+// 🔴 og:title/og:description은 아래 title/description에서 자동으로 만들어지지 않는다.
+// 안 적으면 루트 layout의 「보험맵」이 그대로 나간다(운영에서 확인). 한쪽만 고치지 말 것 -
+// 제목을 바꾸면 공유 카드 문구도 같이 바뀌어야 한다.
+const META_TITLE = '우리 지점 등록 — 지금 등록하면 0원, 선착순 100개';
+const META_DESCRIPTION =
+  '보험맵에 지점을 등록하면 지점 상세 페이지, 조회수, 채용공고까지 한 번에 노출됩니다. 지금 신청하면 선착순 100개 안에 들어갑니다.';
 
 export const metadata: Metadata = {
   // 이 제목은 하루에 세 번 바뀌었다. 최종은 세 번째다.
@@ -17,9 +25,10 @@ export const metadata: Metadata = {
   // 두 곳에서 다른 순서로 말하지 않는다(콘텐츠 확정). 한쪽만 고치지 말 것.
   // ⚠️ "무료"라는 낱말은 이 페이지에서 CTA·제목에는 안 쓴다. 다만 본문의
   //    "채용공고를 무료로 올릴 수 있습니다"는 조건 없이 참이라 그대로 둔다.
-  title: '우리 지점 등록 — 지금 등록하면 0원, 선착순 100개',
-  description: '보험맵에 지점을 등록하면 지점 상세 페이지, 조회수, 채용공고까지 한 번에 노출됩니다. 지금 신청하면 선착순 100개 안에 들어갑니다.',
+  title: META_TITLE,
+  description: META_DESCRIPTION,
   alternates: { canonical: '/register' },
+  openGraph: pageOpenGraph({ title: META_TITLE, description: META_DESCRIPTION, path: '/register' }),
 };
 
 // W-059(비로그인 문의 폼)가 배포되기 전까지는 "문의 수신" 혜택을 넣지 않는다 - 아직
