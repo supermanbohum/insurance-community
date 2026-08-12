@@ -48,7 +48,7 @@ export default function DeleteAccountPage() {
         </p>
         <LegalList
           items={[
-            '가입 시 사용한 이메일 주소(또는 카카오/구글 로그인 계정)',
+            '가입 시 사용한 이메일 주소(또는 카카오 로그인 계정)',
             '삭제를 요청하는 닉네임 또는 회원 정보',
             '(선택) 삭제를 요청하는 사유',
           ]}
@@ -64,7 +64,9 @@ export default function DeleteAccountPage() {
         <p className="text-[13px] leading-relaxed text-[var(--lp-ink-soft)]">
           카카오 계정 설정에서 보험맵 연결을 해제하셔도 <strong className="font-bold">탈퇴로 처리</strong>됩니다.
           이 경우에도 개인정보는 즉시 파기되며,{' '}
-          <strong className="font-bold">작성하신 게시글과 댓글은 「탈퇴한 회원」으로 표시되어 남습니다.</strong>
+          <strong className="font-bold">
+            작성하신 게시글과 댓글은 남고 작성자 이름만 「탈퇴한 회원」으로 바뀝니다.
+          </strong>
         </p>
         <p className="text-[13px] leading-relaxed text-[var(--lp-ink-soft)]">
           연결 해제는 <strong className="font-bold">되돌릴 수 없으니</strong> 신중히 결정해 주세요.
@@ -82,7 +84,7 @@ export default function DeleteAccountPage() {
         <p>계정 삭제 요청이 처리되면 아래 정보가 삭제되거나 식별할 수 없도록 처리됩니다.</p>
         <LegalList
           items={[
-            '계정 정보: 이메일, 비밀번호, 닉네임, 프로필 사진, 로그인 연동 정보(카카오/구글)',
+            '계정 정보: 이메일, 비밀번호, 닉네임, 프로필 사진, 로그인 연동 정보(카카오)',
             '설계사 마켓 프로필: 활동지역, 경력, 자기소개, 연락처, 인증 서류, 배지 신청 내역',
             'GA·지점 파트너 정보: 담당자 연락처, 사업자 등록 서류 등 개인 식별 정보',
             '서비스 이용 기록: 즐겨찾기, 게시글·댓글 작성자 정보(게시물 자체는 익명 처리되어 존치될 수 있습니다), 채팅 메시지, 열람권 구매·언락 이력의 개인 식별 정보',

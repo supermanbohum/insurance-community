@@ -119,6 +119,13 @@ export default async function MyPage() {
         <GaChangeRequestForm gaOptions={gaOptions} currentGaName={currentGaName} pendingRequest={pendingGaChangeRequest} />
         {/* 🔴 카카오 가입자에게만 보인다. 이메일 가입자는 카카오 연결 자체가 없어
             해당 없는 경고가 되고, 없는 위험을 알리는 것도 잘못된 고지다.
+            ⚠️ users.provider는 「가입 경로」이지 「현재 연결 상태」가 아니다. 이메일로
+            가입한 뒤 카카오를 연결한 사용자가 생기면 provider='email'이라 이 안내를
+            못 보는데 연결 해제는 탈퇴로 처리된다 - 가장 위험한 조합이다.
+            운영 확인(2026-08-12): 그런 사용자 0명이고, 다중 identity 계정 1건은
+            email+google(구글은 8/8 종료)이라 카카오와 무관하다. 즉 지금은 provider가
+            연결 상태와 일치한다. 🔴 계정 연결(link) 기능을 만들면 이 조건을
+            auth.identities 기준으로 바꿔야 한다.
             🔴 「탈퇴한 회원」은 DB에 실제로 박히는 문자열과 같아야 한다(/privacy·
             /delete-account와 동일 규칙) - 바꿀 일이 생기면 세 곳을 함께 바꾼다. */}
         {user.provider === 'kakao' && (
@@ -126,8 +133,10 @@ export default async function MyPage() {
             <p className="text-[13px] font-bold text-ink">카카오 계정으로 가입하셨나요?</p>
             <p className="text-xs leading-relaxed text-ink-soft">
               카카오 계정 설정에서 보험맵 연결을 해제하시면 <strong className="font-bold">회원 탈퇴로 처리</strong>
-              됩니다. 개인정보는 즉시 파기되고, 작성하신 글은{' '}
-              <strong className="font-bold">「탈퇴한 회원」으로 표시되어 남습니다.</strong>{' '}
+              됩니다. 개인정보는 즉시 파기되고,{' '}
+              <strong className="font-bold">
+                작성하신 글은 남고 작성자 이름만 「탈퇴한 회원」으로 바뀝니다.
+              </strong>{' '}
               <strong className="font-bold">되돌릴 수 없으니</strong> 신중히 결정해 주세요.
             </p>
             <Link
