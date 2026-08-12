@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { registerPushTokenAction } from '@/lib/actions/push-tokens';
+import { rememberPushToken } from '@/lib/push/session-token';
 import type { AppToWeb, BoheomBridge as BoheomBridgeType } from '@/lib/bridge/protocol';
 
 /**
@@ -38,6 +39,11 @@ export function BoheomBridge() {
           break;
         case 'push-token':
           registerPushTokenAction(msg.token, msg.platform).then((result) => {
+            // 🔴 등록에 성공한 토큰만 보관한다. 로그아웃할 때 이 값으로 **이 기기의
+            // 토큰만** 해제한다(LogoutForm). 예전에는 여기서 토큰을 그냥 버려서
+            // 해제 대상을 알 방법이 없었고, unregisterPushTokenAction은 호출부가
+            // 0건인 채로 남아 있었다.
+            if (result.success) rememberPushToken(msg.token);
             send({ type: 'push-token-ack', ok: result.success });
           });
           break;

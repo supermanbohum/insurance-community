@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { logoutAction } from '@/lib/actions/user-auth';
+import { LogoutForm } from '@/components/auth/LogoutForm';
 import type { GaApprovalStatus } from '@/types/database';
 
 export function PartnerShell({
@@ -71,11 +72,11 @@ function PartnerAccountFooter({ partnerName }: { partnerName: string }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{partnerName}</p>
       </div>
-      <form action={logoutAction}>
+      <LogoutForm action={logoutAction}>
         <Button type="submit" variant="ghost" size="sm">
           로그아웃
         </Button>
-      </form>
+      </LogoutForm>
     </div>
   );
 }

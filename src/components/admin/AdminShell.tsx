@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { signOutAdminAction } from '@/lib/actions/admin-auth';
+import { LogoutForm } from '@/components/auth/LogoutForm';
 import { SITE_CONFIG } from '@/lib/config/site';
 
 export function AdminShell({
@@ -69,11 +70,11 @@ function AdminAccountFooter({ adminName }: { adminName: string }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{adminName}</p>
       </div>
-      <form action={signOutAdminAction}>
+      <LogoutForm action={signOutAdminAction}>
         <Button type="submit" variant="ghost" size="sm">
           로그아웃
         </Button>
-      </form>
+      </LogoutForm>
     </div>
   );
 }

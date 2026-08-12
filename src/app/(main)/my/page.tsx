@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ChevronRight, FileText, LogOut } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth/session';
 import { logoutAction } from '@/lib/actions/user-auth';
+import { LogoutForm } from '@/components/auth/LogoutForm';
 import { listMyGaChangeRequestsAction } from '@/lib/actions/ga-change-request';
 import { listFavoriteBranches } from '@/lib/user/favorites';
 import { listGaFilterOptions } from '@/lib/public/ga-directory';
@@ -60,7 +61,7 @@ export default async function MyPage() {
             </span>
           )}
         </div>
-        <form action={logoutAction}>
+        <LogoutForm action={logoutAction}>
           <button
             type="submit"
             className="flex shrink-0 items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft transition-colors hover:bg-surface-sunken"
@@ -68,7 +69,7 @@ export default async function MyPage() {
             <LogOut className="h-3.5 w-3.5" />
             로그아웃
           </button>
-        </form>
+        </LogoutForm>
       </section>
 
       {/* /my/posts 라우트는 있는데 전 코드베이스에 링크가 0건이었다 - 만들어 놓고
