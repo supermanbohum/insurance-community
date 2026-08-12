@@ -28,6 +28,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BranchDetailView } from '@/components/branch/BranchDetailView';
 import type { BranchPreviewData } from '@/components/branch/types';
 import { triggerHaptic } from '@/lib/native/haptics';
+import {
+  SHORT_TAGLINE_MAX_LENGTH,
+  SHORT_TAGLINE_HELP,
+  normalizeShortTagline,
+} from '@/lib/branch/short-tagline';
 import { cn } from '@/lib/utils';
 
 // W-087 - 가입 관리자 7명 중 5명(71%)이 지점 등록을 시작만 하고 이탈했다(임시저장
@@ -106,6 +111,7 @@ export interface RegistrationDraftPayload {
   regionId?: string | null;
   addressValue?: Partial<AddressValue>;
   tagline?: string;
+  shortTagline?: string;
   introText?: string;
   plannerCount?: number | '';
   amenities?: Partial<Record<AmenityOption['key'], boolean>>;
@@ -135,6 +141,7 @@ export function OnboardingForm({
         initialDraft.gaCompanyId ||
         initialDraft.addressValue?.address ||
         initialDraft.tagline ||
+        initialDraft.shortTagline ||
         initialDraft.introText)
   );
   const [showDraftBanner, setShowDraftBanner] = useState(hasDraft);
@@ -160,6 +167,7 @@ export function OnboardingForm({
     lng: initialDraft?.addressValue?.lng ?? null,
   });
   const [tagline, setTagline] = useState(initialDraft?.tagline ?? '');
+  const [shortTagline, setShortTagline] = useState(initialDraft?.shortTagline ?? '');
   const [introText, setIntroText] = useState(initialDraft?.introText ?? '');
   const [plannerCount, setPlannerCount] = useState<number | ''>(initialDraft?.plannerCount ?? '');
   // 🔴 임시저장을 이어서 열 때, 저장된 직책이 목록에 없으면(예전에 자유 입력으로 저장된
@@ -205,6 +213,7 @@ export function OnboardingForm({
         regionId,
         addressValue,
         tagline,
+        shortTagline,
         introText,
         plannerCount,
         amenities,
@@ -215,7 +224,7 @@ export function OnboardingForm({
     }, DRAFT_AUTOSAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registrant, gaCompanyId, regionId, addressValue, tagline, introText, plannerCount, amenities, links]);
+  }, [registrant, gaCompanyId, regionId, addressValue, tagline, shortTagline, introText, plannerCount, amenities, links]);
 
   // 미리보기용 변환. 공개 상세와 같은 컴포넌트에 넘길 수 있도록 아직 저장 전인 폼
   // 상태를 BranchPreviewData 모양으로 맞춘다(관리자 BranchEditWorkspace와 같은 패턴).
@@ -268,6 +277,7 @@ export function OnboardingForm({
     settlementSupport: amenities.settlementSupport,
     businessHours: null,
     tagline: tagline || null,
+    shortTagline: normalizeShortTagline(shortTagline),
     // 등록 폼에서 받지 않는 값들이라 중립값을 쓴다. 승인 후 운영팀이 정한다.
     operationType: 'branch',
     isHeadquarters: false,
@@ -384,6 +394,7 @@ export function OnboardingForm({
         lng: addressValue.lng,
         introText,
         tagline,
+        shortTagline,
         plannerCount: plannerCount === '' ? null : plannerCount,
         ...amenities,
       },
@@ -393,6 +404,12 @@ export function OnboardingForm({
       toast.error(result.error);
       triggerHaptic('error');
       return;
+    }
+
+    // 🔴 등록은 성공했는데 짧은 소개만 못 들어간 경우 - 조용히 버리지 않는다.
+    // 등록 자체를 되돌리지도 않는다(사진·서류를 다 올린 뒤라 처음부터 다시 하게 된다).
+    if (result.shortTaglineFailed) {
+      toast.warning('짧은 소개만 저장하지 못했습니다. 지점 정보에서 다시 입력해주세요.');
     }
 
     // 서류는 명함 1개다(임대차계약서를 더 이상 받지 않는다). 여기 숫자가 실제 업로드
@@ -460,6 +477,7 @@ export function OnboardingForm({
         lng: addressValue.lng,
         introText,
         tagline,
+        shortTagline,
         plannerCount: plannerCount === '' ? null : plannerCount,
         ...amenities,
       },
@@ -468,6 +486,10 @@ export function OnboardingForm({
     if (!result.success) {
       toast.error(result.error);
       return;
+    }
+
+    if (result.shortTaglineFailed) {
+      toast.warning('짧은 소개만 저장하지 못했습니다. 지점 정보에서 다시 입력해주세요.');
     }
 
     if (mainPhoto) {
@@ -651,6 +673,33 @@ export function OnboardingForm({
                 required
               />
               <p className="text-right text-xs text-muted-foreground">{tagline.length}/30</p>
+            </CardContent>
+          </Card>
+
+          {/* 짧은 소개(0107) - 위 「한 줄 소개」와 **다른 문구**를 받는다. 같은 말을 잘라
+              쓰는 칸이 아니다(오너 확정 2026-08-12). 그래서 카드를 따로 두고, 설명에도
+              "다른 문구"임을 적는다 - 붙여 놓으면 같은 값을 두 번 적게 된다. */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                짧은 소개 <span className="text-xs font-medium text-muted-foreground">(선택)</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-1.5">
+              <Label htmlFor="onb-short-tagline">{SHORT_TAGLINE_HELP}</Label>
+              <Input
+                id="onb-short-tagline"
+                value={shortTagline}
+                onChange={(e) => setShortTagline(e.target.value.slice(0, SHORT_TAGLINE_MAX_LENGTH))}
+                placeholder="신입 환영"
+                maxLength={SHORT_TAGLINE_MAX_LENGTH}
+              />
+              <p className="text-xs text-muted-foreground">
+                위 「한 줄 소개」와 다른 문구를 적어주세요. 같은 말이면 두 번 보입니다.
+              </p>
+              <p className="text-right text-xs text-muted-foreground">
+                {shortTagline.trim().length}/{SHORT_TAGLINE_MAX_LENGTH}
+              </p>
             </CardContent>
           </Card>
 

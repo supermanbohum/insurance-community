@@ -21,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
 import { ImagePlus, Star, Trash2, Clock, FileEdit } from 'lucide-react';
+import { SHORT_TAGLINE_MAX_LENGTH, SHORT_TAGLINE_HELP } from '@/lib/branch/short-tagline';
 
 export interface OpenBranchRegistration {
   status: 'draft' | 'pending';
@@ -107,6 +108,7 @@ export function PartnerBranchEditForm({
   const [address, setAddress] = useState(payloadString(p, 'address', branch.address));
   const [addressDetail, setAddressDetail] = useState(payloadString(p, 'addressDetail', branch.address_detail ?? ''));
   const [introText, setIntroText] = useState(payloadString(p, 'introText', branch.intro_text ?? ''));
+  const [shortTagline, setShortTagline] = useState(payloadString(p, 'shortTagline', branch.short_tagline ?? ''));
   const [educationInfo, setEducationInfo] = useState(payloadString(p, 'educationInfo', branch.education_info ?? ''));
   const [welfareInfo, setWelfareInfo] = useState(payloadString(p, 'welfareInfo', branch.welfare_info ?? ''));
   const [dbSupportInfo, setDbSupportInfo] = useState(payloadString(p, 'dbSupportInfo', branch.db_support_info ?? ''));
@@ -131,6 +133,9 @@ export function PartnerBranchEditForm({
       address,
       addressDetail,
       introText,
+      // 🔴 승인 큐를 탄다(즉시 반영 아님). 공개 카드에 그대로 나가는 문구라 심사가 필요하다.
+      // 빈 문자열도 그대로 보낸다 - review_branch_registration이 "지운다"로 처리한다(0108).
+      shortTagline,
       educationInfo,
       welfareInfo,
       dbSupportInfo,
@@ -307,6 +312,18 @@ export function PartnerBranchEditForm({
             <Switch id="pbe-visit" checked={visitConsultAvailable} onCheckedChange={setVisitConsultAvailable} />
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="pbe-short-tagline">짧은 소개 (선택)</Label>
+            <Input
+              id="pbe-short-tagline"
+              value={shortTagline}
+              onChange={(e) => setShortTagline(e.target.value.slice(0, SHORT_TAGLINE_MAX_LENGTH))}
+              maxLength={SHORT_TAGLINE_MAX_LENGTH}
+            />
+            <p className="text-xs text-muted-foreground">
+              {SHORT_TAGLINE_HELP} · {shortTagline.trim().length}/{SHORT_TAGLINE_MAX_LENGTH}
+            </p>
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pbe-intro">회사소개</Label>
             <Textarea id="pbe-intro" value={introText} onChange={(e) => setIntroText(e.target.value)} rows={3} />

@@ -375,6 +375,8 @@ export interface BranchDetail {
   settlementSupport: boolean | null;
   businessHours: string | null;
   tagline: string | null;
+  /** 지점명 오른쪽에 붙는 짧은 소개(0107). tagline과 다른 문구다 - 자른 것이 아니다. */
+  shortTagline: string | null;
   operationType: GaOperationType;
   isHeadquarters: boolean;
   updatedAt: string;
@@ -455,6 +457,9 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
 
   // 한줄소개/편의시설 체크박스는 migration 0016으로 추가되는 컬럼 - 적용 전 배포에서도
   // 상세페이지 자체는 깨지지 않도록 별도 best-effort 조회로 분리한다.
+  // 🔴 short_tagline(0107)은 여기에 묶지 않는다. 이 조회는 하나라도 없는 컬럼이 섞이면
+  // 통째로 실패해서 나머지 값까지 전부 null이 된다 - 0016 컬럼들이 이미 적용된 지금
+  // 0107만 아직인 환경에 배포하면 한줄소개·편의시설이 통째로 사라진다. 따로 조회한다.
   let extra: {
     tagline: string | null;
     new_recruit_training: boolean | null;
@@ -489,7 +494,10 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
   }
 
   // 목록과 같은 이유로 분리 조회(0094 미적용 배포에서도 상세페이지가 깨지지 않아야 한다).
-  const proUntils = await fetchOptionalColumn<string>(supabase, [branch.id], 'pro_until');
+  const [proUntils, shortTaglines] = await Promise.all([
+    fetchOptionalColumn<string>(supabase, [branch.id], 'pro_until'),
+    fetchOptionalColumn<string>(supabase, [branch.id], 'short_tagline'),
+  ]);
 
   let plannerBadges: { tier: PlannerIncomeTier; count: number }[] = [];
   try {
@@ -531,6 +539,7 @@ export const getPublicBranchDetail = cache(async function getPublicBranchDetail(
     settlementSupport: extra?.settlement_support ?? null,
     businessHours: branch.business_hours,
     tagline: extra?.tagline ?? null,
+    shortTagline: shortTaglines.get(branch.id) ?? null,
     operationType: branch.operation_type,
     isHeadquarters: branch.is_headquarters,
     updatedAt: branch.updated_at,

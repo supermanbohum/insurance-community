@@ -53,6 +53,9 @@ const FIELD_LABELS: Record<string, string> = {
   parkingAvailable: '주차 가능',
   visitConsultAvailable: '방문상담 가능',
   businessHours: '운영시간',
+  // 지점명 오른쪽에 붙는 짧은 소개(0107). 공개 카드에 그대로 나가는 자유 입력이라
+  // 승인 화면에 반드시 보여야 한다 - 여기 없으면 심사 없이 통과하는 문구가 된다.
+  shortTagline: '짧은 소개',
 };
 
 function displayValue(value: unknown): string {

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { AlertTriangle } from 'lucide-react';
 import { updateBranchAction } from '@/lib/actions/branch-admin';
 import { detectSuperlativeClaims } from '@/lib/moderation/superlative';
+import { SHORT_TAGLINE_MAX_LENGTH, SHORT_TAGLINE_HELP } from '@/lib/branch/short-tagline';
 import type { BranchRow, RegionRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
 import { AddressSearchField, type AddressValue } from '@/components/admin/AddressSearchField';
@@ -32,6 +33,8 @@ export interface BranchInfoDraft {
   parkingAvailable: boolean | null;
   visitConsultAvailable: boolean | null;
   businessHours: string;
+  /** 지점명 오른쪽 짧은 소개(0107). 지점명 아래 「한 줄 소개」(tagline)와 다른 문구다. */
+  shortTagline: string;
   operationType: 'direct' | 'branch';
   isHeadquarters: boolean;
 }
@@ -67,6 +70,7 @@ export function BranchInfoTab({
   const [parkingAvailable, setParkingAvailable] = useState<boolean | null>(branch.parking_available);
   const [visitConsultAvailable, setVisitConsultAvailable] = useState<boolean | null>(branch.visit_consult_available);
   const [businessHours, setBusinessHours] = useState(branch.business_hours ?? '');
+  const [shortTagline, setShortTagline] = useState(branch.short_tagline ?? '');
   const [operationType, setOperationType] = useState<'direct' | 'branch'>(branch.operation_type);
   const [isHeadquarters, setIsHeadquarters] = useState(branch.is_headquarters);
 
@@ -103,11 +107,12 @@ export function BranchInfoTab({
       parkingAvailable,
       visitConsultAvailable,
       businessHours,
+      shortTagline,
       operationType,
       isHeadquarters,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, managerName, addressValue, introText, educationInfo, welfareInfo, dbSupportInfo, settlementSupportInfo, atmosphereInfo, plannerCount, parkingAvailable, visitConsultAvailable, businessHours, operationType, isHeadquarters]);
+  }, [name, managerName, addressValue, introText, educationInfo, welfareInfo, dbSupportInfo, settlementSupportInfo, atmosphereInfo, plannerCount, parkingAvailable, visitConsultAvailable, businessHours, shortTagline, operationType, isHeadquarters]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -130,6 +135,7 @@ export function BranchInfoTab({
         parkingAvailable,
         visitConsultAvailable,
         businessHours,
+        shortTagline,
         operationType,
         isHeadquarters,
       });
@@ -177,6 +183,24 @@ export function BranchInfoTab({
       <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
 
       <AddressSearchField value={addressValue} onChange={setAddressValue} />
+
+      {/* 짧은 소개(0107) - 운영팀이 공개 문구를 직접 고칠 수 있어야 해서 여기 둔다.
+          ⚠️ 지점명 아래 「한 줄 소개」(tagline)는 아직 관리자 편집 UI가 없다(파트너 등록
+          화면 전용). 두 필드 동작이 갈리는 상태이므로, tagline 편집을 붙일 때 여기와
+          나란히 놓을 것. */}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="branch-short-tagline">짧은 소개 (선택)</Label>
+        <Input
+          id="branch-short-tagline"
+          value={shortTagline}
+          onChange={(e) => setShortTagline(e.target.value.slice(0, SHORT_TAGLINE_MAX_LENGTH))}
+          maxLength={SHORT_TAGLINE_MAX_LENGTH}
+          placeholder="비워두면 지점명 오른쪽이 비게 됩니다"
+        />
+        <p className="text-xs text-muted-foreground">
+          {SHORT_TAGLINE_HELP} · {shortTagline.trim().length}/{SHORT_TAGLINE_MAX_LENGTH}
+        </p>
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="branch-intro">회사소개</Label>

@@ -64,6 +64,12 @@ export interface BranchPreviewData {
   settlementSupport: boolean | null;
   businessHours: string | null;
   tagline: string | null;
+  /**
+   * 지점명 오른쪽에 작게 붙는 짧은 소개(0107, 9자 이내, 선택 입력).
+   * 🔴 tagline(지점명 아래 한 줄 소개)과 **서로 다른 문구**다 - 같은 말을 자른 것이 아니다.
+   * 비어 있으면 그 자리를 그냥 비운다(대체 텍스트·placeholder 금지).
+   */
+  shortTagline: string | null;
   operationType: 'direct' | 'branch';
   isHeadquarters: boolean;
   updatedAt: string;

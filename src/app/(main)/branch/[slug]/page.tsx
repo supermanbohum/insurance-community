@@ -87,6 +87,7 @@ export default async function BranchDetailPage({ params }: { params: { slug: str
     settlementSupport: branch.settlementSupport,
     businessHours: branch.businessHours,
     tagline: branch.tagline,
+    shortTagline: branch.shortTagline,
     operationType: branch.operationType,
     isHeadquarters: branch.isHeadquarters,
     updatedAt: branch.updatedAt,

@@ -57,6 +57,7 @@ export function BranchEditWorkspace({
     parkingAvailable: branch.parking_available,
     visitConsultAvailable: branch.visit_consult_available,
     businessHours: branch.business_hours ?? '',
+    shortTagline: branch.short_tagline ?? '',
     operationType: branch.operation_type,
     isHeadquarters: branch.is_headquarters,
   });
@@ -90,6 +91,8 @@ export function BranchEditWorkspace({
     settlementSupport: null,
     businessHours: draft.businessHours || null,
     tagline: (branch as unknown as { tagline?: string | null }).tagline ?? null,
+    // 저장 전에도 미리보기에 바로 반영된다 - 관리자가 고치는 칸이라 draft 쪽을 본다.
+    shortTagline: draft.shortTagline.trim() || null,
     operationType: draft.operationType,
     isHeadquarters: draft.isHeadquarters,
     updatedAt: branch.updated_at,

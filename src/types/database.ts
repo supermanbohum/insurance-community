@@ -1686,6 +1686,11 @@ export interface Database {
         Args: { p_branch_id: string; p_status: GaStatus };
         Returns: void;
       };
+      /** 0108 - 짧은 소개 단독 저장. GA 담당자는 심사 전 지점만, 운영팀은 제한 없이. */
+      set_branch_short_tagline: {
+        Args: { p_branch_id: string; p_short_tagline: string | null };
+        Returns: void;
+      };
       set_branch_recommended: {
         Args: { p_branch_id: string; p_is_recommended: boolean; p_recommended_rank?: number };
         Returns: void;

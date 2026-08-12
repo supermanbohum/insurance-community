@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { GaStatus, GaOperationType } from '@/types/database';
 import { slugify } from '@/lib/utils';
+import { normalizeShortTagline, validateShortTagline } from '@/lib/branch/short-tagline';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
@@ -27,6 +28,14 @@ export interface BranchFormInput {
   businessHours?: string | null;
   operationType?: GaOperationType;
   isHeadquarters?: boolean;
+  /**
+   * 지점명 오른쪽에 붙는 짧은 소개(0107).
+   *
+   * ⚠️ `update_branch` RPC가 받는 값이 아니다 - 전용 RPC(`set_branch_short_tagline`,
+   * 0108)로 따로 저장한다. 왜 기존 RPC에 인자를 안 붙였는지는 0108 헤더 참고.
+   * `undefined`면 건드리지 않는다(빈 문자열은 "지운다"는 뜻이라 구분해야 한다).
+   */
+  shortTagline?: string | null;
 }
 
 function revalidateBranch(branchId?: string) {
@@ -112,6 +121,24 @@ export async function updateBranchAction(branchId: string, input: BranchFormInpu
 
   if (error) {
     return { success: false, error: '저장하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  // 🔴 짧은 소개는 별도 RPC라 저장이 따로 실패할 수 있다. 파트너 등록 폼과 달리 여기서는
+  // **에러로 알린다** - 운영팀은 이 칸을 고치려고 들어온 것이라, 나머지가 저장됐다고
+  // 성공으로 처리하면 고친 줄 알고 나간다.
+  if (input.shortTagline !== undefined) {
+    const value = normalizeShortTagline(input.shortTagline);
+    if (value !== null && validateShortTagline(value) !== null) {
+      return { success: false, error: '짧은 소개는 9자까지 입력할 수 있습니다.' };
+    }
+    const { error: shortError } = await supabase.rpc('set_branch_short_tagline', {
+      p_branch_id: branchId,
+      p_short_tagline: value,
+    });
+    if (shortError) {
+      revalidateBranch(branchId);
+      return { success: false, error: '나머지는 저장했지만 짧은 소개는 저장하지 못했습니다.' };
+    }
   }
 
   revalidateBranch(branchId);

@@ -164,6 +164,13 @@ export function BranchDetailView({
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <h1 className="text-xl font-extrabold tracking-tight text-ink">{data.name}</h1>
+            {/* 짧은 소개(0107) - 목록 카드와 같은 자리(지점명 오른쪽), 같은 색.
+                🔴 목록 카드에서는 폭이 모자라면 숨기지만 여기서는 숨기지 않는다. 상세는
+                flex-wrap이라 좁으면 다음 줄로 내려갈 뿐 지점명을 밀어내지 않는다 -
+                "안 들어가면 숨긴다"는 규칙은 자를 수밖에 없는 190px 카드의 사정이다. */}
+            {data.shortTagline && (
+              <span className="text-[13px] font-semibold text-[#8B95A8]">{data.shortTagline}</span>
+            )}
             {/* SPEC-035 v2 - 상세는 24px 사이즈. 지점명 바로 우측 인라인이 유일한 위치다. */}
             <BranchBadges isPro={data.isPro ?? false} size="detail" />
             <span

@@ -123,6 +123,7 @@ async function findSampleBranchDetail(): Promise<BranchPreviewData | null> {
     settlementSupport: branch.settlementSupport,
     businessHours: branch.businessHours,
     tagline: branch.tagline,
+    shortTagline: branch.shortTagline,
     operationType: branch.operationType,
     isHeadquarters: branch.isHeadquarters,
     updatedAt: branch.updatedAt,

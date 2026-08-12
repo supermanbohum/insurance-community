@@ -6,12 +6,51 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { requirePartner } from '@/lib/partner/session';
 import { slugify } from '@/lib/utils';
 import { notifyAdminsOfNewBranchRegistration } from '@/lib/push/admin-alerts';
+import { normalizeShortTagline, validateShortTagline } from '@/lib/branch/short-tagline';
 import type { BranchMediaSource } from '@/types/database';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 export type RegisterGaResult =
-  | { success: true; branchId: string; registrationId: string }
+  | {
+      success: true;
+      branchId: string;
+      registrationId: string;
+      /**
+       * 지점은 등록됐지만 「짧은 소개」만 저장하지 못한 경우 true.
+       *
+       * 🔴 지점 등록 자체를 실패로 만들지 않는다 - 사진·서류까지 다 올린 등록을 선택
+       * 입력 한 칸 때문에 되돌리면 사용자가 처음부터 다시 해야 한다. 대신 **조용히
+       * 버리지도 않는다**: 호출부가 이 값을 보고 "짧은 소개만 저장 못 했다"고 알린다.
+       */
+      shortTaglineFailed?: boolean;
+    }
   | { success: false; error: string };
+
+/**
+ * 「짧은 소개」를 지점에 저장한다(0108의 전용 RPC).
+ *
+ * 왜 등록 RPC에 인자로 안 넣었나: `submit_branch_registration`에 파라미터를 더하면
+ * 시그니처가 다른 함수가 하나 더 생겨(옛 함수는 남는다) PostgREST가 후보를 못 고르거나,
+ * 옛 함수를 지우면 SQL 적용~배포 사이에 등록 폼이 죽는다. 0108 헤더에 자세히 적었다.
+ *
+ * 반환값은 "저장됐는가"다. 실패해도 던지지 않는다 - 호출부가 등록 자체를 살린 채
+ * 이 값만 보고 안내하도록.
+ */
+async function saveShortTagline(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  branchId: string,
+  raw: string | null | undefined
+): Promise<boolean> {
+  const value = normalizeShortTagline(raw);
+  if (value === null) return true; // 미입력 - 저장할 것이 없다(빈 값으로 덮어쓸 필요도 없다)
+  if (validateShortTagline(value) !== null) return false;
+
+  const { error } = await supabase.rpc('set_branch_short_tagline', {
+    p_branch_id: branchId,
+    p_short_tagline: value,
+  });
+  return !error;
+}
 
 function uniqueSlug(name: string, seed: string): string {
   return `${slugify(name) || 'branch'}-${seed.replace(/-/g, '').slice(-8)}`;
@@ -41,6 +80,8 @@ export async function submitBranchRegistrationAction(input: {
     lng?: number | null;
     introText?: string;
     tagline?: string;
+    /** 지점명 오른쪽에 붙는 짧은 소개(0107). tagline과 다른 문구다 - 자른 것이 아니다. */
+    shortTagline?: string;
     plannerCount?: number | null;
     parkingAvailable?: boolean | null;
     visitConsultAvailable?: boolean | null;
@@ -97,12 +138,21 @@ export async function submitBranchRegistrationAction(input: {
     return { success: false, error: '지점 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
   }
 
+  // 지점이 만들어진 다음에 저장한다 - branch_id가 있어야 하고, submit_branch_registration이
+  // ga_admin_users.branch_id를 방금 채웠으므로 RPC의 소유자 확인을 통과한다.
+  const shortTaglineSaved = await saveShortTagline(supabase, data.branch_id, input.branch.shortTagline);
+
   await supabase.rpc('clear_branch_registration_draft');
 
   revalidatePath('/partner');
   revalidatePath('/admin/change-requests');
   await notifyAdminsOfNewBranchRegistration();
-  return { success: true, branchId: data.branch_id, registrationId: data.registration_id };
+  return {
+    success: true,
+    branchId: data.branch_id,
+    registrationId: data.registration_id,
+    shortTaglineFailed: !shortTaglineSaved,
+  };
 }
 
 /** W-087③ - 사진 없이 지점 등록을 저장한다. status='incomplete'라 승인 대기열에는
@@ -128,6 +178,8 @@ export async function saveIncompleteBranchRegistrationAction(input: {
     lng?: number | null;
     introText?: string;
     tagline?: string;
+    /** 지점명 오른쪽에 붙는 짧은 소개(0107). tagline과 다른 문구다 - 자른 것이 아니다. */
+    shortTagline?: string;
     plannerCount?: number | null;
     parkingAvailable?: boolean | null;
     visitConsultAvailable?: boolean | null;
@@ -184,9 +236,16 @@ export async function saveIncompleteBranchRegistrationAction(input: {
     return { success: false, error: '지점 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
   }
 
+  const shortTaglineSaved = await saveShortTagline(supabase, data.branch_id, input.branch.shortTagline);
+
   await supabase.rpc('clear_branch_registration_draft');
   revalidatePath('/partner');
-  return { success: true, branchId: data.branch_id, registrationId: data.registration_id };
+  return {
+    success: true,
+    branchId: data.branch_id,
+    registrationId: data.registration_id,
+    shortTaglineFailed: !shortTaglineSaved,
+  };
 }
 
 /** W-087③ - 미완성 등록에 사진을 마저 올린 뒤 호출해 실제 승인 대기열('pending')로
@@ -453,6 +512,11 @@ export interface BranchTrustPayload {
   parkingAvailable?: boolean;
   visitConsultAvailable?: boolean;
   businessHours?: string;
+  /**
+   * 짧은 소개(0107). 🔴 승인 큐를 탄다 - 즉시 반영되지 않는다.
+   * 빈 문자열은 "지운다"는 뜻이라 undefined와 구분해서 그대로 넘긴다.
+   */
+  shortTagline?: string;
 }
 
 /** 임시저장 - 작성중 내용을 draft로 보관한다(필수값 검증 없음). 이미 대기중인 요청이
@@ -490,6 +554,9 @@ export async function saveBranchUpdateDraftAction(
       parkingAvailable: payload.parkingAvailable ?? undefined,
       visitConsultAvailable: payload.visitConsultAvailable ?? undefined,
       businessHours: payload.businessHours?.trim() ?? undefined,
+      // 🔴 `?? undefined`가 아니라 `!== undefined` 검사다. 빈 문자열을 undefined로
+      // 접으면 "지운다"가 "안 바꾼다"가 되어 짧은 소개를 영영 못 지운다.
+      ...(payload.shortTagline !== undefined ? { shortTagline: payload.shortTagline.trim() } : {}),
     },
   });
   if (error) {
@@ -519,6 +586,11 @@ export async function submitBranchTrustUpdateAction(
     parkingAvailable?: boolean;
     visitConsultAvailable?: boolean;
     businessHours?: string;
+    /**
+     * 짧은 소개(0107). 🔴 승인 큐를 탄다 - 즉시 반영되지 않는다.
+     * 빈 문자열은 "지운다"는 뜻이라 undefined와 구분해서 그대로 넘긴다.
+     */
+    shortTagline?: string;
   }
 ): Promise<SubmitTrustUpdateResult> {
   const { name, title, phone, company, branchLabel } = registrant;
@@ -557,6 +629,9 @@ export async function submitBranchTrustUpdateAction(
       parkingAvailable: payload.parkingAvailable ?? undefined,
       visitConsultAvailable: payload.visitConsultAvailable ?? undefined,
       businessHours: payload.businessHours?.trim() ?? undefined,
+      // 🔴 `?? undefined`가 아니라 `!== undefined` 검사다. 빈 문자열을 undefined로
+      // 접으면 "지운다"가 "안 바꾼다"가 되어 짧은 소개를 영영 못 지운다.
+      ...(payload.shortTagline !== undefined ? { shortTagline: payload.shortTagline.trim() } : {}),
     },
   });
   if (error || !registrationId) {
