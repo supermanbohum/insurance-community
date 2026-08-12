@@ -143,6 +143,44 @@ export default function PrivacyPage() {
           ※ 카카오로 가입하는 경우에도 카카오로부터 제공받는 항목(계정 식별자·닉네임·프로필 사진·이메일)과는 별개로,
           가입 양식에서 아이디·이름·이메일·연락처를 정보주체 본인이 직접 입력합니다(비밀번호는 입력하지 않음).
         </p>
+
+        {/* 🔴 카카오 연결 해제 = 탈퇴. 콘텐츠 확정본(2026-08-12)이며 아래 문장들은
+            0106 적용 후에야 참이 됐다 - 특히 「작성자 이름이 「탈퇴한 회원」으로 바뀝니다」는
+            0106 전까지 거짓이었다(그전 함수는 화면이 읽지 않는 컬럼만 바꿨다).
+            🔴 「탈퇴한 회원」은 DB에 실제로 박히는 문자열과 **글자 단위로 같아야 한다**
+            (withdraw_kakao_user가 users.nickname·posts/comments.author_display_name에
+            쓰는 값). 한쪽만 바꾸면 고지와 화면이 어긋난다 - 바꿀 일이 생기면 함께 바꾼다.
+            🔴 줄 순서를 바꾸지 말 것. 「게시글」 줄은 「파기」 줄 바로 뒤에 와야 서로를
+            설명한다(콘텐츠 확정) - 사이에 푸시 토큰이 끼면 그 연결이 끊긴다. */}
+        <div className="flex flex-col gap-2 rounded-xl border border-[var(--lp-line)] bg-[var(--lp-surface-sunken)] p-4">
+          <p className="text-[14px] font-bold text-[var(--lp-ink)]">카카오 계정 연결을 해제하신 경우</p>
+          <p className="text-[13px] leading-relaxed text-[var(--lp-ink-soft)]">
+            카카오 계정에서 보험맵 연결을 해제하시면 <strong className="font-bold">회원 탈퇴로 처리</strong>됩니다.
+            별도의 탈퇴 신청 없이 아래와 같이 진행됩니다.
+          </p>
+          <ul className="flex list-disc flex-col gap-1.5 pl-5 text-[13px] leading-relaxed text-[var(--lp-ink-soft)]">
+            <li>
+              <strong className="font-bold">로그인과 서비스 이용이 즉시 중단</strong>됩니다.
+            </li>
+            <li>
+              <strong className="font-bold">연락처·이메일·닉네임·프로필 이미지는 즉시 파기</strong>합니다.
+            </li>
+            <li>
+              <strong className="font-bold">
+                작성하신 게시글과 댓글은 삭제되지 않고 남으며, 작성자 이름이 「탈퇴한 회원」으로 바뀝니다.
+              </strong>{' '}
+              다른 이용자들이 나눈 대화의 맥락이 끊기지 않도록 하기 위해서입니다.{' '}
+              <strong className="font-bold">원래 쓰시던 닉네임은 남지 않습니다.</strong>
+            </li>
+            <li>
+              <strong className="font-bold">알림 발송에 사용하던 푸시 토큰도 즉시 삭제</strong>합니다.
+            </li>
+          </ul>
+          <p className="text-[13px] leading-relaxed text-[var(--lp-ink-soft)]">
+            <strong className="font-bold">연결 해제는 되돌릴 수 없습니다.</strong> 다시 이용하시려면 새로
+            가입하셔야 하며, 이전 활동 내역은 복구되지 않습니다.
+          </p>
+        </div>
       </LegalSection>
 
       {/* 심사관이 앱의 권한 팝업과 한 줄씩 대조하는 자리다. 조 번호를 붙이지 않은 이유는

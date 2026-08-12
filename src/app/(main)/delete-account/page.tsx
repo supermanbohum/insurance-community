@@ -55,6 +55,22 @@ export default function DeleteAccountPage() {
         />
       </LegalSection>
 
+      {/* 🔴 카카오 가입자는 이 이메일 요청 경로 말고도 스스로 탈퇴할 수 있다 -
+          카카오 쪽에서 연결을 끊으면 그 자체가 탈퇴로 처리된다(0103·0106 웹훅).
+          그 사실을 여기 안 적으면 카카오 사용자는 "이메일을 보내야만 탈퇴된다"고 읽는다.
+          🔴 「탈퇴한 회원」은 DB에 실제로 박히는 문자열과 같아야 한다(/privacy와 동일 규칙). */}
+      <div className="flex flex-col gap-2 rounded-xl border border-[var(--lp-line)] bg-[var(--lp-surface-sunken)] p-4">
+        <p className="text-[14px] font-bold text-[var(--lp-ink)]">카카오 계정으로 가입하셨다면</p>
+        <p className="text-[13px] leading-relaxed text-[var(--lp-ink-soft)]">
+          카카오 계정 설정에서 보험맵 연결을 해제하셔도 <strong className="font-bold">탈퇴로 처리</strong>됩니다.
+          이 경우에도 개인정보는 즉시 파기되며,{' '}
+          <strong className="font-bold">작성하신 게시글과 댓글은 「탈퇴한 회원」으로 표시되어 남습니다.</strong>
+        </p>
+        <p className="text-[13px] leading-relaxed text-[var(--lp-ink-soft)]">
+          연결 해제는 <strong className="font-bold">되돌릴 수 없으니</strong> 신중히 결정해 주세요.
+        </p>
+      </div>
+
       <LegalSection title="2. 처리 절차 및 기간">
         <p>
           회사는 요청인이 본인임을 확인한 뒤, 접수일로부터 영업일 기준 7일 이내에 계정 및 개인정보를 삭제 처리합니다.

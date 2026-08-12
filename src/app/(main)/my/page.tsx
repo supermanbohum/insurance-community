@@ -117,6 +117,27 @@ export default async function MyPage() {
         {user.provider === 'email' && <ChangePasswordForm />}
         <ChangeContactForm currentContact={user.contact} />
         <GaChangeRequestForm gaOptions={gaOptions} currentGaName={currentGaName} pendingRequest={pendingGaChangeRequest} />
+        {/* 🔴 카카오 가입자에게만 보인다. 이메일 가입자는 카카오 연결 자체가 없어
+            해당 없는 경고가 되고, 없는 위험을 알리는 것도 잘못된 고지다.
+            🔴 「탈퇴한 회원」은 DB에 실제로 박히는 문자열과 같아야 한다(/privacy·
+            /delete-account와 동일 규칙) - 바꿀 일이 생기면 세 곳을 함께 바꾼다. */}
+        {user.provider === 'kakao' && (
+          <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface-sunken p-4">
+            <p className="text-[13px] font-bold text-ink">카카오 계정으로 가입하셨나요?</p>
+            <p className="text-xs leading-relaxed text-ink-soft">
+              카카오 계정 설정에서 보험맵 연결을 해제하시면 <strong className="font-bold">회원 탈퇴로 처리</strong>
+              됩니다. 개인정보는 즉시 파기되고, 작성하신 글은{' '}
+              <strong className="font-bold">「탈퇴한 회원」으로 표시되어 남습니다.</strong>{' '}
+              <strong className="font-bold">되돌릴 수 없으니</strong> 신중히 결정해 주세요.
+            </p>
+            <Link
+              href="/privacy"
+              className="w-fit text-xs font-semibold text-brand-600 underline underline-offset-2"
+            >
+              자세히 보기
+            </Link>
+          </div>
+        )}
       </section>
     </div>
   );
