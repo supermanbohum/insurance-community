@@ -8,13 +8,24 @@ import { pageOpenGraph } from '@/lib/seo/config';
 // 안 적으면 루트 layout의 「보험맵」이 그대로 나간다(운영에서 확인). 한쪽만 고치지 말 것 -
 // 제목을 바꾸면 공유 카드 문구도 같이 바뀌어야 한다.
 const META_TITLE = '개인정보처리방침';
-const META_DESCRIPTION = '보험맵 개인정보처리방침';
+
+// 🔴 og:title에는 「| 보험맵」을 직접 붙인다. <title>은 루트 layout의 template이
+// `%s | 보험맵`으로 자동으로 붙여 주지만 **og:title에는 template이 적용되지 않는다** -
+// 여기에 META_TITLE을 그대로 넘기면 공유 카드에 「개인정보처리방침」만 뜬다.
+// 반대로 META_TITLE 자체에 「| 보험맵」을 넣으면 <title>이 두 번 붙는다.
+const OG_TITLE = '개인정보처리방침 | 보험맵';
+
+// 🔴 「보험맵 개인정보처리방침」은 제목을 한 번 더 말할 뿐 내용을 말하지 않는다.
+// 방침 문서는 공유보다 **검색으로 도달**하는 자리라 무엇이 적혀 있는지가 나와야 한다
+// (콘텐츠 확정). 아래 문장은 실제 §1·§3·§5 구성 그대로다 - 조항이 바뀌면 여기도 본다.
+const META_DESCRIPTION =
+  '보험맵이 수집하는 개인정보 항목과 보유 기간, 처리 위탁·국외 이전 현황을 안내합니다.';
 
 export const metadata: Metadata = {
   title: META_TITLE,
   description: META_DESCRIPTION,
   alternates: { canonical: '/privacy' },
-  openGraph: pageOpenGraph({ title: META_TITLE, description: META_DESCRIPTION, path: '/privacy' }),
+  openGraph: pageOpenGraph({ title: OG_TITLE, description: META_DESCRIPTION, path: '/privacy' }),
 };
 
 const EFFECTIVE_DATE = '2026년 7월 29일';
