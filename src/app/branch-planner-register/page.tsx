@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { UserPlus, MapPinned, FileText, Gift, ShieldCheck, Award } from 'lucide-react';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
+import { STICKY_BOTTOM_SAFE } from '@/lib/design/safe-area';
+import { cn } from '@/lib/utils';
 import { SITE_CONFIG } from '@/lib/config/site';
 import { pageOpenGraph } from '@/lib/seo/config';
 
@@ -160,7 +162,7 @@ export default function BranchPlannerRegisterIntroPage() {
           </ul>
         </section>
 
-        <section className="sticky bottom-4 pt-2">
+        <section className={cn('sticky pt-2', STICKY_BOTTOM_SAFE)}>
           <HeroCtaButton
             href="/branch-planner/register"
             label="등록하기"

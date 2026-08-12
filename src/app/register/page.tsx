@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BadgeCheck, Eye, Megaphone, MapPinned } from 'lucide-react';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
+import { STICKY_BOTTOM_SAFE } from '@/lib/design/safe-area';
+import { cn } from '@/lib/utils';
 import { SITE_CONFIG } from '@/lib/config/site';
 import { pageOpenGraph } from '@/lib/seo/config';
 
@@ -247,7 +249,7 @@ export default function RegisterIntroPage() {
           </p>
         </section>
 
-        <section className="sticky bottom-4 pt-2">
+        <section className={cn('sticky pt-2', STICKY_BOTTOM_SAFE)}>
           <HeroCtaButton
             href="/partner/register"
             // 🔴 「무료로 등록하기」 → 「지금 등록하기」(콘텐츠 확정). 바로 위 가격 블록이

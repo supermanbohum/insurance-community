@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Award, FileText, ShieldCheck, CheckCircle2, Gift, Lock, Eye } from 'lucide-react';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
+import { STICKY_BOTTOM_SAFE } from '@/lib/design/safe-area';
+import { cn } from '@/lib/utils';
 import { SITE_CONFIG } from '@/lib/config/site';
 
 export const metadata: Metadata = {
@@ -127,7 +129,7 @@ export default function TopDesignerRegisterIntroPage() {
           </p>
         </section>
 
-        <section className="sticky bottom-4 pt-2">
+        <section className={cn('sticky pt-2', STICKY_BOTTOM_SAFE)}>
           <HeroCtaButton
             href="/top-designer/apply"
             label="무료로 인증 신청하기"
