@@ -186,14 +186,23 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           </div>
         ) : (
           <div className="flex flex-col items-center gap-0.5 rounded-xl border border-line bg-surface-sunken px-3 py-2 text-center">
+            {/* 🔴 완료형으로 쓴다. 「정리 중」·「정리하고 있습니다」는 **미완성 신호**라
+                심사자에게는 「덜 만든 앱」, 사용자에게는 「아직 쓸 게 없다」로 읽힌다
+                (「준비 중」 라벨을 금지한 것과 같은 계열, 콘텐츠 확정 2026-08-12).
+                🔴 「지금까지」를 빼지 말 것 - 완료형만 쓰면 「50곳이 전부」로 닫힌다.
+                「지금까지」가 계속 늘어난다는 뜻을 담으면서 미완성 신호는 안 준다.
+                ⚠️ 상단 배너의 「전국 4,288개 GA」와 숫자가 달라 보이는 문제도 여기서
+                갈린다 - 배너는 「받고 있습니다」(대상 범위), 이 줄은 「정리했습니다」
+                (우리 작업량)로 동사가 달라야 같은 것의 두 숫자로 안 읽힌다.
+                상단 배너는 오너 영역(home_open_banner)이라 건드리지 않는다. */}
             <span className="hidden sm:block">
               <span className="block text-[13px] font-bold text-ink-soft">
-                전국 GA <span className="text-brand-600">{stats.gaCount}</span>곳 · <span className="text-brand-600">{stats.regionCount}</span>개 지역을 정리하고 있습니다
+                지금까지 GA <span className="text-brand-600">{stats.gaCount}</span>곳 · <span className="text-brand-600">{stats.regionCount}</span>개 지역을 정리했습니다
               </span>
               <span className="block text-[11px] text-ink-faint">내 지역부터 확인해 보세요</span>
             </span>
             <span className="text-[13px] font-bold text-ink-soft sm:hidden">
-              전국 GA {stats.gaCount}곳 · {stats.regionCount}개 지역 정리 중
+              지금까지 GA {stats.gaCount}곳 · {stats.regionCount}개 지역을 정리했습니다
             </span>
           </div>
         )}
