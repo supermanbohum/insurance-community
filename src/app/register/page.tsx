@@ -142,11 +142,19 @@ export default function RegisterIntroPage() {
                   보였다. 짧은 문구를 따로 받는 게 그 결론이다. */}
               <p className="flex items-baseline gap-1 text-base font-bold text-ink">
                 <span className="min-w-0 max-w-[65%] shrink-0 truncate">{PREVIEW_EXAMPLE.branchName}</span>
-                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-brand-600">
+                <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#8B95A8]">
                   {PREVIEW_EXAMPLE.shortTagline}
                 </span>
               </p>
-              <p className="truncate text-[11px] font-medium text-brand-600">✨ {PREVIEW_EXAMPLE.tagline}</p>
+              {/* 🔴 한 줄 소개는 14px/500 회색(#6B7280)이다. 파란색(brand-600)을 쓰지 말 것 -
+                  이 사이트에서 파랑은 「누를 수 있는 것」 전용이다(「1호 지점 등록」·「더보기」·
+                  CTA가 전부 그 색). 부가정보가 그 색이면 링크로 보이고, 주정보인 지점명(검정)
+                  보다 튀는 역전이 생긴다(디자인 실측 지적).
+                  🔴 14px는 짧은 소개 11px의 전제다. 둘을 같은 크기로 두면 위계가 사라져
+                  「서로 다른 두 문구」가 한 덩어리로 읽힌다 - 이 기능을 만든 이유가 없어진다.
+                  확정 위계: 지점명 16/700 검정 → 한 줄 소개 14/500 #6B7280 →
+                            지역 12/400 → 짧은 소개 11/600 #8B95A8 */}
+              <p className="truncate text-[14px] font-medium text-[#6B7280]">✨ {PREVIEW_EXAMPLE.tagline}</p>
               <p className="text-xs text-ink-faint">
                 {PREVIEW_EXAMPLE.sidoName} {PREVIEW_EXAMPLE.sigunguName}
               </p>
