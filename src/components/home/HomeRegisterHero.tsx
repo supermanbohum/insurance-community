@@ -26,7 +26,15 @@ import { cn } from '@/lib/utils';
 const HOME_STAT_THRESHOLDS = {
   branch: 10,
   planner: 10,
-  visitor: 100,
+  // 🔴 visitor 임계는 제거했다(오너 확정 2026-08-13). 표시값이 실측 × 2.8이라 **오전
+  // 내내 100 미만**이었고, 카운터가 정오쯤에야 나타났다(8/12 환산 실측: 11시 78 →
+  // 12시 109). 하루 중 시각에 따라 화면이 두 모양이 되면 스토어 캡처도 불안정해진다.
+  // ⚠️ 자정 직후에는 「오늘 방문자 3명」처럼 작은 숫자가 뜬다 - 오너가 그 미리보기를
+  // 보고 고른 것이다.
+  //
+  // 🔴 branch·planner 임계는 성격이 다르다. 그건 「숫자가 사회적 증명이 되는 최소치」이고
+  // visitor는 표시 자체를 막는 게이트였다. **같이 없애지 마라** - branch를 없애면
+  // 지점 1개에 「등록 지점 1개」가 뜬다.
 } as const;
 
 const STAT_MIN_TODAY_COUNT = 1;
@@ -76,7 +84,7 @@ function ReplacementCard({
   shortLine,
 }: {
   href?: string;
-  longLines: [string, React.ReactNode];
+  longLines: [React.ReactNode, React.ReactNode];
   shortLine: React.ReactNode;
 }) {
   const baseClassName = 'flex flex-col gap-0.5 rounded-xl border border-dashed border-brand-200 bg-brand-50/50 px-3 py-2 text-center';
@@ -142,7 +150,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
   // 화면에 뜨는 숫자와 뜰지 말지를 정하는 숫자가 달라져, 「109가 100 미만이라 안 뜬다」는
   // 설명 불가능한 상태가 된다.
   const displayVisitorCount = toDisplayVisitorCount(stats.todayVisitorCount);
-  const showVisitorNumber = displayVisitorCount >= HOME_STAT_THRESHOLDS.visitor;
+  // 방문자 카운터는 임계 없이 항상 표시한다(위 HOME_STAT_THRESHOLDS 주석 참고).
   const showTodayChip = stats.todayCount >= STAT_MIN_TODAY_COUNT;
   const earlyBirdSlotsRemaining = Math.max(0, EARLY_BIRD_TOTAL_SLOTS - stats.branchCount);
 
@@ -201,9 +209,23 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
               // **전국 전체 지점 수**(branchCount < 10)이고 지역을 보지 않는다. 지점이
               // 있는 지역의 지점장에게도 "당신 지역은 비어 있다"고 말하게 된다.
               // 오너가 조건을 바꾸는 대신 문구를 조건에 맞추는 쪽으로 확정했다(2026-08-13).
-              // ⚠️ 아랫줄 「지역 1호 지점을 선점하세요」의 「지역」은 그대로 둔다 - 그건
-              // 사실 주장이 아니라 권유고, 오너가 고른 문구다.
-              '지금까지 등록된 지점이 없습니다',
+              //
+              // 🔴 정적 문자열로 두지 않는다. 「등록된 지점이 없습니다」를 박아 두면
+              // **첫 지점이 승인돼도 사람이 배포할 때까지 화면이 거짓말을 한다.**
+              // 아래 「지금까지 GA N곳」 줄이 이미 쓰는 것과 같은 바인딩 방식이다.
+              //
+              // ⚠️ 아랫줄 「지역 1호 지점을 선점하세요」는 **지역을 보지 않는다.** 전국에
+              // N건이 있어도 「지역 1호」라고 말한다. 이번 범위가 아니라 그대로 두지만,
+              // 고치려면 지역별 카운트 배선이 필요하고 지금 그 배선이 없다.
+              // G1(첫 지점 승인) 시점에 아랫줄까지 함께 판단한다 - 콘텐츠에 대체 후크가
+              // 준비돼 있다.
+              stats.branchCount === 0 ? (
+                '지금까지 등록된 지점이 없습니다'
+              ) : (
+                <>
+                  이미 <span className="text-brand-600">{stats.branchCount}</span>개 지점이 등록됐습니다
+                </>
+              ),
               // "6개월 무료(선착순 N개)"는 진행 중인 실제 이벤트(event_popups, 상시 노출)에
               // 맞춘 문구다 - 해당 프로모션이 종료되면 이 문구도 함께 걷어내야 한다. N은
               // 더는 고정 100이 아니라 실시간 잔여 슬롯이다(오너 지시 ⑦).
@@ -251,8 +273,12 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
           />
         )}
 
-        {showVisitorNumber ? (
-          <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
+        {/* 🔴 예전에는 이 자리가 「방문자 카운터 **또는** 우리 작업량 줄」이었다.
+            visitor 임계가 사라지면서 카운터가 항상 뜨는데, 그렇다고 아래 「지금까지 GA
+            N곳 · M개 지역을 정리했습니다」를 버리면 **콘텐츠가 따로 확정한 문구가 조용히
+            사라진다**(8/12 확정, 디자인이 재캡처 대기 중이던 줄이다). 둘은 같은 것의
+            두 모양이 아니라 서로 다른 정보라, 분기를 풀어 **둘 다 표시**한다. */}
+        <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
             <span className="flex items-center gap-1 text-[12px] font-bold text-ink-soft">
               👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={displayVisitorCount} /></span>명
               {showTodayChip && (
@@ -262,9 +288,9 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
                 </>
               )}
             </span>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-line bg-surface-sunken px-3 py-2 text-center">
+        </div>
+
+        <div className="flex flex-col items-center gap-0.5 rounded-xl border border-line bg-surface-sunken px-3 py-2 text-center">
             {/* 🔴 완료형으로 쓴다. 「정리 중」·「정리하고 있습니다」는 **미완성 신호**라
                 심사자에게는 「덜 만든 앱」, 사용자에게는 「아직 쓸 게 없다」로 읽힌다
                 (「준비 중」 라벨을 금지한 것과 같은 계열, 콘텐츠 확정 2026-08-12).
@@ -283,8 +309,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
             <span className="text-[13px] font-bold text-ink-soft sm:hidden">
               지금까지 GA {stats.gaCount}곳 · {stats.regionCount}개 지역을 정리했습니다
             </span>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

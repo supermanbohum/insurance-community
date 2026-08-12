@@ -393,6 +393,23 @@ src/
   놓으면 판단이 틀린다. 실제 사례로, 「익명화 미동작(대상 0건)」과 「탈퇴 처리 자체 미실행
   (대상 전원)」을 같이 놓고 "둘 다 위험"이라고 보고한 적이 있다 — 후자가 압도적으로 나쁘다.
 
+- **`og:title`에는 루트 layout의 title template이 적용되지 않는다**(2026-08-13 실측):
+  루트가 `title: { template: '%s | 보험맵' }`을 갖고 있어서 `<title>`은 자동으로 「… | 보험맵」이
+  되지만, **`openGraph.title`은 그 template을 타지 않는다.** 그래서
+  ```
+  page의 title을 og에 그대로 넘긴다  → 공유 카드에 「개인정보처리방침」만 뜬다
+  page의 title에 「| 보험맵」을 넣는다 → <title>이 「… | 보험맵 | 보험맵」이 된다
+  ```
+  → **og용 상수를 따로 둔다.** `/privacy`가 그렇게 돼 있다.
+
+  ⚠️ 함께 걸리는 것 2가지:
+  - **페이지의 `title`/`description`은 og로 아예 흘러가지 않는다.** `openGraph`를 정의하지
+    않으면 루트 값(「보험맵」)이 그대로 나간다 - 운영에서 5개 페이지가 그 상태였다.
+  - **`openGraph`를 정의하면서 `images`를 빼면 og:image 태그 자체가 사라진다.** 루트
+    `app/opengraph-image.tsx` 상속으로 대체되지 않는다(실측 확인). 문자열로 명시하면
+    Next가 붙이던 콘텐츠 해시와 width/height/type도 사라지므로, 해시 대신 우리가 관리하는
+    버전(`OG_IMAGE_VERSION`)을 붙이고 치수를 직접 적는다.
+
 - **배포 워크플로**: 코드 변경 → `tsc --noEmit`/`next lint`/`npm run build` 통과 확인 →
   커밋 → `git push` → Vercel 자동 배포 → 운영(bohummap.com)에서 직접 확인. 마이그레이션이
   필요한 기능은 "코드는 배포됐지만 DB 미적용 상태"를 견딜 수 있게 방어적으로 짠다(예:
