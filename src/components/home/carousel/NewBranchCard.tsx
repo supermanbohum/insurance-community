@@ -5,6 +5,7 @@ import { ko } from 'date-fns/locale';
 import { MapPin, Building2 } from 'lucide-react';
 import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
+import { fitsShortTaglineInCard } from '@/lib/branch/short-tagline';
 import { SafeBranchImage } from '@/components/shared/SafeBranchImage';
 
 export function NewBranchCard({ branch }: { branch: PublicBranchSummary }) {
@@ -52,9 +53,11 @@ export function NewBranchCard({ branch }: { branch: PublicBranchSummary }) {
             ⚠️ 한 번 실패한 자리다: tagline을 오른쪽으로 옮겼더니 190px 카드에서 5글자만
             보였다. 짧은 문구를 따로 받는 게 그 결론이다. */}
         <p className="flex items-baseline gap-1 text-[15px] font-bold text-ink">
-          <span className="min-w-0 max-w-[65%] shrink-0 truncate">{branch.name}</span>
-          {branch.shortTagline && (
-            <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-brand-600">
+          {/* 🔴 지점명에 max-w를 걸지 않는다. 짧은 소개 자리를 만들려고 지점명을 자르면
+              어느 지점인지 알 수 없게 된다(CTO 판정) - 자리가 없으면 짧은 소개를 숨긴다. */}
+          <span className="min-w-0 truncate">{branch.name}</span>
+          {fitsShortTaglineInCard(branch.name, branch.shortTagline) && (
+            <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-[#8B95A8]">
               {branch.shortTagline}
             </span>
           )}
