@@ -33,7 +33,15 @@ export function validateShortTagline(value: string | null): ShortTaglineError | 
   return value.length > SHORT_TAGLINE_MAX_LENGTH ? 'TOO_LONG' : null;
 }
 
-export const SHORT_TAGLINE_HELP = `지점명 옆에 작게 붙습니다. ${SHORT_TAGLINE_MAX_LENGTH}자 이내 · 선택 입력`;
+/**
+ * 🔴 「9자까지」만 알려주면 안 된다(콘텐츠 확정 2026-08-12). 상한만 말하면 사용자가
+ * 상한까지 채우는데, 190px 목록 카드에서는 지점명이 6자만 넘어도 9자가 **통째로
+ * 숨겨진다**(자르지 않고 숨기는 규칙이라 아예 안 보인다). 상한을 지켰는데 화면에
+ * 없는 상태가 되고, 사용자는 이유를 알 수 없다.
+ * 그래서 상한이 아니라 **"짧을수록 잘 보인다"는 방향**을 알려준다.
+ * ⚠️ 글자 수 카운터는 별도로 붙인다 - 상한 자체를 숨기라는 뜻은 아니다.
+ */
+export const SHORT_TAGLINE_HELP = '지점명 옆에 작게 붙습니다. 짧을수록 목록에 더 잘 표시됩니다.';
 
 /* ─────────────────────────────────────────────────────────────────────────
    표시 판정 (CTO 판정 2026-08-12)
