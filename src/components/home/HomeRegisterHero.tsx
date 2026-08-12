@@ -168,7 +168,12 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
                 <strong className="text-brand-600">첫 번째로 등록해보세요</strong> — 완전 무료
               </>,
             ]}
-            shortLine={<strong className="text-brand-600">설계사 등록, 완전 무료</strong>}
+            // 「설계사 등록」만 쓰면 어느 등록인지 안 갈린다 - 이 사이트에는 설계사마켓
+            // 등록(/planner-market/register)과 우리 지점 설계사 등록
+            // (/branch-planner-register)이 따로 있고, 이 카드가 가리키는 것은 후자다.
+            // ⚠️ 위 longLines(넓은 화면용)는 「첫 번째로 등록해보세요」라 같은 모호함이
+            // 남아 있다. 그쪽은 문구 자체가 달라 임의로 못 고쳤다 - 콘텐츠 확인 대기.
+            shortLine={<strong className="text-brand-600">우리 지점 설계사 등록, 완전 무료</strong>}
           />
         )}
 
