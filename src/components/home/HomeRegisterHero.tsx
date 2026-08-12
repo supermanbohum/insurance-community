@@ -31,6 +31,30 @@ const HOME_STAT_THRESHOLDS = {
 
 const STAT_MIN_TODAY_COUNT = 1;
 
+/**
+ * 🔴 **표시용 배수다. 측정값이 아니다.** 오너 확정(2026-08-12): 홈의 「오늘 방문자」를
+ * 실측 × 2.8로 표시한다. CTO가 「부풀린 수치를 보여주는 것」이라고 우려를 올렸고
+ * 오너가 알고 결정했다 - 사업 판단이다.
+ *
+ * ⚠️ `site_visits`는 「익명 프로필 생성 수」이지 사람 수가 아니다. 8/11 미들웨어 수정으로
+ * 하루 1,453 → 39로 붕괴했고, 그 붕괴가 이 지표의 정체를 드러냈다.
+ *
+ * 🔴 **이 값을 통계·보고·스토어·광고에 쓰지 마라. 화면 표시 전용이다.**
+ * 🔴 `/admin`의 「오늘 방문자」에는 걸지 않는다 - 거기는 운영 판단에 쓰는 숫자다.
+ *    부풀리면 우리가 우리 숫자를 못 믿게 된다.
+ * 🔴 DB·집계 함수(`site_visits`, `get_today_site_traffic_stats`)는 건드리지 않는다.
+ *    표시 계층에서만 곱한다 - 원본이 오염되면 되돌릴 수 없다.
+ */
+const HOME_VISITOR_DISPLAY_MULTIPLIER = 2.8;
+
+/**
+ * 내림으로 통일한다(CTO 확정) - 과대표시를 줄이는 방향이다.
+ * 39 × 2.8 = 109.2 → 109.
+ */
+function toDisplayVisitorCount(actual: number): number {
+  return Math.floor(actual * HOME_VISITOR_DISPLAY_MULTIPLIER);
+}
+
 function StatChip({ emoji, label, value, unit }: { emoji: string; label: string; value: number; unit: string }) {
   return (
     <span className="flex min-w-0 items-center gap-1 text-[12px] font-bold text-ink-soft">
@@ -88,7 +112,11 @@ const EARLY_BIRD_TOTAL_SLOTS = 100;
 export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
   const showBranchNumber = stats.branchCount >= HOME_STAT_THRESHOLDS.branch;
   const showPlannerNumber = stats.publicPlannerProfileCount >= HOME_STAT_THRESHOLDS.planner;
-  const showVisitorNumber = stats.todayVisitorCount >= HOME_STAT_THRESHOLDS.visitor;
+  // 🔴 임계 판정은 **배수 적용 후 값** 기준이다(CTO 확정). 실측 기준으로 재면
+  // 화면에 뜨는 숫자와 뜰지 말지를 정하는 숫자가 달라져, 「109가 100 미만이라 안 뜬다」는
+  // 설명 불가능한 상태가 된다.
+  const displayVisitorCount = toDisplayVisitorCount(stats.todayVisitorCount);
+  const showVisitorNumber = displayVisitorCount >= HOME_STAT_THRESHOLDS.visitor;
   const showTodayChip = stats.todayCount >= STAT_MIN_TODAY_COUNT;
   const earlyBirdSlotsRemaining = Math.max(0, EARLY_BIRD_TOTAL_SLOTS - stats.branchCount);
 
@@ -149,7 +177,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
               // 더는 고정 100이 아니라 실시간 잔여 슬롯이다(오너 지시 ⑦).
               <>
                 <strong className="text-brand-600">지역 1호 지점으로 등록하세요</strong> — 6개월 무료(선착순{' '}
-                <StatCountUp value={earlyBirdSlotsRemaining} />개)
+                <StatCountUp value={earlyBirdSlotsRemaining} />개 지점)
               </>,
             ]}
             shortLine={<strong className="text-brand-600">지역 1호 지점을 선점하세요</strong>}
@@ -180,7 +208,7 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
         {showVisitorNumber ? (
           <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
             <span className="flex items-center gap-1 text-[12px] font-bold text-ink-soft">
-              👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={stats.todayVisitorCount} /></span>명
+              👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={displayVisitorCount} /></span>명
               {showTodayChip && (
                 <>
                   <span className="hidden h-3.5 w-px shrink-0 bg-line sm:block" />
