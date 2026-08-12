@@ -26,12 +26,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BranchDetailView } from '@/components/branch/BranchDetailView';
+import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 import type { BranchPreviewData } from '@/components/branch/types';
+import type { PublicBranchSummary } from '@/types/database';
 import { triggerHaptic } from '@/lib/native/haptics';
 import {
   SHORT_TAGLINE_MAX_LENGTH,
   SHORT_TAGLINE_HELP,
   normalizeShortTagline,
+  fitsShortTaglineInCard,
 } from '@/lib/branch/short-tagline';
 import { cn } from '@/lib/utils';
 
@@ -294,6 +297,51 @@ export function OnboardingForm({
     activeRecruits: [],
     siblingBranches: [],
     plannerBadges: [],
+  };
+
+  /**
+   * 홈 목록 카드(190px) 미리보기용 변환.
+   *
+   * 🔴 왜 필요한가: 상세 미리보기만 보면 **짧은 소개가 항상 보인다.** 목록 카드는 폭이
+   * 좁아 지점명이 길면 짧은 소개를 통째로 숨기는데(자르지 않는 규칙), 그 사실이 여기서만
+   * 드러난다. 예시로는 안 드러난다 - 예시 지점명이 짧으면 9자가 다 들어가서
+   * 「다 보이는구나」를 한 번 더 확인시켜 줄 뿐이다(디자인 판정 2026-08-13).
+   *
+   * 🔴 실제 목록에 쓰는 그 컴포넌트(NewBranchCard)를 그대로 쓴다. 따로 그리면 폭 계산이
+   * 갈려서 「미리보기에선 보였는데 목록엔 없다」가 그대로 재발한다.
+   *
+   * ⚠️ 카드는 Link라 클릭하면 존재하지 않는 slug로 이동한다. 감싸서 클릭을 막는다.
+   */
+  const previewSummary: PublicBranchSummary = {
+    id: 'preview',
+    slug: 'preview',
+    gaCompanyId: gaCompanyId ?? '',
+    gaCompanyName: gaName,
+    gaCompanyLogoUrl: null,
+    isGaVerified: false,
+    name: registrant.branchLabel || '(지점명 미입력)',
+    sidoName: previewRegion?.sido_name ?? null,
+    sigunguName: previewRegion?.sigungu_name ?? null,
+    address: addressValue.address,
+    mainImageUrl: previewMedia.find((m) => m.type === 'image_main')?.url ?? null,
+    viewCount: 0,
+    isRecommended: false,
+    hasNewOpenBadge: false,
+    isPro: false,
+    createdAt: previewNow,
+    updatedAt: previewNow,
+    gaBranchCount: 0,
+    operationType: 'branch',
+    isHeadquarters: false,
+    lat: addressValue.lat,
+    lng: addressValue.lng,
+    hasActiveRecruit: false,
+    kakaoContactHref: null,
+    contactClickCount: 0,
+    tagline: tagline || null,
+    shortTagline: normalizeShortTagline(shortTagline),
+    plannerBadgeTotal: 0,
+    plannerTopTier: null,
   };
 
   const introRemaining = MIN_INTRO_LENGTH - introText.trim().length;
@@ -1038,6 +1086,24 @@ export function OnboardingForm({
               <p className="text-xs text-muted-foreground">
                 승인되면 이렇게 공개됩니다. 아직 제출 전이며, 이 화면은 저장되지 않습니다.
               </p>
+              {/* 목록 카드 먼저 보여준다 - 짧은 소개가 숨는 것은 여기서만 드러난다. */}
+              <div className="flex flex-col gap-1.5 rounded-2xl border border-line bg-white p-4">
+                <p className="text-xs font-semibold text-ink-soft">홈·검색 목록에서는 이렇게 보입니다</p>
+                <div className="w-[190px] cursor-default" aria-hidden>
+                  {/* 이 카드는 Link다. 미리보기에서는 눌러도 갈 곳이 없으므로 클릭을 막는다. */}
+                  <div className="pointer-events-none">
+                    <NewBranchCard branch={previewSummary} />
+                  </div>
+                </div>
+                {shortTagline.trim() &&
+                  !fitsShortTaglineInCard(previewSummary.name, previewSummary.shortTagline) && (
+                    // 🔴 왜 사라졌는지 말해준다. 아무 설명 없이 비면 "내 입력이 안 저장됐나"로 읽힌다.
+                    <p className="text-xs text-amber-700">
+                      지점명이 길어 목록 카드에서는 짧은 소개가 표시되지 않습니다. 지점 상세에는 그대로
+                      나옵니다.
+                    </p>
+                  )}
+              </div>
               <div className="max-h-[70vh] overflow-y-auto rounded-2xl border border-line bg-white p-4">
                 <BranchDetailView data={previewData} variant="preview" />
               </div>

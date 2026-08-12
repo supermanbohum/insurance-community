@@ -151,9 +151,15 @@ export default function RegisterIntroPage() {
                   오너가 지적한 게 "오른쪽이 비어 보인다"였는데 빈 요소를 그리면 그대로 남는다.
                   ⚠️ 한 번 실패한 자리다: tagline을 오른쪽으로 옮겼더니 190px 카드에서 5글자만
                   보였다. 짧은 문구를 따로 받는 게 그 결론이다. */}
+              {/* 🔴 지점명에 max-w를 걸지 않는다(CTO 판정). 짧은 소개 자리를 만들려고 지점명을
+                    자르면 어느 지점인지 알 수 없게 된다 - 자리가 없으면 짧은 소개를 숨긴다.
+                    ⚠️ 여기는 예시라 실제로 숨는 일이 없다(「○○지점」 4자라 항상 다 들어간다).
+                    그래도 실제 목록 카드(NewBranchCard)와 같은 규칙으로 맞춰 둔다 - 두 곳이
+                    다르면 "예시에선 이랬는데" 가 그대로 재발한다. 짧은 소개가 실제로 숨는
+                    상황은 등록 폼 미리보기의 190px 목록 카드가 보여준다. */}
               <p className="flex items-baseline gap-1 text-base font-bold text-ink">
-                <span className="min-w-0 max-w-[65%] shrink-0 truncate">{PREVIEW_EXAMPLE.branchName}</span>
-                <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-[#8B95A8]">
+                <span className="min-w-0 truncate">{PREVIEW_EXAMPLE.branchName}</span>
+                <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-[#8B95A8]">
                   {PREVIEW_EXAMPLE.shortTagline}
                 </span>
               </p>
