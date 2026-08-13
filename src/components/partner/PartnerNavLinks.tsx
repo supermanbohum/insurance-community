@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building2, MapPin, History, Megaphone, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Building2, MapPin, History, Megaphone, MessageSquare, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // W-075 - "고소득 설계사 (Legacy)" 메뉴 제거. "Legacy"는 개발 용어라 지점장이 보는
@@ -15,6 +15,9 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/partner', label: '대시보드', icon: LayoutDashboard, exact: true },
   { href: '/partner/company', label: 'GA 정보', icon: Building2 },
   { href: '/partner/branches', label: '지점 관리', icon: MapPin },
+  // 🔴 「우리 지점 설계사」 연결 승인. 이 항목이 없어서 신청 5건이 무기한 쌓였다
+  // (RPC는 있는데 호출부 0건이었다). 승인 주체는 운영팀이 아니라 지점 관리자다.
+  { href: '/partner/planner-links', label: '설계사 연결 승인', icon: UserCheck },
   { href: '/partner/inquiries', label: '받은 문의', icon: MessageSquare },
   { href: '/partner/ad-products', label: '광고 상품', icon: Megaphone },
   { href: '/partner/history', label: '변경 이력', icon: History },

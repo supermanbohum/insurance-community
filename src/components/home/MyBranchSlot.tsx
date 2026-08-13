@@ -26,8 +26,9 @@ import type { MyBranchSlotState } from '@/lib/public/my-branch-slot';
  * 디자인 실측(카드 335 · 이름 자리 146.8): 11자 「메가인포에셋 청주지점」 133px로 온전,
  * 12자(155.6px)부터 말줄임. 이름이 잘려도 버튼 위치는 그대로다.
  *
- * ⚠️ **아직 한 번도 렌더된 적이 없다.** 지점 0건 · 설계사 연결 0행이라 'none' 외의
- * 분기는 화면으로 확인하지 못했다(2026-08-13). 「완료」로 적지 않는다.
+ * ⚠️ 실사용 상태(2026-08-13 저녁): 공개 지점 2건 · 설계사 연결 5건(전부 pending_review).
+ * `approved`(지점장)와 `plannerLinkPending`이 실제로 렌더되고 있고, 나머지 분기는
+ * 아직 한 번도 렌더된 적이 없다. 「완료」로 적지 않는다.
  */
 export function MyBranchSlot({ state }: { state: MyBranchSlotState }) {
   if (state.kind === 'none') return null;
@@ -123,6 +124,55 @@ export function MyBranchSlot({ state }: { state: MyBranchSlotState }) {
           className="mt-2.5 block rounded-[10px] bg-brand-500 py-2.5 text-center text-[13px] font-extrabold text-white transition-colors hover:bg-brand-600"
         >
           반려 사유 확인하기
+        </Link>
+      </div>
+    );
+  }
+
+  if (state.kind === 'plannerLinkPending') {
+    // 🔴 ③(지점 심사 중)과 문장이 다르다. 심사 대상이 **지점이 아니라 본인의 연결**이다.
+    // 지점은 이미 공개 중인데 「등록하신 지점을 확인하고 있습니다」를 보여주면 거짓이다.
+    // 🔴 「승인되면 알려드립니다」를 넣지 않는다 - 알림 수단이 확정돼야 쓸 수 있는
+    // 실행 약속이다(③과 같은 원칙). 소요 시간도 넣지 않는다.
+    return (
+      <div className="rounded-2xl border border-line bg-surface-sunken p-3.5">
+        <div className="flex items-center gap-3">
+          <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[10px] bg-[#E9ECF1] text-ink-faint">
+            <Clock className="h-6 w-6" strokeWidth={1.75} />
+          </span>
+          <p className="text-sm font-extrabold leading-snug text-ink">소속 지점 연결을 확인하고 있습니다</p>
+        </div>
+        <p className="mt-2.5 text-xs leading-relaxed text-ink-soft">
+          지점 관리자가 명함을 확인하고 있습니다.{' '}
+          <b className="font-bold">확인이 끝나면 이 자리에 우리 지점이 표시됩니다.</b>
+        </p>
+      </div>
+    );
+  }
+
+  if (state.kind === 'plannerLinkRejected') {
+    // 🔴 ⑤(지점 반려)와 다른 카드다. 지점은 멀쩡하고 **내 연결만** 반려됐다.
+    // ⑤를 쓰면 남의 지점이 반려된 것처럼 읽힌다.
+    // 🔴 사유는 지점 관리자가 적어 보낸 것이라 본인에게 보여준다 - 홈이 공용 화면이라
+    // 걱정되지만, 지점 반려 사유(제3자 정보)와 달리 이건 **본인에 대한 통지**다.
+    return (
+      <div className="rounded-2xl border border-[#F7C9BE] bg-[#FFF8F6] p-3.5">
+        <div className="flex items-center gap-3">
+          <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[10px] bg-[#E9ECF1] text-ink-faint">
+            <Undo2 className="h-6 w-6" strokeWidth={1.75} />
+          </span>
+          <p className="text-sm font-extrabold leading-snug text-ink">소속 지점 연결이 반려되었습니다</p>
+        </div>
+        {state.reason && (
+          <p className="mt-2.5 rounded-lg bg-white/70 px-3 py-2 text-xs leading-relaxed text-ink-soft">
+            {state.reason}
+          </p>
+        )}
+        <Link
+          href="/branch-planner/register"
+          className="mt-2.5 block rounded-[10px] bg-brand-500 py-2.5 text-center text-[13px] font-extrabold text-white transition-colors hover:bg-brand-600"
+        >
+          다시 신청하기
         </Link>
       </div>
     );

@@ -25,11 +25,12 @@ import { createAdminClient } from '@/lib/supabase/admin';
  * 그래서 설계사 카드는 한 상태가 아니라 **두 상태의 곱**이고, 「내가 소속된 지점
  * 페이지입니다」는 **본인 연결이 approved일 때만 참**이다.
  *
- * 🔴 지금은 최소안이다(CTO 판단 대기): **본인 approved + 지점 approved**일 때만
- * 「우리 지점 보기」를 띄우고, 나머지 조합은 전부 설계사용 안내(④-b)로 떨어뜨린다.
- * 새 문구를 만들지 않고 이미 확정·배포된 문안만 쓴다.
- * ⚠️ 그 결과 `on_hold`·`rejected` 설계사는 **자기 연결이 어떻게 됐는지 홈에서 모른다.**
- * ⑤(지점 반려 카드)를 만든 이유와 같은 형태의 구멍이라, 첫 연결이 생기면 다시 본다.
+ * 🔴 처음엔 최소안이었다 - 「본인 approved가 아니면 전부 ④-b」. **그게 틀렸다.**
+ * [실측 2026-08-13] 첫 연결 5건이 전부 `pending_review`인데 소속 지점은 공개 중이었고,
+ * 그 5명에게 「소속 지점이 아직 보험맵에 없습니다」가 떴다. **지점은 있었다.**
+ * 없는 것은 지점이 아니라 **본인의 연결 승인**이었다.
+ * 새 문구를 안 만들려고 기존 문안을 재사용한 대가였다 - 문구를 아끼려다 거짓을 띄웠다.
+ * 지금은 `pending_review`·`on_hold`·`rejected`를 각각 다른 카드로 보낸다.
  *
  * ---------------------------------------------------------------------------
  * 🔴 ⑤ 반려의 판정 소스는 **「내 등록 큐」**다 (CTO 확정, 디자인 권고 기각)
@@ -48,12 +49,12 @@ import { createAdminClient } from '@/lib/supabase/admin';
  * 덮으면 그 이상이 영영 안 보인다(CTO, 별건 등재).
  *
  * ---------------------------------------------------------------------------
- * ⚠️ 지금 이 함수가 반환할 수 있는 값은 사실상 'none' 하나뿐이다
+ * ⚠️ 어느 분기가 실제로 도는가 (2026-08-13 저녁 실측)
  * ---------------------------------------------------------------------------
- * [실측 2026-08-13] branch_planner_registrations 0행 · branch_registrations 0행 ·
- * 활성 GA 관리자 3명 전원 branch_id 없음 · 살아있는 지점 0건.
- * **나머지 분기는 한 번도 렌더된 적이 없다.** 화면 검증은 첫 등록 이후다 -
- * 「없는 상태를 상상해서 검증했다」고 적지 않는다.
+ * 공개 지점 2건 · 설계사 연결 5건(전부 pending_review · 소속 지점은 approved).
+ *   'approved'(지점장)    실사용 중
+ *   'plannerLinkPending'  실사용 중 - 5명
+ *   나머지                아직 한 번도 렌더된 적 없다
  */
 export type MyBranchSlotState =
   /** ④-a 미등록(지점장·비로그인 포함) - 현행 등록 유도 배너 */
@@ -65,7 +66,18 @@ export type MyBranchSlotState =
   /** ⑤ 반려 - 도착지 있음. 🔴 사유는 여기 담지 않는다(홈은 공용 화면) */
   | { kind: 'rejected'; registrationId: string }
   /** ④-b 설계사인데 소속 지점이 없다/못 간다 - 🔴 ④-a(등록 유도)를 보이면 안 된다 */
-  | { kind: 'plannerWithoutBranch' };
+  | { kind: 'plannerWithoutBranch' }
+  /**
+   * 지점은 있는데 **본인 연결이 아직 심사 중**이다(pending_review · on_hold).
+   *
+   * 🔴 이걸 ④-b로 보내면 안 된다. [실측 2026-08-13] 그렇게 짜 놨더니 5명에게
+   * 「소속 지점이 아직 보험맵에 없습니다」가 떴는데 **지점은 공개 중이었다** -
+   * 없는 것은 지점이 아니라 본인의 연결 승인이었다. 그 문구를 보면 지점을 다시
+   * 등록하려 든다.
+   */
+  | { kind: 'plannerLinkPending' }
+  /** 본인 연결이 반려됐다. 지점은 멀쩡하므로 ⑤(지점 반려)와 다른 카드여야 한다. */
+  | { kind: 'plannerLinkRejected'; reason: string | null };
 
 const NONE: MyBranchSlotState = { kind: 'none' };
 
@@ -142,7 +154,7 @@ export async function getMyBranchSlotState(): Promise<MyBranchSlotState> {
 
   const { data: link } = await admin
     .from('branch_planner_registrations')
-    .select('branch_id, status')
+    .select('branch_id, status, review_reason')
     .eq('user_id', appUser.id)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -150,8 +162,14 @@ export async function getMyBranchSlotState(): Promise<MyBranchSlotState> {
 
   if (!link) return NONE;
 
-  // 🔴 본인 연결이 approved가 아니면 「내가 소속된 지점 페이지입니다」가 참이 아니다.
-  // pending_review · on_hold · rejected 셋 다 여기서 걸린다(최소안).
+  // 🔴 본인 연결 상태를 **하나씩 명시**한다. else로 묶으면 「지점이 없다」와
+  // 「내 연결이 아직 안 됐다」가 같은 화면이 되고, 그게 실제로 5명에게 났던 오류다.
+  if (link.status === 'pending_review' || link.status === 'on_hold') {
+    return { kind: 'plannerLinkPending' };
+  }
+  if (link.status === 'rejected') {
+    return { kind: 'plannerLinkRejected', reason: link.review_reason };
+  }
   if (link.status !== 'approved') return { kind: 'plannerWithoutBranch' };
 
   const branch = await fetchLiveBranch(admin, link.branch_id);

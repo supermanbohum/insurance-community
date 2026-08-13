@@ -1696,6 +1696,15 @@ export interface Database {
         Args: { p_branch_id: string; p_operation_type: GaOperationType };
         Returns: void;
       };
+      /** 0111 - 설계사 지점 연결 심사. 주체는 해당 지점 관리자(운영팀도 가능). */
+      review_branch_planner_registration: {
+        Args: {
+          p_registration_id: string;
+          p_decision: 'approved' | 'on_hold' | 'rejected' | 'pending_review';
+          p_reason?: string;
+        };
+        Returns: void;
+      };
       set_branch_recommended: {
         Args: { p_branch_id: string; p_is_recommended: boolean; p_recommended_rank?: number };
         Returns: void;
