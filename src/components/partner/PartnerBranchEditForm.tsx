@@ -8,7 +8,10 @@ import {
   submitBranchTrustUpdateAction,
   saveBranchUpdateDraftAction,
   uploadPendingBranchPhotoAction,
+  setBranchOperationTypeAction,
 } from '@/lib/actions/partner';
+import type { GaOperationType } from '@/types/database';
+import { cn } from '@/lib/utils';
 import { deleteBranchMediaAction } from '@/lib/actions/branch-media-admin';
 import type { BranchRow, InsurerRow, RegionRow, BranchContactRow, BranchRecruitRow, BranchMediaRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
@@ -48,6 +51,13 @@ const REGISTRANT_FIELDS = [
 
 const MAX_PENDING_PHOTOS = 10;
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+/** 🔴 등록 폼(OnboardingForm)과 같은 라벨·설명을 쓴다. 두 곳이 다르면 "등록할 때 본 것과
+ *  수정할 때 보는 것"이 달라진다. 화면 5곳이 렌더하는 「직영」/「지사」와도 같아야 한다. */
+const OPERATION_TYPE_OPTIONS = [
+  { value: 'branch' as const, label: '지사', desc: '본사와 별개로 운영하는 지사·대리점' },
+  { value: 'direct' as const, label: '직영', desc: '본사가 직접 운영하는 지점' },
+];
 
 export function PartnerBranchEditForm({
   branch,
@@ -109,6 +119,28 @@ export function PartnerBranchEditForm({
   const [addressDetail, setAddressDetail] = useState(payloadString(p, 'addressDetail', branch.address_detail ?? ''));
   const [introText, setIntroText] = useState(payloadString(p, 'introText', branch.intro_text ?? ''));
   const [shortTagline, setShortTagline] = useState(payloadString(p, 'shortTagline', branch.short_tagline ?? ''));
+  // 🔴 이 값은 승인 큐를 타지 않는다. payload가 아니라 현재 저장값에서 읽고, 바꾸는 즉시
+  // 서버에 쓴다 - 아래 카드 주석 참고.
+  const [operationType, setOperationType] = useState<GaOperationType>(branch.operation_type);
+  const [savingOperationType, setSavingOperationType] = useState(false);
+
+  function changeOperationType(next: GaOperationType) {
+    if (next === operationType || savingOperationType) return;
+    const previous = operationType;
+    setOperationType(next); // 낙관적 반영 - 실패하면 되돌린다
+    setSavingOperationType(true);
+    setBranchOperationTypeAction(branch.id, next)
+      .then((result) => {
+        if (result.success) {
+          toast.success(`${next === 'direct' ? '직영' : '지사'}으로 변경되었습니다.`);
+          router.refresh();
+        } else {
+          setOperationType(previous);
+          toast.error(result.error);
+        }
+      })
+      .finally(() => setSavingOperationType(false));
+  }
   const [educationInfo, setEducationInfo] = useState(payloadString(p, 'educationInfo', branch.education_info ?? ''));
   const [welfareInfo, setWelfareInfo] = useState(payloadString(p, 'welfareInfo', branch.welfare_info ?? ''));
   const [dbSupportInfo, setDbSupportInfo] = useState(payloadString(p, 'dbSupportInfo', branch.db_support_info ?? ''));
@@ -230,6 +262,47 @@ export function PartnerBranchEditForm({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* 🔴 이 카드는 아래 「신뢰도 항목 수정(운영팀 승인 필요)」과 **다른 규칙**이다.
+          직영/지사는 **승인 없이 즉시 반영**된다(오너 지시 2026-08-13) - 잘못 고른 지점이
+          있을 수 있으니 언제든 스스로 바꿀 수 있어야 한다.
+          ⚠️ 그래서 아래 저장 버튼에 묶지 않고 여기서 바로 쓴다. 같은 버튼에 묶으면
+          "저장했는데 어떤 건 반영되고 어떤 건 대기"가 되어 설명할 수 없다. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">운영 형태</CardTitle>
+          <CardDescription>
+            선택하면 <b>바로 반영</b>됩니다. 승인 절차가 없습니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            {OPERATION_TYPE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                disabled={savingOperationType}
+                onClick={() => changeOperationType(option.value)}
+                aria-pressed={operationType === option.value}
+                className={cn(
+                  'flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-3 text-left transition-colors disabled:opacity-60',
+                  operationType === option.value
+                    ? 'border-brand-500 bg-brand-50/60 ring-1 ring-brand-500'
+                    : 'border-line bg-white hover:border-brand-200'
+                )}
+              >
+                <span className={cn('text-sm font-bold', operationType === option.value ? 'text-brand-700' : 'text-ink')}>
+                  {option.label}
+                </span>
+                <span className="text-xs leading-snug text-ink-faint">{option.desc}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            지점 상세·검색·지도에 「{operationType === 'direct' ? '직영' : '지사'}」로 표시됩니다.
+          </p>
+        </CardContent>
+      </Card>
+
       <Card className="border-brand-200 bg-brand-50/40">
         <CardHeader>
           <div className="flex items-center gap-2">

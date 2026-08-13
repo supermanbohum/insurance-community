@@ -7,7 +7,7 @@ import { requirePartner } from '@/lib/partner/session';
 import { slugify } from '@/lib/utils';
 import { notifyAdminsOfNewBranchRegistration } from '@/lib/push/admin-alerts';
 import { normalizeShortTagline, validateShortTagline } from '@/lib/branch/short-tagline';
-import type { BranchMediaSource } from '@/types/database';
+import type { BranchMediaSource, GaOperationType } from '@/types/database';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 export type RegisterGaResult =
@@ -52,6 +52,81 @@ async function saveShortTagline(
   return !error;
 }
 
+/**
+ * 직영/지사 구분을 지점에 저장한다(기존 `set_branch_operation_type` RPC).
+ *
+ * 왜 등록 RPC에 인자로 안 넣었나: `submit_branch_registration`에 파라미터를 더하면
+ * 시그니처가 다른 함수가 하나 더 생겨(옛 함수는 남는다) PostgREST가 후보를 못 고르거나,
+ * 옛 함수를 지우면 SQL 적용~배포 사이에 등록 폼이 죽는다. 0108 헤더에 자세히 적었다.
+ * 🔴 그리고 이 RPC는 **이미 DB에 있었다** - 호출부가 0건이었을 뿐이다. 새로 만들지 않았다.
+ *
+ * 지점이 만들어진 다음에 선택값으로 저장한다 - branch_id가 있어야 하기 때문이다.
+ * 'branch'는 DB 기본값과 같아 호출 자체를 건너뛴다.
+ *
+ * 반환값은 "저장됐는가"다. 실패해도 던지지 않는다 - 호출부가 등록 자체를 살린 채
+ * 이 값만 보고 안내하도록.
+ */
+async function saveOperationType(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  branchId: string,
+  operationType: GaOperationType | undefined
+): Promise<boolean> {
+  // 기본값이 'branch'라 같은 값이면 쓸 일이 없다.
+  if (!operationType || operationType === 'branch') return true;
+  const { error } = await supabase.rpc('set_branch_operation_type', {
+    p_branch_id: branchId,
+    p_operation_type: operationType,
+  });
+  return !error;
+}
+
+/**
+ * 직영/지사를 **즉시** 바꾼다(오너 지시 2026-08-13).
+ *
+ * 🔴 승인 큐를 타지 않는다. 잘못 고른 지점이 있을 수 있으니 지점 수정에서 언제든
+ * 바꿀 수 있어야 하고, 그 변경은 관리자 승인 없이 바로 반영된다.
+ *
+ * ⚠️ 다른 수정 항목과 저장 버튼을 공유하지 않는다. 이 값만 승인 없이 즉시 반영되므로,
+ * 같은 버튼에 묶으면 "저장했는데 어떤 건 반영되고 어떤 건 대기"가 되어 설명할 수 없다.
+ *
+ * 🔴 심사 상태를 보지 않는 것은 RPC 쪽(0110)이다. 그 마이그레이션이 적용되기 전에는
+ * 승인된 지점에서 REQUIRES_REVIEW가 올라온다 - 그때도 조용히 실패하지 않도록
+ * 호출부가 에러를 그대로 보여준다.
+ */
+export async function setBranchOperationTypeAction(
+  branchId: string,
+  operationType: GaOperationType
+): Promise<ActionResult> {
+  const partner = await requirePartner();
+  const supabase = createServerSupabaseClient();
+
+  const { data: branch } = await supabase
+    .from('ga_branch')
+    .select('id, slug, ga_company_id')
+    .eq('id', branchId)
+    .maybeSingle();
+  if (!branch || branch.ga_company_id !== partner.ga_company_id) {
+    return { success: false, error: '접근 권한이 없습니다.' };
+  }
+
+  const { error } = await supabase.rpc('set_branch_operation_type', {
+    p_branch_id: branchId,
+    p_operation_type: operationType,
+  });
+  if (error) {
+    return { success: false, error: '변경하지 못했습니다. 잠시 후 다시 시도해주세요.' };
+  }
+
+  // 즉시 반영이므로 공개 화면 캐시도 함께 무효화한다 - 지점 상세·검색·지도가 이 값을
+  // 배지와 마커 색으로 쓴다.
+  revalidatePath('/partner');
+  revalidatePath(`/partner/branches/${branchId}`);
+  revalidatePath(`/branch/${branch.slug}`);
+  revalidatePath('/search');
+  revalidatePath('/map');
+  return { success: true };
+}
+
 function uniqueSlug(name: string, seed: string): string {
   return `${slugify(name) || 'branch'}-${seed.replace(/-/g, '').slice(-8)}`;
 }
@@ -82,6 +157,8 @@ export async function submitBranchRegistrationAction(input: {
     tagline?: string;
     /** 지점명 오른쪽에 붙는 짧은 소개(0107). tagline과 다른 문구다 - 자른 것이 아니다. */
     shortTagline?: string;
+    /** 직영/지사(오너 지시 2026-08-13). 미지정이면 DB 기본값 'branch'가 그대로 남는다. */
+    operationType?: GaOperationType;
     plannerCount?: number | null;
     parkingAvailable?: boolean | null;
     visitConsultAvailable?: boolean | null;
@@ -141,6 +218,7 @@ export async function submitBranchRegistrationAction(input: {
   // 지점이 만들어진 다음에 저장한다 - branch_id가 있어야 하고, submit_branch_registration이
   // ga_admin_users.branch_id를 방금 채웠으므로 RPC의 소유자 확인을 통과한다.
   const shortTaglineSaved = await saveShortTagline(supabase, data.branch_id, input.branch.shortTagline);
+  await saveOperationType(supabase, data.branch_id, input.branch.operationType);
 
   await supabase.rpc('clear_branch_registration_draft');
 
@@ -180,6 +258,8 @@ export async function saveIncompleteBranchRegistrationAction(input: {
     tagline?: string;
     /** 지점명 오른쪽에 붙는 짧은 소개(0107). tagline과 다른 문구다 - 자른 것이 아니다. */
     shortTagline?: string;
+    /** 직영/지사(오너 지시 2026-08-13). 미지정이면 DB 기본값 'branch'가 그대로 남는다. */
+    operationType?: GaOperationType;
     plannerCount?: number | null;
     parkingAvailable?: boolean | null;
     visitConsultAvailable?: boolean | null;
@@ -237,6 +317,7 @@ export async function saveIncompleteBranchRegistrationAction(input: {
   }
 
   const shortTaglineSaved = await saveShortTagline(supabase, data.branch_id, input.branch.shortTagline);
+  await saveOperationType(supabase, data.branch_id, input.branch.operationType);
 
   await supabase.rpc('clear_branch_registration_draft');
   revalidatePath('/partner');

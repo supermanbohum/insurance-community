@@ -28,7 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BranchDetailView } from '@/components/branch/BranchDetailView';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 import type { BranchPreviewData } from '@/components/branch/types';
-import type { PublicBranchSummary } from '@/types/database';
+import type { PublicBranchSummary, GaOperationType } from '@/types/database';
 import { triggerHaptic } from '@/lib/native/haptics';
 import {
   SHORT_TAGLINE_MAX_LENGTH,
@@ -106,6 +106,14 @@ const AMENITIES: AmenityOption[] = [
   { key: 'settlementSupport', label: '정착지원금' },
 ];
 
+/** 🔴 라벨은 이미 화면 5곳이 쓰는 것과 같아야 한다(지점 상세·지점 카드·지도 미리보기·
+ *  지도 바텀시트·지도 목록이 전부 「직영」/「지사」로 렌더한다). 여기서만 다른 말을 쓰면
+ *  고른 것과 보이는 것이 달라진다. */
+const OPERATION_TYPE_OPTIONS = [
+  { value: 'branch' as const, label: '지사', desc: '본사와 별개로 운영하는 지사·대리점' },
+  { value: 'direct' as const, label: '직영', desc: '본사가 직접 운영하는 지점' },
+];
+
 const PHOTO_GUIDE_FRAMES = ['간판', '외관', '내부', '상담 공간'];
 
 export interface RegistrationDraftPayload {
@@ -115,6 +123,7 @@ export interface RegistrationDraftPayload {
   addressValue?: Partial<AddressValue>;
   tagline?: string;
   shortTagline?: string;
+  operationType?: GaOperationType;
   introText?: string;
   plannerCount?: number | '';
   amenities?: Partial<Record<AmenityOption['key'], boolean>>;
@@ -171,6 +180,12 @@ export function OnboardingForm({
   });
   const [tagline, setTagline] = useState(initialDraft?.tagline ?? '');
   const [shortTagline, setShortTagline] = useState(initialDraft?.shortTagline ?? '');
+  // 🔴 기본값 'branch'는 DB 기본값과 같다(ga_branch.operation_type default 'branch').
+  // 화면이 미리 골라 둔 것처럼 보이지 않게 라디오 두 개를 나란히 두고, 안 고르면
+  // 지금까지와 똑같이 「지사」로 저장된다 - 기존 등록 동작이 바뀌지 않는다.
+  const [operationType, setOperationType] = useState<GaOperationType>(
+    initialDraft?.operationType ?? 'branch'
+  );
   const [introText, setIntroText] = useState(initialDraft?.introText ?? '');
   const [plannerCount, setPlannerCount] = useState<number | ''>(initialDraft?.plannerCount ?? '');
   // 🔴 임시저장을 이어서 열 때, 저장된 직책이 목록에 없으면(예전에 자유 입력으로 저장된
@@ -217,6 +232,7 @@ export function OnboardingForm({
         addressValue,
         tagline,
         shortTagline,
+        operationType,
         introText,
         plannerCount,
         amenities,
@@ -227,7 +243,7 @@ export function OnboardingForm({
     }, DRAFT_AUTOSAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registrant, gaCompanyId, regionId, addressValue, tagline, shortTagline, introText, plannerCount, amenities, links]);
+  }, [registrant, gaCompanyId, regionId, addressValue, tagline, shortTagline, operationType, introText, plannerCount, amenities, links]);
 
   // 미리보기용 변환. 공개 상세와 같은 컴포넌트에 넘길 수 있도록 아직 저장 전인 폼
   // 상태를 BranchPreviewData 모양으로 맞춘다(관리자 BranchEditWorkspace와 같은 패턴).
@@ -281,8 +297,8 @@ export function OnboardingForm({
     businessHours: null,
     tagline: tagline || null,
     shortTagline: normalizeShortTagline(shortTagline),
-    // 등록 폼에서 받지 않는 값들이라 중립값을 쓴다. 승인 후 운영팀이 정한다.
-    operationType: 'branch',
+    operationType,
+    // 등록 폼에서 받지 않는 값이라 중립값을 쓴다. 승인 후 운영팀이 정한다.
     isHeadquarters: false,
     updatedAt: previewNow,
     gaCompanyName: gaName,
@@ -331,7 +347,7 @@ export function OnboardingForm({
     createdAt: previewNow,
     updatedAt: previewNow,
     gaBranchCount: 0,
-    operationType: 'branch',
+    operationType,
     isHeadquarters: false,
     lat: addressValue.lat,
     lng: addressValue.lng,
@@ -443,6 +459,7 @@ export function OnboardingForm({
         introText,
         tagline,
         shortTagline,
+        operationType,
         plannerCount: plannerCount === '' ? null : plannerCount,
         ...amenities,
       },
@@ -526,6 +543,7 @@ export function OnboardingForm({
         introText,
         tagline,
         shortTagline,
+        operationType,
         plannerCount: plannerCount === '' ? null : plannerCount,
         ...amenities,
       },
@@ -704,6 +722,46 @@ export function OnboardingForm({
             <CardContent className="flex flex-col gap-4">
               <RegionSelect regions={regions} value={regionId} onChange={setRegionId} />
               <AddressSearchField value={addressValue} onChange={setAddressValue} />
+            </CardContent>
+          </Card>
+
+          {/* 직영/지사(오너 지시 2026-08-13).
+              등록할 때 고르고, **지점 수정에서 언제든 바꿀 수 있다**(승인 없이 즉시 반영).
+              검색·지도 필터와 지도 마커 색(직영 #e0a319 / 지사 #2f6bff)이 이 값을 쓴다. */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">운영 형태</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2">
+                {OPERATION_TYPE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setOperationType(option.value)}
+                    aria-pressed={operationType === option.value}
+                    className={cn(
+                      'flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-3 text-left transition-colors',
+                      operationType === option.value
+                        ? 'border-brand-500 bg-brand-50/60 ring-1 ring-brand-500'
+                        : 'border-line bg-white hover:border-brand-200'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'text-sm font-bold',
+                        operationType === option.value ? 'text-brand-700' : 'text-ink'
+                      )}
+                    >
+                      {option.label}
+                    </span>
+                    <span className="text-xs leading-snug text-ink-faint">{option.desc}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                지점 상세·검색·지도에 「{operationType === 'direct' ? '직영' : '지사'}」로 표시됩니다.
+              </p>
             </CardContent>
           </Card>
 
