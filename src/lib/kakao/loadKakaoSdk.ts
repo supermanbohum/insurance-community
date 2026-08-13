@@ -68,6 +68,25 @@ function loadScript(): Promise<void> {
  * JS 키는 공개 키라 프론트 노출이 정상이지만, 교체 시 재배포만으로 끝나도록
  * env var로 뺐다.
  */
+/**
+ * 이미 로드·초기화가 끝난 SDK만 **동기적으로** 돌려준다. 아직이면 null.
+ *
+ * 🔴 왜 필요한가: 클릭 핸들러에서 `await loadKakaoSdk()`를 타면 그 사이에
+ * **사용자 제스처 컨텍스트가 끊긴다.** 모바일 브라우저는 제스처 없는 앱 스킴 이동·
+ * 새 창을 막고 PC는 관대해서, 「웹에선 되는데 모바일에선 무반응」이 된다.
+ * 그래서 공유 버튼은 마운트 시 미리 로드해 두고, 클릭 시점에는 이 함수로 꺼내 쓴다.
+ */
+export function getLoadedKakaoSdk(): KakaoSdk | null {
+  if (typeof window === 'undefined') return null;
+  const kakao = window.Kakao;
+  if (!kakao) return null;
+  try {
+    return kakao.isInitialized() ? kakao : null;
+  } catch {
+    return null;
+  }
+}
+
 export function loadKakaoSdk(): Promise<KakaoSdk> {
   if (loadPromise) return loadPromise;
 
