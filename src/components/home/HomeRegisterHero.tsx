@@ -278,8 +278,23 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
             N곳 · M개 지역을 정리했습니다」를 버리면 **콘텐츠가 따로 확정한 문구가 조용히
             사라진다**(8/12 확정, 디자인이 재캡처 대기 중이던 줄이다). 둘은 같은 것의
             두 모양이 아니라 서로 다른 정보라, 분기를 풀어 **둘 다 표시**한다. */}
-        <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
-            <span className="flex items-center gap-1 text-[12px] font-bold text-ink-soft">
+        {/* 🔴 이 카드만 위 두 통계 카드(등록 지점·등록 설계사)와 규격이 다르다. 의도한 것이다.
+            바로 아래 「지금까지 GA N곳」 줄과 **한 세트로 읽혀야** 하는데, 나란히 놓고 재보니
+            어긋나 있었다(디자인 실측): radius 16 vs 12 · 정렬 좌 vs 중앙 · padding 12/16 vs 8/12.
+            특히 **정렬축이 좌/중앙으로 갈리면 두 줄이 한 그룹으로 안 묶인다.**
+            → 아래 줄이 이미 쓰는 값(12px radius · 8/12 padding · 중앙)에 맞춘다. 새 값을
+              만들지 않고 있는 값에 붙이는 쪽이라 변경이 적다.
+            mb-2는 부모의 gap-1.5(6px)에 더해져 이 두 카드 사이만 14px가 된다 - 6px면 둘이
+            하나로 뭉개 보이고, 더 벌리면 관계가 끊긴다(실측 판단).
+            높이 36 vs 37.5의 1.5px 차이는 글자 크기에서 오는 것이라 그대로 둔다 - 억지로
+            맞추면 한쪽에 빈 공간이 생긴다.
+
+            ⚠️ 지점·설계사 통계 카드(위 두 개)는 지금 화면에 없다(임계 미달). 그것들이
+            뜨는 시점(지점 10건·설계사 10명)에는 이 카드만 모양이 달라 보일 수 있다 -
+            그때 셋을 어떻게 묶을지 디자인에 다시 물어야 한다. 지금 같이 바꾸지 않은 것은
+            **보이지 않는 카드의 모양을 상상해서 고치지 않기 위해서**다. */}
+        <div className="mb-2 rounded-xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-3 py-2">
+            <span className="flex items-center justify-center gap-1 text-[12px] font-bold text-ink-soft">
               👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={displayVisitorCount} /></span>명
               {showTodayChip && (
                 <>
