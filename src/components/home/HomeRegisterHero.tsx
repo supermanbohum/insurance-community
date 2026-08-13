@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Megaphone, MessageSquareText, Plus, UserPlus } from 'lucide-react';
 import type { HomeStats } from '@/lib/public/branch';
+import type { MyBranchSlotState } from '@/lib/public/my-branch-slot';
+import { MyBranchSlot } from '@/components/home/MyBranchSlot';
 import { StatCountUp } from '@/components/home/StatCountUp';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { GlobalShareButton } from '@/components/shared/GlobalShareButton';
@@ -143,7 +145,16 @@ function EarlyBirdSlots({ remaining }: { remaining: number }) {
   );
 }
 
-export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기' }: { stats: HomeStats; ctaLabel?: string }) {
+export function HomeRegisterHero({
+  stats,
+  ctaLabel = '우리 지점 등록하기',
+  myBranchSlot = { kind: 'none' },
+}: {
+  stats: HomeStats;
+  ctaLabel?: string;
+  /** SPEC-042 - 뷰어별 「우리 지점」 상태. 'none'이면 지금까지의 배너가 그대로 나온다. */
+  myBranchSlot?: MyBranchSlotState;
+}) {
   const showBranchNumber = stats.branchCount >= HOME_STAT_THRESHOLDS.branch;
   const showPlannerNumber = stats.publicPlannerProfileCount >= HOME_STAT_THRESHOLDS.planner;
   // 🔴 임계 판정은 **배수 적용 후 값** 기준이다(CTO 확정). 실측 기준으로 재면
@@ -197,7 +208,18 @@ export function HomeRegisterHero({ stats, ctaLabel = '우리 지점 등록하기
       <GlobalShareButton variant="home" />
 
       <div className="flex flex-col gap-1.5">
-        {showBranchNumber ? (
+        {/* 🔴 SPEC-042 - 내 지점이 있으면 **이 자리를 통째로** 「우리 지점」 카드가 가져간다.
+            배너 아래에 따로 붙이지 않는다 - 그러면 이미 등록한 사람에게 등록하라고 계속
+            말하게 된다(오너·CTO 확정).
+
+            ⚠️ 판단이 하나 걸려 있다: 지점이 10건을 넘어 「등록 지점 N개」 통계가 뜨는
+            시점에도 이 카드가 그 자리를 가져간다. 지점을 가진 사람에게는 **자기 지점으로
+            가는 길**이 전체 통계보다 우선이라고 봤다 - 통계만 보이고 갈 데가 없으면
+            「내 지점이 어디 있지」가 된다. 다만 지금 지점 0건이라 **어느 쪽으로 짜도 화면이
+            같아서 확인할 수 없다.** 디자인·CTO 확인이 필요한 자리로 남긴다. */}
+        {myBranchSlot.kind !== 'none' ? (
+          <MyBranchSlot state={myBranchSlot} />
+        ) : showBranchNumber ? (
           <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
             <StatChip emoji="📍" label="등록 지점" value={stats.branchCount} unit="개" />
           </div>

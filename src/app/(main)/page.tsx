@@ -11,6 +11,7 @@ import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { HomeOpenBanner } from '@/components/home/HomeOpenBanner';
 import { HomeAdSlot } from '@/components/home/HomeAdSlot';
 import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
+import { getMyBranchSlotState } from '@/lib/public/my-branch-slot';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
 import { GaQualityCard } from '@/components/home/carousel/GaQualityCard';
@@ -102,7 +103,8 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [gaQuality, latest, stats, layoutConfig, openBanner, topDesignerRanking, adBanners] = await Promise.all([
+  const [gaQuality, latest, stats, layoutConfig, openBanner, topDesignerRanking, adBanners, myBranchSlot] =
+    await Promise.all([
     // "인기 GA"(조회수) → "우수 GA"(TOP 설계사 등급 합산 점수)로 대체(오너 지시 ⑤).
     listGaQualityRanking(10),
     listPublicBranches({ sort: 'newest', limit: 10 }),
@@ -117,6 +119,11 @@ export default async function HomePage() {
     // 이름이다 - 지면은 PC/모바일 구분 없이 같은 자리에 뜬다. enum 값을 늘리는
     // 마이그레이션 대신 이름을 그대로 쓰고, 관리자 화면 라벨을 실제 위치로 고쳤다.
     listActiveBanners('mobile_list_middle'),
+    // SPEC-042 - 뷰어별 「우리 지점」 상태. 🔴 이 조회는 쿠키를 읽는다.
+    // 이 페이지는 이미 force-dynamic이라(레이아웃이 매 요청 getCurrentUser를 부른다)
+    // 추가 비용은 없지만, 위 주석의 "추후 캐시 가능해진다"는 길은 이것이 들어오면서
+    // 막혔다 - 그때는 이 슬롯도 함께 클라이언트로 옮겨야 한다.
+    getMyBranchSlotState(),
   ]);
 
   // priority 내림차순 정렬된 목록의 첫 건만 쓴다 - 지면이 하나라 회전은 없다.
@@ -125,7 +132,7 @@ export default async function HomePage() {
   const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '우리 지점 등록하기';
 
   const nodesByKey: Record<(typeof HOME_SECTIONS)[number]['key'], React.ReactNode> = {
-    hero: <HomeRegisterHero stats={stats} ctaLabel={ctaLabel} />,
+    hero: <HomeRegisterHero stats={stats} ctaLabel={ctaLabel} myBranchSlot={myBranchSlot} />,
     quickMenu: <QuickMenuGrid />,
     // 🔴 소재가 없으면 null - 빈 지면을 그리지 않는다(SPEC-004 §3, pc_left 폐지 사유).
     adSlot: adBanner ? <HomeAdSlot banner={adBanner} /> : null,
