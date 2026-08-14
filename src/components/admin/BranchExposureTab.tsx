@@ -46,6 +46,7 @@ export function BranchExposureTab({
   const [isDeleting, setIsDeleting] = useState(false);
   // <input type="date">가 요구하는 YYYY-MM-DD로 잘라 넣는다(저장 시 그 날의 끝으로 보정).
   const [proUntilDate, setProUntilDate] = useState(branch.pro_until ? branch.pro_until.slice(0, 10) : '');
+  const [confirmHideOpen, setConfirmHideOpen] = useState(false);
 
   function handleSavePro() {
     // 만료일을 "그 날까지 유효"로 읽히게 하루의 끝(23:59:59.999)으로 맞춘다 - 날짜만
@@ -68,7 +69,7 @@ export function BranchExposureTab({
     });
   }
 
-  function handleStatusToggle(checked: boolean) {
+  function applyStatus(checked: boolean) {
     startTransition(async () => {
       const result = await setBranchStatusAction(branch.id, checked ? 'visible' : 'hidden');
       if (result.success) toast.success(checked ? '공개로 전환했습니다.' : '비공개로 전환했습니다.');
@@ -76,10 +77,28 @@ export function BranchExposureTab({
     });
   }
 
+  function handleStatusToggle(checked: boolean) {
+    // 🔴 켜는 것은 되돌리기 쉽지만, 끄는 것은 **승인된 실지점을 토글 한 번으로 사이트에서
+    // 지우는 일**이다(지역 카운트·검색·지도·상세 전부에서 사라진다). 확인 단계를 둔다.
+    // 이 스위치와 바로 아래 「추천 지점」 스위치가 나란히 있고 둘 다 「노출」로 읽혀서
+    // 오너가 실제로 한 시간을 잃었다 - 무게가 다른 두 스위치를 같은 무게로 두지 않는다.
+    if (!checked) {
+      setConfirmHideOpen(true);
+      return;
+    }
+    applyStatus(true);
+  }
+
   function handleRecommendedToggle(checked: boolean) {
     startTransition(async () => {
       const result = await setBranchRecommendedAction(branch.id, checked);
-      if (result.success) toast.success(checked ? '추천 지점으로 설정했습니다.' : '추천을 해제했습니다.');
+      if (result.success) {
+        toast.success(
+          checked
+            ? '목록 상단 고정을 켰습니다. 광고 심사를 처리하면 자동으로 해제될 수 있습니다.'
+            : '목록 상단 고정을 껐습니다.'
+        );
+      }
       else toast.error(result.error);
     });
   }
@@ -115,27 +134,88 @@ export function BranchExposureTab({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* 🔴 아래 두 스위치는 예전에 나란히 놓여 **둘 다 「노출」로 읽혔다.** 오너가 이 둘을
+          구분하지 못해 한 시간을 잃었다. 이름을 「사이트 공개」/「목록 상단 고정」으로 갈라 놓고,
+          각각 **무엇이 실제로 달라지는지**를 설명에 그대로 적는다. */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">공개 여부</CardTitle>
-          <CardDescription>비공개로 전환하면 GA가 승인 상태여도 이 지점만 숨길 수 있습니다.</CardDescription>
+          <CardTitle className="text-base">사이트 공개 (끄면 방문자에게 사라집니다)</CardTitle>
+          <CardDescription>
+            끄면 이 지점이 <b>홈·검색·지도·지역별 목록·지역별 지점 수·지점 상세페이지에서 통째로
+            빠집니다.</b> 링크를 알고 있어도 상세페이지가 열리지 않습니다. GA가 승인 상태여도
+            이 지점만 숨기는 스위치이고, 아래 「목록 상단 고정」과 달리 <b>노출 자체를 없애는</b>
+            설정입니다.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-3">
           <Switch checked={branch.status === 'visible'} onCheckedChange={handleStatusToggle} disabled={isPending} />
-          <span className="text-sm">{branch.status === 'visible' ? '공개' : '비공개'}</span>
+          <span className="text-sm">{branch.status === 'visible' ? '공개' : '비공개(방문자에게 안 보임)'}</span>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">추천 지점</CardTitle>
-          <CardDescription>홈 화면의 추천 GA 섹션에 노출됩니다.</CardDescription>
+          <CardTitle className="text-base">목록 상단 고정 (「추천」 배지)</CardTitle>
+          {/* 🔴 예전 문구는 「홈 화면의 추천 GA 섹션에 노출됩니다」였는데 **사실이 아니다.**
+              그런 섹션은 없다. 실제 효과는 아래 두 가지뿐이다(코드 확인:
+              정렬 = src/lib/public/branch.supabase.ts:231, 배지 = BranchCard.tsx:71). */}
+          <CardDescription>
+            <span className="flex flex-col gap-1.5">
+              <span>켜면 이 두 가지가 달라집니다. 그 외에는 아무 변화도 없습니다.</span>
+              <span>① 검색·지도·지역별·홈 목록의 <b>기본 정렬에서 맨 위로</b> 올라갑니다.</span>
+              <span>② 지점 카드에 <b>「추천」 배지</b>가 붙습니다.</span>
+              <span className="text-muted-foreground">
+                (홈에 「추천 GA 섹션」 같은 별도 영역은 없습니다. `recommended_rank`는 저장되지만
+                지금 어느 화면에서도 쓰이지 않습니다.)
+              </span>
+              <span className="font-semibold text-destructive">
+                🔴 여기서 수동으로 켠 추천은 <b>광고 심사(승인·반려)를 처리하는 순간 자동으로
+                해제됩니다.</b> 심사 시 `sync_branch_ad_exposure`가 돌면서 &ldquo;승인+결제완료+기간내&rdquo;
+                광고가 없는 지점의 추천을 전부 끕니다. 결제 없이 켜 둔 추천은 그때 사라지므로,
+                광고 심사를 한 뒤에는 이 스위치를 다시 확인해주세요.
+              </span>
+            </span>
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-3">
           <Switch checked={branch.is_recommended} onCheckedChange={handleRecommendedToggle} disabled={isPending} />
-          <span className="text-sm">{branch.is_recommended ? '추천중' : '미지정'}</span>
+          <span className="text-sm">{branch.is_recommended ? '상단 고정중' : '미지정'}</span>
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmHideOpen} onOpenChange={setConfirmHideOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>&quot;{branch.name}&quot;을 방문자에게서 숨기시겠습니까?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="flex flex-col gap-2">
+                <span>
+                  비공개로 바꾸면 홈·검색·지도·지역별 목록·지역별 지점 수·지점 상세페이지에서
+                  <b> 통째로 빠집니다.</b> 링크를 알고 있어도 상세페이지가 열리지 않습니다.
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  데이터는 지워지지 않고, 다시 켜면 그대로 돌아옵니다. 「목록 상단 고정(추천)」과
+                  헷갈리기 쉬운 자리라 한 번 더 묻습니다.
+                </span>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                setConfirmHideOpen(false);
+                applyStatus(false);
+              }}
+              disabled={isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              비공개로 전환
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ⑧ PRO 뱃지(SPEC-035 v2) - 결제 연동 없이 운영팀이 직접 기간을 넣는다.
           🔴 정렬·랭킹·검색 순서에는 전혀 영향이 없다(오너 확정 "상위 노출 차별 없음") -
