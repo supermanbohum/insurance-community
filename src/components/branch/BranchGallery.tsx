@@ -94,13 +94,20 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
                 // **장당 <link rel="preload" href=원본> 이 자동으로 붙어서**(홈 1·포항 5·일품 9로
                 // img 수와 정확히 일치 확인) 5712px 원본 ~1.3MB × 9장이 첫 로드에 전부 내려갔다.
                 // 88px 칸에 그리면서다. next/image는 priority가 없으면 preload도 없고 lazy가
-                // 기본이라, 이 한 줄 전환이 「썸네일 축소 + 원본 preload 제거」를 동시에 잡는다.
+                // 기본이라, 이 전환이 「썸네일 축소 + 원본 preload 제거」를 동시에 잡는다.
+                //
+                // 🔴 `fill`이 아니라 **고정 width/height**다(2026-08-14 라이브 실측 후 교체).
+                // fill + sizes로 하면 srcset이 deviceSizes 전체(256w~3840w)가 되는데,
+                // lazy 이미지의 하이드레이션 타이밍에서 브라우저가 sizes 적용 전에 후보를
+                // 골라 **1920px 화면에서 9장 전부 w=3840을 내려받는 것**을 확인했다(같은
+                // srcset을 새 Image()로 주면 256을 고른다 - DOM 하이드레이션 경로만 어긋난다).
+                // 고정 width면 srcset이 320/640 두 개뿐이라 **최악의 선택도 640이 상한**이다.
                 <Image
                   src={item.url}
                   alt={`사무실사진 ${i + 1}`}
-                  fill
-                  sizes="(min-width: 640px) 160px, 25vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-110"
+                  width={320}
+                  height={320}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
               ) : (
                 // external은 remotePatterns에 없는 도메인이면 최적화 요청이 실패하므로 원본을 쓴다.
