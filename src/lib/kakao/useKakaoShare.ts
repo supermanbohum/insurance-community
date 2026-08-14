@@ -37,19 +37,31 @@ export interface KakaoShareContentInput {
  *    모바일에선 안 된다"와 정확히 같은 모양이다. 미리 로드해 두면 클릭 시점에는
  *    동기적으로 꺼내 쓰므로 제스처가 유지된다.
  *
- * ② **성공 신호가 없으면 대안을 준다.**
- *    카카오가 성공하면 앱/새 창으로 **화면을 벗어난다**(visibilitychange 또는 blur).
- *    그 신호가 일정 시간 안에 없으면 실패로 보고 네이티브 공유 시트 →
- *    링크 복사 순으로 내려간다. 🔴 휴리스틱이다 - 성공/실패를 직접 알 방법이 없어서
- *    **이탈 여부로 대신 재는 것**이고, 그 사실을 여기 적어 둔다.
+ * ② **SDK가 없거나 예외가 났을 때만** 네이티브 공유 시트 → 링크 복사로 내려간다.
  *
- * ⚠️ 실기기(오너 폰·앱 WebView)에서는 확인하지 못했다. 확인한 것은 "모바일 UA
- * 브라우저에서 sendDefault가 조용히 아무것도 안 한다"까지다. 앱(WebView)은 원인이
- * 다를 수 있다 - WebView가 `kakaolink://`·`intent://`를 처리하지 못하면 같은 증상이
- * 나고, 그건 앱 셸이 외부 스킴을 허용해야 풀린다(앱 세션 확인 필요).
- * 다만 어느 쪽이든 **이제 무반응으로 끝나지는 않는다.**
+ * ---------------------------------------------------------------------------
+ * 🔴 2026-08-14 정정 - 성공을 실패로 판정하고 있었다 (오너 실기기 스크린샷)
+ * ---------------------------------------------------------------------------
+ * 위 ②는 원래 「1.2초 안에 visibilitychange/blur가 오면 성공」이라는 휴리스틱
+ * (`watchForExit`)이었다. **틀린 전제였다.**
+ * 카카오 공유는 성공하면 **페이지 위에 친구 선택 시트를 띄운다** - 페이지를 숨기지도
+ * 않고 포커스를 뺏지도 않는다. 그래서 오너 화면에서는 **친구 선택 시트가 열린 채로**
+ * 「공유를 열지 못했습니다…」 토스트가 같이 떴다. 공유는 되고 있었는데 우리가 실패라고
+ * 말한 것이다. 이탈은 성공의 신호가 아니었다.
+ *
+ * 지금 기준: **SDK가 로드돼 있고 `sendDefault`가 예외를 던지지 않았으면 성공으로 보고
+ * 즉시 끝낸다.** 폴백은 ⓐ `getLoadedKakaoSdk()`가 null ⓑ `sendDefault`가 예외를 던짐,
+ * 이 둘뿐이다.
+ *
+ * ⚠️ 이 판정도 완벽하지 않다는 것을 안다 - `sendDefault`는 실패해도 예외를 안 던질 수
+ * 있어서, 그런 경우는 다시 무반응이 된다. 그럼에도 이쪽을 고른 이유는:
+ * **되는 사람에게 매번 거짓 실패를 보여주는 쪽이 더 나쁘기 때문**이다. 무반응은 다시
+ * 누르게 하지만, 거짓 경고는 되는 기능을 안 되는 기능으로 믿게 만든다.
+ * 🔴 폴백 문구 자체는 지우지 않았다 - 지우면 ⓐ·ⓑ 진짜 실패가 무반응으로 회귀한다.
+ *
+ * ⚠️ 앱(WebView)은 여전히 원인이 다를 수 있다 - WebView가 `kakaolink://`·`intent://`를
+ * 처리하지 못하면 같은 증상이 나고, 그건 앱 셸이 외부 스킴을 허용해야 풀린다.
  */
-const EXIT_SIGNAL_TIMEOUT_MS = 1200;
 
 export function useKakaoShare({ title, description, imageUrl, url }: KakaoShareContentInput) {
   const [isPending, setIsPending] = useState(false);
@@ -67,17 +79,20 @@ export function useKakaoShare({ title, description, imageUrl, url }: KakaoShareC
       // 이미 로드된 경우에만 동기적으로 꺼낸다. await를 타면 제스처가 끊긴다.
       const kakao = getLoadedKakaoSdk();
       if (kakao) {
-        const exited = watchForExit();
         try {
           kakao.Share.sendDefault({
             objectType: 'feed',
             content: { title, description, imageUrl, link: { mobileWebUrl: url, webUrl: url } },
             buttons: [{ title: '자세히 보기', link: { mobileWebUrl: url, webUrl: url } }],
           });
+          // 🔴 여기서 끝낸다. 친구 선택 시트는 페이지 위에 뜨므로 이탈 신호가 오지 않는다 -
+          // 예전에는 그 신호가 없다고 아래 폴백으로 내려가 **열려 있는 시트 위에 실패
+          // 토스트**를 띄웠다. 예외가 없었으면 성공으로 본다(위 머리말 참고).
+          return;
         } catch (err) {
           console.error('[useKakaoShare] sendDefault 실패', err);
+          // 예외가 났을 때만 아래로 내려간다.
         }
-        if (await exited) return; // 카톡/새 창으로 넘어갔다 - 여기서 끝
       }
 
       // ── ② 네이티브 공유 시트 ─────────────────────────────────────────────
@@ -106,30 +121,11 @@ export function useKakaoShare({ title, description, imageUrl, url }: KakaoShareC
 }
 
 /**
- * 화면을 벗어났는지 지켜본다 - 카카오 공유가 성공하면 카톡 앱이나 새 창으로 넘어간다.
- * 🔴 성공을 직접 알 수 없어서 **이탈로 대신 잰다.** 시간 안에 아무 신호가 없으면 false.
+ * 🔴 `watchForExit`를 여기서 들어냈다(2026-08-14). 「1.2초 안에 이탈 신호가 없으면 실패」로
+ * 재던 함수인데, 카카오 친구 선택 시트는 이탈을 만들지 않으므로 **성공을 실패로 판정**했다.
+ * 목적을 달성하지 못하는 장치라 되살리지 마라 - 되살리면 오너가 본 그 화면
+ * (시트가 열린 채 「공유를 열지 못했습니다」)이 그대로 돌아온다.
  */
-function watchForExit(): Promise<boolean> {
-  return new Promise((resolve) => {
-    let done = false;
-    const finish = (exited: boolean) => {
-      if (done) return;
-      done = true;
-      document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('blur', onBlur);
-      clearTimeout(timer);
-      resolve(exited);
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') finish(true);
-    };
-    const onBlur = () => finish(true);
-
-    document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('blur', onBlur);
-    const timer = setTimeout(() => finish(false), EXIT_SIGNAL_TIMEOUT_MS);
-  });
-}
 
 async function copyLink(url: string) {
   try {
@@ -151,6 +147,10 @@ async function copyLink(url: string) {
   } catch (err) {
     console.error('[useKakaoShare] 링크 복사 실패', err);
     // 🔴 여기까지 오면 알려줄 수단이 토스트뿐이다. 주소를 그대로 띄워 직접 복사하게 한다.
-    toast.error(`공유를 열지 못했습니다. 이 주소를 복사해주세요: ${url}`);
+    // ⚠️ 이 경로는 **카카오톡 인앱 브라우저에서 실제로 밟힌다** - 거기서는 clipboard API도
+    // execCommand('copy')도 막혀서 "최후 수단"이 실은 작동하지 않는다. 그래서 기본
+    // 4초로 사라지면 사용자가 주소를 옮겨 적을 시간이 없다. 직접 길게 눌러 복사할 수
+    // 있도록 오래 띄운다(닫기 전까지가 아니라, 충분히 긴 시간).
+    toast.error(`공유를 열지 못했습니다. 이 주소를 복사해주세요: ${url}`, { duration: 20000 });
   }
 }
