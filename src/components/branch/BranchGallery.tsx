@@ -85,15 +85,34 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
               type="button"
               key={item.id}
               onClick={() => open((main ? 1 : 0) + i)}
-              className="group aspect-square cursor-zoom-in overflow-hidden rounded-xl bg-surface-sunken"
+              className="group relative aspect-square cursor-zoom-in overflow-hidden rounded-xl bg-surface-sunken"
               aria-label={`사무실사진 ${i + 1} 크게 보기`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.url}
-                alt={`사무실사진 ${i + 1}`}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-              />
+              {item.source === 'storage' ? (
+                // 🔴 raw <img>를 쓰면 안 되는 자리다(2026-08-14 실측). SSR에 나간 raw <img>는
+                // **장당 <link rel="preload" href=원본> 이 자동으로 붙어서**(홈 1·포항 5·일품 9로
+                // img 수와 정확히 일치 확인) 5712px 원본 ~1.3MB × 9장이 첫 로드에 전부 내려갔다.
+                // 88px 칸에 그리면서다. next/image는 priority가 없으면 preload도 없고 lazy가
+                // 기본이라, 이 한 줄 전환이 「썸네일 축소 + 원본 preload 제거」를 동시에 잡는다.
+                <Image
+                  src={item.url}
+                  alt={`사무실사진 ${i + 1}`}
+                  fill
+                  sizes="(min-width: 640px) 160px, 25vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+              ) : (
+                // external은 remotePatterns에 없는 도메인이면 최적화 요청이 실패하므로 원본을 쓴다.
+                // lazy를 명시해 화면 밖 썸네일이 첫 로드에 끼어들지 않게 한다.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.url}
+                  alt={`사무실사진 ${i + 1}`}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+              )}
             </button>
           ))}
           {video && (
@@ -291,29 +310,56 @@ function PhotoViewer({
         </button>
       </div>
 
+      {/*
+        🔴 `min-h-0`이 없으면 이 뷰어는 통째로 무너진다 (2026-08-14 CTO 라이브 실측: 화면
+        954×918인데 화살표가 y=1652 - 아래로 734px 밖). flex 자식의 min-height 기본값은
+        auto(=콘텐츠 크기)라, 원본 사진의 자연 높이가 flex-1을 뷰포트 밖까지 밀어냈고
+        이미지의 max-h-full도 그 부풀어난 높이 기준이 되어 화면을 꽉 채웠다.
+        min-h-0을 주면 flex가 남은 공간으로 확정 높이를 주고, 그 높이 기준으로
+        max-h가 동작한다. 화살표는 정적 흐름 위치에 기대지 않고 top-1/2로 세로 중앙에 박는다.
+        패딩(p-3/sm:p-6)은 「기본 배율에서 이미지가 화면을 꽉 채우지 않을 것」 조건이다.
+      */}
       <div
-        className="relative flex flex-1 items-center justify-center overflow-hidden"
+        className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden p-3 sm:p-6"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onWheel={onWheel}
         onDoubleClick={() => (scale > 1 ? resetZoom() : setScale(2))}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <div
           key={photo.id}
-          src={photo.url}
-          alt={photoLabel}
-          className="max-h-full max-w-full object-contain transition-transform duration-100"
+          className="relative h-full w-full transition-transform duration-100"
           style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}
-          draggable={false}
-        />
+        >
+          {photo.source === 'storage' ? (
+            // 원본(~1.3MB, 5712px)을 그대로 내리지 않는다 - 뷰어도 next/image를 거쳐
+            // 화면 폭 기준으로 받는다. MAX_SCALE(4배) 줌 극단에서는 원본보다 소프트해질 수
+            // 있는데, 사진마다 1MB+를 내리는 비용보다 그 트레이드오프가 낫다고 판단했다.
+            <Image
+              src={photo.url}
+              alt={photoLabel}
+              fill
+              sizes="100vw"
+              className="object-contain"
+              draggable={false}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photo.url}
+              alt={photoLabel}
+              className="absolute inset-0 h-full w-full object-contain"
+              draggable={false}
+            />
+          )}
+        </div>
 
         {index > 0 && (
           <button
             type="button"
             onClick={() => go(-1)}
-            className="absolute left-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/30"
+            className="absolute left-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/30"
             aria-label="이전 사진"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -323,7 +369,7 @@ function PhotoViewer({
           <button
             type="button"
             onClick={() => go(1)}
-            className="absolute right-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/30"
+            className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/30"
             aria-label="다음 사진"
           >
             <ChevronRight className="h-6 w-6" />
