@@ -60,14 +60,31 @@ export function ContinueRegistrationForm({
     if (!files || files.length === 0) return;
     setIsUploading(true);
     let sortOrder = officePhotos.length;
+    // 🔴 예전에는 이 루프가 결과를 통째로 버렸고(`await ...(...)` 만 하고 끝),
+    // 형식이 안 맞는 파일은 조용히 `continue` 했다. 10장을 고르고 한 장이 실패해도
+    // 화면에는 아무 말도 안 나와서 **지점장은 10장이 올라간 줄 안다.**
+    // 실패한 장수와 이유를 반드시 눈에 보이게 남긴다.
+    const failures: string[] = [];
     for (const file of Array.from(files)) {
-      if (!IMAGE_TYPES.includes(file.type)) continue;
+      if (!IMAGE_TYPES.includes(file.type)) {
+        // 아이폰 기본 포맷(HEIC)이 여기로 떨어진다 - 가장 흔한 조용한 탈락 지점이다.
+        failures.push(`${file.name}: jpg, png, webp 형식만 올릴 수 있습니다`);
+        continue;
+      }
       const fd = new FormData();
       fd.set('file', file);
-      await uploadPartnerBranchPhotoAction(branchId, fd, false, sortOrder);
+      // eslint-disable-next-line no-await-in-loop
+      const result = await uploadPartnerBranchPhotoAction(branchId, fd, false, sortOrder);
+      if (!result.success) {
+        failures.push(`${file.name}: ${result.error ?? '업로드하지 못했습니다'}`);
+        continue;
+      }
       sortOrder += 1;
     }
     setIsUploading(false);
+    if (failures.length > 0) {
+      toast.error(`${failures.length}장이 등록되지 않았습니다.`, { description: failures.join('\n') });
+    }
     router.refresh();
   }
 
@@ -153,6 +170,15 @@ export function ContinueRegistrationForm({
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <p className="text-xs text-muted-foreground">대표사진과 별도로, 지점 상세페이지에서만 노출되는 사무실 사진입니다. (권장 5~10장)</p>
+          {!mainPhoto && (
+            // 🔴 add_branch_media RPC는 지점에 이미지가 하나도 없으면 **첫 장을 대표사진으로**
+            // 바꾼다(partner.ts의 "첫 업로드 = 대표사진 정책"). 이 규칙이 화면에 안 적혀 있어서
+            // 「사무실 10장을 올렸는데 9장만 있다」로 보이는 일이 실제로 있었다(일품지점).
+            // 사진이 사라진 게 아니라 한 장이 대표사진이 된 것이다 - 그 사실을 미리 말해 준다.
+            <p className="text-xs font-medium text-brand-600">
+              대표사진이 아직 없어서, 여기서 올리는 첫 장이 대표사진으로 등록됩니다.
+            </p>
+          )}
 
           {officePhotos.length > 0 && (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">

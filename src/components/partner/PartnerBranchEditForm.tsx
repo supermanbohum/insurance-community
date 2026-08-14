@@ -232,15 +232,26 @@ export function PartnerBranchEditForm({
         toast.error(result.error);
         return;
       }
+      // 🔴 예전에는 이 루프가 결과를 버리고 **무조건 성공 토스트**를 띄웠다. 사진이
+      // 하나도 안 올라가도 "접수되었습니다"가 떴다는 뜻이다. 실패는 실패로 말한다.
+      const failed: string[] = [];
       for (const file of newOfficePhotos) {
         const fd = new FormData();
         fd.set('file', file);
         // eslint-disable-next-line no-await-in-loop
-        await uploadPendingBranchPhotoAction(branch.id, result.registrationId, fd, false);
+        const uploaded = await uploadPendingBranchPhotoAction(branch.id, result.registrationId, fd, false);
+        if (!uploaded.success) failed.push(`${file.name}: ${uploaded.error ?? '업로드하지 못했습니다'}`);
       }
       toast.success(
         openRegistration?.status === 'pending' ? '수정 내용이 다시 제출되었습니다. 운영팀이 최신 내용을 검토합니다.' : '승인 요청이 접수되었습니다. 운영팀 승인 후 반영됩니다.'
       );
+      if (failed.length > 0) {
+        // 본문(수정 내용)은 실제로 제출됐으므로 위 성공 토스트는 그대로 두고,
+        // 사진만 따로 실패를 알린다 - 어느 쪽이 안 됐는지 구분되어야 다시 시도할 수 있다.
+        toast.error(`사진 ${failed.length}장이 첨부되지 않았습니다. 다시 올려주세요.`, {
+          description: failed.join('\n'),
+        });
+      }
       setNewOfficePhotos([]);
       router.refresh();
     });
