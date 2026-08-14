@@ -167,6 +167,11 @@ export function OnboardingForm({
     phone: initialDraft?.registrant?.phone ?? signupContact ?? '',
     branchLabel: initialDraft?.registrant?.branchLabel ?? '',
   });
+  // 🔴 등록자 연락처 공개 동의(오너 지시 2026-08-13). **기본값은 미체크**다 -
+  // 여기 들어가는 번호는 회사 대표번호가 아니라 지점관리자 **개인 휴대폰**이다.
+  // 임시저장(draft)에 담지 않는다: 동의는 매번 본인이 직접 눌러야 하는 것이지
+  // 예전 세션에서 복원돼 자기도 모르게 켜져 있으면 안 된다.
+  const [publishRegistrantPhone, setPublishRegistrantPhone] = useState(false);
   const [businessCard, setBusinessCard] = useState<File | null>(null);
   const [gaCompanyId, setGaCompanyId] = useState<string | null>(initialDraft?.gaCompanyId ?? signupGaCompanyId ?? null);
   const gaName = gaOptions.find((g) => g.id === gaCompanyId)?.name ?? '';
@@ -449,6 +454,7 @@ export function OnboardingForm({
     const result = await submitBranchRegistrationAction({
       gaName,
       registrant: { ...registrant, company: gaName },
+      publishRegistrantPhone,
       branch: {
         name: registrant.branchLabel,
         regionId,
@@ -475,6 +481,12 @@ export function OnboardingForm({
     // 등록 자체를 되돌리지도 않는다(사진·서류를 다 올린 뒤라 처음부터 다시 하게 된다).
     if (result.shortTaglineFailed) {
       toast.warning('짧은 소개만 저장하지 못했습니다. 지점 정보에서 다시 입력해주세요.');
+    }
+
+    // 🔴 "공개하겠다"고 체크했는데 저장이 안 됐으면 반드시 말해야 한다. 조용히 넘어가면
+    // 지점장은 번호가 공개된 줄 알고, 방문자에게는 연락 수단이 없다.
+    if (result.registrantPhoneShareFailed) {
+      toast.warning('연락처 공개 설정만 저장하지 못했습니다. 지점 정보 > 연락처에서 다시 저장해주세요.');
     }
 
     // 서류는 명함 1개다(임대차계약서를 더 이상 받지 않는다). 여기 숫자가 실제 업로드
@@ -708,6 +720,34 @@ export function OnboardingForm({
                         onChange={(e) => setRegistrant((prev) => ({ ...prev, [field.key]: e.target.value }))}
                         required
                       />
+                      {field.key === 'phone' && (
+                        // 🔴 개인 휴대폰이 공개되는 일이다. 기본 미체크이고, 문구에
+                        // "공개됩니다"를 그대로 쓴다 - "노출"·"등록" 같은 완곡어를 쓰면
+                        // 무엇이 일어나는지 읽는 사람이 알 수 없다.
+                        <label
+                          htmlFor="onb-registrant-phone-public"
+                          className="mt-1 flex cursor-pointer items-start gap-2 rounded-xl border border-line bg-surface-sunken px-3 py-2.5"
+                        >
+                          <input
+                            id="onb-registrant-phone-public"
+                            type="checkbox"
+                            checked={publishRegistrantPhone}
+                            onChange={(e) => setPublishRegistrantPhone(e.target.checked)}
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
+                          />
+                          <span className="flex flex-col gap-0.5">
+                            <span className="text-[13px] font-bold text-ink">
+                              이 번호를 지점 연락처로 공개합니다
+                            </span>
+                            <span className="text-xs text-ink-faint">
+                              체크하면 위 번호가 <b>지점 상세페이지의 「전화하기」 버튼</b>에 그대로
+                              공개됩니다. 회사 대표번호가 아니라 <b>본인 번호</b>이니 확인하고 체크해주세요.
+                              체크하지 않으면 공개되지 않고, 방문자는 문의 폼으로만 연락할 수 있습니다.
+                              등록 후 지점 정보에서 언제든 바꿀 수 있습니다.
+                            </span>
+                          </span>
+                        </label>
+                      )}
                     </div>
                   )
                 )}

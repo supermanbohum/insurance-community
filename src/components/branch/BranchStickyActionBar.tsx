@@ -1,6 +1,6 @@
 'use client';
 
-import { Phone, MessageCircle, Navigation } from 'lucide-react';
+import { Phone, MessageCircle, MessageSquare, Navigation } from 'lucide-react';
 import { recordBranchContactClickAction } from '@/lib/actions/public';
 import { triggerHaptic } from '@/lib/native/haptics';
 import type { BranchContactItem } from '@/components/branch/types';
@@ -32,6 +32,30 @@ export function BranchStickyActionBar({
   const kakao = contacts.find((c) => c.type === 'kakao');
 
   const buttons = [
+    // 🔴 연락처가 하나도 없는 지점(= 연락처 미공개)에는 그 자리에 「문의하기」를 둔다.
+    // 문의 폼은 후기 아래 맨 끝의 「연락처」 섹션 안에 있어서 상단에서 아주 멀다 -
+    // 액션바에서 바로 데려가지 않으면 방문자는 그런 폼이 있는지도 모른다.
+    // 조건이 `contacts.length === 0`인 이유: 문의 폼 자체가 그때만 렌더된다
+    // (BranchContactList). 연락처가 하나라도 있으면 「문의하기」가 데려갈 폼이 없어서
+    // 라벨이 거짓말이 된다.
+    contacts.length === 0
+      ? {
+          key: 'inquiry',
+          label: '문의하기',
+          icon: MessageSquare,
+          // ResponsiveSection이 섹션마다 `section-<key>` id를 붙인다(연락처 = contacts).
+          href: '#section-contacts',
+          onClick: (e: React.MouseEvent) => {
+            const target = document.getElementById('section-contacts');
+            if (!target) return; // id가 없으면 기본 앵커 이동에 맡긴다
+            e.preventDefault();
+            triggerHaptic('medium');
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          },
+          external: false,
+          primary: true,
+        }
+      : null,
     phone
       ? {
           key: 'phone',
@@ -82,7 +106,13 @@ export function BranchStickyActionBar({
       <div
         className={cn(
           'mx-auto grid w-full max-w-2xl gap-px overflow-hidden rounded-2xl border border-line bg-line shadow-card',
-          buttons.length === 3 ? 'grid-cols-3' : 'grid-cols-2',
+          // 🔴 예전에는 3개가 아니면 무조건 grid-cols-2였다. 길찾기 하나뿐인 지점은
+          // 오른쪽 칸이 그냥 **빈칸**으로 남았다(포항지점에서 오너가 직접 지적).
+          // 버튼 수 = 칸 수. Tailwind JIT가 클래스를 정적으로 찾아야 하므로
+          // `grid-cols-${n}` 템플릿이 아니라 완성된 문자열로 적는다.
+          buttons.length === 1 && 'grid-cols-1',
+          buttons.length === 2 && 'grid-cols-2',
+          buttons.length >= 3 && 'grid-cols-3',
           variant === 'public' && 'shadow-2xl lg:shadow-card'
         )}
       >

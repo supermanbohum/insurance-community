@@ -23,6 +23,11 @@ export type RegisterGaResult =
        * 버리지도 않는다**: 호출부가 이 값을 보고 "짧은 소개만 저장 못 했다"고 알린다.
        */
       shortTaglineFailed?: boolean;
+      /**
+       * 「등록자 연락처를 지점 연락처로 공개」에 체크했는데 그 저장만 실패한 경우 true.
+       * shortTaglineFailed와 같은 이유로 등록 자체는 살리고, 조용히 버리지도 않는다.
+       */
+      registrantPhoneShareFailed?: boolean;
     }
   | { success: false; error: string };
 
@@ -127,6 +132,38 @@ export async function setBranchOperationTypeAction(
   return { success: true };
 }
 
+/**
+ * 등록자 본인 연락처를 **지점의 공개 연락처로** 올린다(오너 지시 2026-08-13:
+ * "지점등록하면 연락처 등록 여부 체크 넣고, 체크하면 공개해").
+ *
+ * 🔴 여기 들어가는 번호는 **회사 대표번호가 아니라 지점관리자 본인 번호**다
+ * (`branch_registrations.registrant_phone`). 개인 휴대폰이 공개되는 일이므로
+ * **체크했을 때만** 호출한다 - 기본값은 미체크이고, 폼 문구에 "공개됩니다"를 명시했다.
+ *
+ * 왜 DB 스키마를 안 건드렸나: 공개 연락처는 이미 `branch_contacts`가 정본이고
+ * `upsert_branch_contact` RPC를 파트너가 부를 수 있다(submitBranchChangeAction이 같은
+ * 경로를 쓴다). 등록 RPC에 파라미터를 더하면 시그니처가 다른 함수가 하나 더 생겨
+ * PostgREST가 후보를 못 고르는 문제가 생긴다(0108 헤더 참고) - 그 위험을 지지 않는다.
+ *
+ * 반환값은 "저장됐는가"다. 실패해도 던지지 않는다.
+ */
+async function savePublicRegistrantPhone(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  branchId: string,
+  phone: string
+): Promise<boolean> {
+  const value = phone.trim();
+  if (!value) return false;
+  const { error } = await supabase.rpc('upsert_branch_contact', {
+    p_contact_id: null,
+    p_branch_id: branchId,
+    p_type: 'phone',
+    p_value: value,
+    p_sort_order: 0,
+  });
+  return !error;
+}
+
 function uniqueSlug(name: string, seed: string): string {
   return `${slugify(name) || 'branch'}-${seed.replace(/-/g, '').slice(-8)}`;
 }
@@ -145,6 +182,9 @@ export async function submitBranchRegistrationAction(input: {
     company: string;
     branchLabel: string;
   };
+  /** 등록자 본인 연락처를 지점 공개 연락처로 올릴지(오너 지시 2026-08-13).
+   * 기본은 **미공개**다 - 호출부가 명시적으로 true를 넘겨야 공개된다. */
+  publishRegistrantPhone?: boolean;
   branch: {
     name: string;
     regionId: string | null;
@@ -219,6 +259,10 @@ export async function submitBranchRegistrationAction(input: {
   // ga_admin_users.branch_id를 방금 채웠으므로 RPC의 소유자 확인을 통과한다.
   const shortTaglineSaved = await saveShortTagline(supabase, data.branch_id, input.branch.shortTagline);
   await saveOperationType(supabase, data.branch_id, input.branch.operationType);
+  // 체크하지 않았으면 아무것도 하지 않는다 - 개인 휴대폰이라 기본은 미공개다.
+  const phoneShared = input.publishRegistrantPhone
+    ? await savePublicRegistrantPhone(supabase, data.branch_id, phone)
+    : true;
 
   await supabase.rpc('clear_branch_registration_draft');
 
@@ -230,6 +274,7 @@ export async function submitBranchRegistrationAction(input: {
     branchId: data.branch_id,
     registrationId: data.registration_id,
     shortTaglineFailed: !shortTaglineSaved,
+    registrantPhoneShareFailed: !phoneShared,
   };
 }
 
