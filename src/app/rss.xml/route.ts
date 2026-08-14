@@ -2,7 +2,11 @@ import { SITE_URL } from '@/lib/seo/config';
 import { SITE_CONFIG } from '@/lib/config/site';
 import { listRecentPostsForRss } from '@/lib/posts/query';
 
-export const revalidate = 3600;
+// sitemap.ts와 같은 이유로 동적이다(그 파일 주석 참고) - 공개 클라이언트가 fetch를
+// no-store로 강제하므로 `revalidate = 3600`을 남기면 빌드가 프리렌더에서 깨진다.
+// 대신 CDN에는 캐시를 허용한다: 응답 자체는 1시간 재사용해도 되고(피드 리더·서치어드바이저가
+// 1시간 단위로 읽는다) 그러면 실제 DB 조회는 CDN 미스일 때만 일어난다.
+export const dynamic = 'force-dynamic';
 
 function escapeXml(text: string): string {
   return text
@@ -53,6 +57,9 @@ export async function GET() {
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/rss+xml; charset=utf-8',
+      // 공개 피드라 개인화 요소가 없다 - CDN에서 1시간 재사용하고 그 뒤 1시간은
+      // 백그라운드 갱신 동안 옛 응답을 그대로 내보낸다(크롤러에게 502를 주지 않는다).
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=3600',
     },
   });
 }

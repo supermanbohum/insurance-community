@@ -17,7 +17,10 @@ export interface SigunguItem {
 }
 
 export async function listSidoGroups(): Promise<SidoGroup[]> {
-  // 홈 화면에서 쓰이므로 cookies()를 건드리지 않는 공개 클라이언트를 쓴다(ISR 캐시 유지).
+  // 홈 화면에서도 쓰이므로 cookies()를 건드리지 않는 공개 클라이언트를 쓴다.
+  // ⚠️ 예전 주석은 "ISR 캐시 유지"라고 돼 있었는데 사실이 아니다 - 이 클라이언트를 쓰는
+  // 공개 페이지는 전부 force-dynamic이고, 오히려 그 캐시가 "승인했는데 안 보인다"의
+  // 원인이었다. 지금은 public.ts가 fetch를 no-store로 강제한다(그 파일 주석 참고).
   const supabase = createPublicSupabaseClient();
   const [{ data, error }, { data: branchRows, error: branchError }] = await Promise.all([
     supabase.from('regions').select('sido_code, sido_name').order('sort_order'),

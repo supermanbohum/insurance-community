@@ -2,18 +2,18 @@
 
 import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
+import { revalidatePublicBranchPages } from '@/lib/cache/public-paths';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { GaApprovalStatus, GaDisplayStatus } from '@/types/database';
 
 export type ActionResult = { success: true } | { success: false; error: string };
 
-// 공개 페이지도 함께 무효화 - 홈이 캐시(ISR)를 쓰기 때문에 GA 승인/수정 즉시 반영에 필요하다.
+// 공개 페이지도 함께 무효화 - GA 승인 상태는 소속 지점의 공개 여부를 통째로 좌우한다
+// (region.supabase.ts가 승인된 GA의 지점만 센다). 경로 목록은 public-paths.ts 한곳에 있다 -
+// 여기 있던 사본에 /region 계열이 빠져 있었다.
 function revalidatePublicPages() {
-  revalidatePath('/');
-  revalidatePath('/search');
-  revalidatePath('/map');
-  revalidatePath('/branch/[slug]', 'page');
+  revalidatePublicBranchPages();
 }
 
 /** GA는 회사 정보/로고/브랜드 소개만 갖는 상위 엔티티다 - 주소/연락처/SNS/교육/복지 등은

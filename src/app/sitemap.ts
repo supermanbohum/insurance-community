@@ -7,10 +7,16 @@ import { listPostIdsForSitemap } from '@/lib/posts/query';
 import { listPlannerProfileIdsForSitemap } from '@/lib/public/planner-market.supabase';
 import { listTopDesignerIdsForSitemap } from '@/lib/public/top-designer.supabase';
 
-// app/sitemap.ts는 (main) 레이아웃 밖의 독립 라우트라 (main)이 매 요청 cookies()를 읽어
-// 강제하는 force-dynamic의 영향을 받지 않는다 - 1시간 단위로 재생성해 DB 부하 없이도
-// 새 지점/지역/게시판이 자동으로 sitemap에 반영되게 한다.
-export const revalidate = 3600;
+// 예전에는 `revalidate = 3600`(1시간 재생성)이었다. 2026-08-13에 공개 클라이언트가 fetch를
+// no-store로 강제하게 되면서(src/lib/supabase/public.ts — "승인했는데 안 보인다" 대응)
+// 이 라우트를 정적으로 프리렌더할 수 없게 됐고, `revalidate`를 남겨 두면 **빌드가 깨진다**
+// ("Dynamic server usage: no-store fetch ... /sitemap.xml"). 그래서 동적으로 돌린다.
+//
+// 받아들인 트레이드오프: 크롤러 요청마다 조회 6건이 DB로 나간다. sitemap은 검색엔진이
+// 하루 몇 번 부르는 경로라 부하보다 최신성(새 지점이 즉시 sitemap에 반영)이 낫다고 봤다.
+// 부하가 문제가 되면 되돌리는 방법은 revalidate를 되살리는 게 아니라 이 조회들을
+// unstable_cache로 감싸는 것이다 — 공개 클라이언트의 no-store는 되돌리면 안 된다.
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [branches, regions, categories, posts, planners, topDesigners] = await Promise.all([

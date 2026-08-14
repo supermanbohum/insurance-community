@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { revalidatePublicBranchPages } from '@/lib/cache/public-paths';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { GaStatus, GaOperationType } from '@/types/database';
 import { slugify } from '@/lib/utils';
@@ -42,11 +43,9 @@ function revalidateBranch(branchId?: string) {
   revalidatePath('/admin/branches');
   if (branchId) revalidatePath(`/admin/branches/${branchId}`);
   revalidatePath('/admin');
-  // 공개 페이지도 함께 무효화 - 홈이 캐시(ISR)를 쓰기 때문에 등록/승인 즉시 반영되려면 필요하다.
-  revalidatePath('/');
-  revalidatePath('/search');
-  revalidatePath('/map');
-  revalidatePath('/branch/[slug]', 'page');
+  // 공개 페이지도 함께 무효화. 목록은 /region 계열까지 포함해 한곳(public-paths.ts)에 모았다 -
+  // 여기 있던 사본에 지역 페이지가 빠져 있어서 승인한 지점이 지역별 카운트에 늦게 반영됐다.
+  revalidatePublicBranchPages();
 }
 
 export async function createBranchAction(
