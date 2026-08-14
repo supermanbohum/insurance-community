@@ -143,8 +143,8 @@ export function BranchExposureTab({
           <CardDescription>
             끄면 이 지점이 <b>홈·검색·지도·지역별 목록·지역별 지점 수·지점 상세페이지에서 통째로
             빠집니다.</b> 링크를 알고 있어도 상세페이지가 열리지 않습니다. GA가 승인 상태여도
-            이 지점만 숨기는 스위치이고, 아래 「목록 상단 고정」과 달리 <b>노출 자체를 없애는</b>
-            설정입니다.
+            이 지점만 숨기는 스위치이고, 아래 「목록 상단 고정」과 달리{' '}
+            <b>노출 자체를 없애는</b> 설정입니다.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-3">
