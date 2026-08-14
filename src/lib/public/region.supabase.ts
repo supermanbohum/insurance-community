@@ -16,31 +16,40 @@ export interface SigunguItem {
   sigunguName: string | null;
 }
 
-export async function listSidoGroups(): Promise<SidoGroup[]> {
-  // 홈 화면에서도 쓰이므로 cookies()를 건드리지 않는 공개 클라이언트를 쓴다.
-  // ⚠️ 예전 주석은 "ISR 캐시 유지"라고 돼 있었는데 사실이 아니다 - 이 클라이언트를 쓰는
-  // 공개 페이지는 전부 force-dynamic이고, 오히려 그 캐시가 "승인했는데 안 보인다"의
-  // 원인이었다. 지금은 public.ts가 fetch를 no-store로 강제한다(그 파일 주석 참고).
-  const supabase = createPublicSupabaseClient();
-  const [{ data, error }, { data: branchRows, error: branchError }] = await Promise.all([
-    supabase.from('regions').select('sido_code, sido_name').order('sort_order'),
-    // ga_company 승인 상태는 조인 필터 문법이 아니라(fragile) 기존 코드베이스 관례대로
-    // 별도 승인 GA id 집합을 구해 JS에서 걸러낸다(branch.supabase.ts의 검색 매칭과 동일 패턴).
-    supabase
-      .from('ga_branch')
-      .select('ga_company_id, region:region_id(sido_code)')
-      .eq('status', 'visible')
-      .eq('registration_status', 'approved')
-      .is('deleted_at', null),
-  ]);
-  if (error) throw error;
+export interface SigunguGroup extends SigunguItem {
+  /** 🔴 `SidoGroup.branchCount`와 **같은 함수**로 센다. 그래야 시/도 합계와 시/군/구 합이
+   * 어긋나지 않는다. 0도 그대로 담는다 - 화면에서 숨기지 않는다(오너 지시). */
+  branchCount: number;
+}
+
+/**
+ * 🔴 공개 지점 카운트의 **유일한 기준**. 시/도 카운트(`listSidoGroups`)와 시/군/구
+ * 카운트(`listSigunguGroups`)가 이 함수 하나를 공유한다 - 각자 세면 합계가 어긋나고
+ * 그 어긋남이 화면에 바로 보인다("경상북도 1개 지점"인데 시군구를 다 더하면 0인 식).
+ * 기준은 `get_platform_core_stats()`의 지점 카운트와 같다(W-056).
+ *
+ * ⚠️ `deleted_at is null`을 빼면 안 된다. **청주시에 소프트 삭제된 시드가 5건 남아 있어서**
+ * 그 한 줄을 빠뜨리면 청주시가 1개가 아니라 6개로 나온다. `status`만 보고 판단하면 틀린다.
+ */
+async function fetchVisibleApprovedBranchRegions(
+  supabase: ReturnType<typeof createPublicSupabaseClient>
+): Promise<{ sidoCode: string; sigunguCode: string | null }[]> {
+  const { data: branchRows, error: branchError } = await supabase
+    .from('ga_branch')
+    .select('ga_company_id, region:region_id(sido_code, sigungu_code)')
+    .eq('status', 'visible')
+    .eq('registration_status', 'approved')
+    .is('deleted_at', null);
   if (branchError) throw branchError;
 
-  const branchRowsTyped = (branchRows ?? []) as unknown as {
+  const rows = (branchRows ?? []) as unknown as {
     ga_company_id: string;
-    region: { sido_code: string } | null;
+    region: { sido_code: string; sigungu_code: string | null } | null;
   }[];
-  const companyIds = Array.from(new Set(branchRowsTyped.map((r) => r.ga_company_id)));
+
+  // ga_company 승인 상태는 조인 필터 문법이 아니라(fragile) 기존 코드베이스 관례대로
+  // 별도 승인 GA id 집합을 구해 JS에서 걸러낸다(branch.supabase.ts의 검색 매칭과 동일 패턴).
+  const companyIds = Array.from(new Set(rows.map((r) => r.ga_company_id)));
   const approvedCompanyIds = new Set<string>();
   if (companyIds.length > 0) {
     const { data: companies, error: companyError } = await supabase
@@ -53,10 +62,29 @@ export async function listSidoGroups(): Promise<SidoGroup[]> {
     for (const c of companies ?? []) approvedCompanyIds.add(c.id);
   }
 
-  const branchCountBySido = new Map<string, number>();
-  for (const row of branchRowsTyped) {
+  const result: { sidoCode: string; sigunguCode: string | null }[] = [];
+  for (const row of rows) {
     if (!row.region || !approvedCompanyIds.has(row.ga_company_id)) continue;
-    branchCountBySido.set(row.region.sido_code, (branchCountBySido.get(row.region.sido_code) ?? 0) + 1);
+    result.push({ sidoCode: row.region.sido_code, sigunguCode: row.region.sigungu_code });
+  }
+  return result;
+}
+
+export async function listSidoGroups(): Promise<SidoGroup[]> {
+  // 홈 화면에서도 쓰이므로 cookies()를 건드리지 않는 공개 클라이언트를 쓴다.
+  // ⚠️ 예전 주석은 "ISR 캐시 유지"라고 돼 있었는데 사실이 아니다 - 이 클라이언트를 쓰는
+  // 공개 페이지는 전부 force-dynamic이고, 오히려 그 캐시가 "승인했는데 안 보인다"의
+  // 원인이었다. 지금은 public.ts가 fetch를 no-store로 강제한다(그 파일 주석 참고).
+  const supabase = createPublicSupabaseClient();
+  const [{ data, error }, branchRegions] = await Promise.all([
+    supabase.from('regions').select('sido_code, sido_name').order('sort_order'),
+    fetchVisibleApprovedBranchRegions(supabase),
+  ]);
+  if (error) throw error;
+
+  const branchCountBySido = new Map<string, number>();
+  for (const row of branchRegions) {
+    branchCountBySido.set(row.sidoCode, (branchCountBySido.get(row.sidoCode) ?? 0) + 1);
   }
 
   const seen = new Map<string, string>();
@@ -93,6 +121,39 @@ export const listSigunguBySido = cache(async function listSigunguBySido(
       .map((r) => ({ regionId: r.id, sigunguCode: r.sigungu_code, sigunguName: r.sigungu_name })),
   };
 });
+
+/**
+ * 지역 상세(`/region/[sido]`)가 쓰는, **지점 수가 붙은** 시/군/구 목록.
+ *
+ * 오너 지시(2026-08-13): 「경산시 0개 지점」처럼 **0도 그대로 표기**한다. 그래서 지점이
+ * 있는 시군구만 남기지 않고 전체를 그대로 돌려준다.
+ *
+ * 🔴 카운트는 `fetchVisibleApprovedBranchRegions`를 그대로 재사용한다. 여기서 새로 세면
+ * 상위 `/region`의 시/도 숫자와 어긋나고, 그 어긋남은 한 번만 봐도 눈에 띈다.
+ */
+export async function listSigunguGroups(
+  sidoCode: string
+): Promise<{ sidoName: string; items: SigunguGroup[] }> {
+  const supabase = createPublicSupabaseClient();
+  const [{ sidoName, items }, branchRegions] = await Promise.all([
+    listSigunguBySido(sidoCode),
+    fetchVisibleApprovedBranchRegions(supabase),
+  ]);
+
+  const countBySigungu = new Map<string, number>();
+  for (const row of branchRegions) {
+    if (row.sidoCode !== sidoCode || !row.sigunguCode) continue;
+    countBySigungu.set(row.sigunguCode, (countBySigungu.get(row.sigunguCode) ?? 0) + 1);
+  }
+
+  return {
+    sidoName,
+    items: items.map((item) => ({
+      ...item,
+      branchCount: item.sigunguCode ? (countBySigungu.get(item.sigunguCode) ?? 0) : 0,
+    })),
+  };
+}
 
 export interface SigunguRegion {
   regionId: string;

@@ -102,6 +102,25 @@
 - 검증: tsc/lint 통과. ⚠️ **이 증상은 오너 실기기에서만 재현된다** - 우리 쪽 확인은 코드
   경로 대조까지다. 오너가 카톡 공유를 눌렀을 때 시트만 뜨고 빨간 토스트가 **안 뜨는지**를
   직접 봐야 판정된다.
+- 커밋: 0a9e00d
+
+## 2026-08-14 · E. 지역 상세에 시군구별 지점 수 (0도 그대로 표기)
+- 무엇: `/region/[sido]`의 시/군/구 타일에 지점 수를 붙였다. 「경산시 0개 지점」처럼 **0도
+  그대로 표기**한다(오너 지시). `listSigunguGroups`를 새로 만들었다.
+- 왜 이렇게 셌나: 카운트 기준을 `fetchVisibleApprovedBranchRegions` **한 함수**로 뽑아
+  `listSidoGroups`(상위 /region)와 **공유**하게 했다. 새로 세면 시/도 합계와 어긋나고 그
+  어긋남은 한 번만 봐도 눈에 띈다. 기준: `status='visible'` + `registration_status='approved'`
+  + `deleted_at is null` + 소속 GA `approval_status='approved'` + GA `deleted_at is null`.
+- 🔴 청주시 실측(2026-08-14, SQL 편집기): 청주시(43-01)에 지점이 **6행** 있고 그중
+  **5건이 `deleted_at` 찍힌 시드**다. 그런데 그 5건 모두 `status='visible'`,
+  `registration_status='approved'`, GA도 `approved`다. 즉 **`deleted_at is null`을 빠뜨리면
+  청주시가 6개로 나온다.** 살아 있는 건 일품(一品) 1건뿐이라 화면은 「1개 지점」이어야 한다.
+- 0개 시군구의 링크 목적지: **시군구 상세 그대로**다(/register로 보내지 않는다). 상위
+  /region은 0인 시/도에 숫자를 아예 안 보여주고 "1호 지점 등록"으로 바꿔 /register로
+  보내지만(W-056), 여기는 숫자를 보여주기로 한 이상 그 숫자를 눌렀을 때 등록 폼이 튀어나오는
+  것은 예상 밖의 이동이다. 시군구 상세는 이미 `EmptyBranchResults`로 "아직 없습니다 + 1호
+  자리가 비어 있습니다" + CTA를 보여주므로 막다른 길이 아니다. 이 근거는 페이지 주석에도 남겼다.
+- 검증: tsc/lint 통과. 배포 후 `/region/43`(충북) 청주시 = 1개, `/region/47`(경북) 실화면 확인.
 
 ## 2026-08-09 · 카카오 로그인 실개통 - /privacy 정정, verify 브랜치 프리뷰 검증, 후속 fix 2건
 - 무엇:
