@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { Video as VideoIcon, ImageOff, Play, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { BranchMediaItem } from '@/components/branch/types';
@@ -160,11 +161,17 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
         </div>
       )}
 
-      {viewerIndex !== null && photos.length > 0 && (
-        <PhotoViewer photos={photos} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
-      )}
+      {/* 🔴 portal 필수. 이 갤러리의 조상(animate-page-fade)이 transform을 갖고 있어서
+          fixed 오버레이의 기준이 뷰포트가 아니라 그 조상이 된다 - 뷰어가 문서 높이만큼
+          펼쳐져 화살표가 화면 밖(y=1652)으로 나갔던 원인. body로 빼면 기준이 뷰포트다. */}
+      {viewerIndex !== null && photos.length > 0 &&
+        createPortal(
+          <PhotoViewer photos={photos} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />,
+          document.body
+        )}
 
-      {videoOpen && video && <VideoOverlay url={video.url} onClose={() => setVideoOpen(false)} />}
+      {videoOpen && video &&
+        createPortal(<VideoOverlay url={video.url} onClose={() => setVideoOpen(false)} />, document.body)}
     </div>
   );
 }
@@ -384,13 +391,17 @@ function PhotoViewer({
       </div>
 
       {/*
-        🔴 `min-h-0`이 없으면 이 뷰어는 통째로 무너진다 (2026-08-14 CTO 라이브 실측: 화면
-        954×918인데 화살표가 y=1652 - 아래로 734px 밖). flex 자식의 min-height 기본값은
-        auto(=콘텐츠 크기)라, 원본 사진의 자연 높이가 flex-1을 뷰포트 밖까지 밀어냈고
-        이미지의 max-h-full도 그 부풀어난 높이 기준이 되어 화면을 꽉 채웠다.
-        min-h-0을 주면 flex가 남은 공간으로 확정 높이를 주고, 그 높이 기준으로
-        max-h가 동작한다. 화살표는 정적 흐름 위치에 기대지 않고 top-1/2로 세로 중앙에 박는다.
-        패딩(p-3/sm:p-6)은 「기본 배율에서 이미지가 화면을 꽉 채우지 않을 것」 조건이다.
+        🔴 이 뷰어가 화면 밖으로 밀려났던 진짜 원인은 둘이었다 (2026-08-14 CTO 라이브
+        실측: 화면 954×918인데 화살표가 y=1652):
+        ① 조상 `animate-page-fade`(페이지 전환 페이드)가 transform을 가진다 - transform이
+           있는 조상은 `fixed`의 기준(containing block)을 뷰포트에서 **그 조상**으로 바꿔
+           버린다. 그래서 `fixed inset-0`이 뷰포트(1078px)가 아니라 문서 높이(3084px)로
+           펼쳐졌다. → 이 컴포넌트는 createPortal로 document.body에 렌더한다(호출부 참고).
+           SearchFilterSheet가 같은 이유로 이미 같은 방식을 쓴다.
+        ② flex 자식의 min-height 기본값 auto - 원본 사진의 자연 높이가 flex-1을 밀어낸다.
+           min-h-0으로 남은 공간을 확정 높이로 만든다.
+        화살표는 top-1/2로 세로 중앙 고정, 패딩(p-3/sm:p-6)은 「기본 배율에서 이미지가
+        화면을 꽉 채우지 않을 것」 조건이다.
       */}
       <div
         className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden p-3 sm:p-6"
