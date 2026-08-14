@@ -361,6 +361,24 @@
   ⚠️ **실제 디코딩·재생 시작은 미확인** - 검증 환경이 백그라운드 탭이라 Chrome이
   비디오 재생 개시를 보류한다(play()가 pending에 멈춤). 표준 `<video controls>` +
   정상 mp4라 전면 탭에서는 재생될 코드 경로지만, 그 마지막 한 칸은 사람이 눌러 봐야 한다.
+  → **오너 실기기 확인 완료(2026-08-14): 재생된다.** 동영상 건 종결.
+
+## 2026-08-14 · 설계사 연결 승인 400 - RPC가 한 번도 성공할 수 없었던 제약 충돌
+- 증상: 운영자가 /admin/planner-links에서 승인 → 「처리하지 못했습니다」(오너 보고).
+- 원인 추적: edge 로그에 03:54~03:55 UTC `POST /rest/v1/rpc/review_branch_planner_registration`
+  **400 × 4회**. 같은 시각 Postgres 로그:
+  `null value in column "business_card_path" ... violates not-null constraint`.
+  0112 RPC가 승인/반려 시 명함 경로를 null로 비우는데(판정 후 서류 참조를 남기지 않는
+  원칙) **컬럼이 NOT NULL**이라 UPDATE가 항상 죽는다.
+- 🔴 **운영자 경로 문제가 아니다. 지점장이 눌렀어도 똑같이 실패한다** - 이 RPC의
+  승인/반려는 만들어진 뒤 한 번도 성공한 적 없는 코드였다(admin_users 매핑·권한·
+  RLS 전부 정상임을 로그로 확인 - 400의 유일한 원인이 이 제약이다).
+- 조치: `0113_branch_planner_business_card_nullable.sql` 생성 -
+  `alter table branch_planner_registrations alter column business_card_path drop not null;`
+  「명함 필수」는 등록 시점 요건이고 등록 RPC가 보장한다. 등록 요건을 수명 전체 제약으로
+  박아 둔 스키마가 문제였지 원칙 충돌이 아니다. 빈 문자열 우회는 쓰지 않았다.
+- 🔴 **실행은 오너**: 저장소 선행 기록이고, 이 세션의 DB 접근은 CTO가 「조회용」으로
+  명시했다. 실행 후 승인 버튼이 바로 살아난다(코드 변경·재배포 불필요).
 
 ## 2026-08-09 · 카카오 로그인 실개통 - /privacy 정정, verify 브랜치 프리뷰 검증, 후속 fix 2건
 - 무엇:
