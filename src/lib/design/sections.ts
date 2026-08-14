@@ -13,6 +13,8 @@ export interface SectionDef {
   key: string;
   label: string;
   textFields?: TextFieldDef[];
+  /** 미저장 상태의 marginBottom 특례. 없으면 페이지 공통 기본값(DEFAULT_MARGIN_BOTTOM). */
+  defaultMarginBottom?: number;
 }
 
 export interface SectionConfig {
@@ -28,11 +30,21 @@ export interface SectionConfig {
 /** 홈/지점상세 편집 가능 섹션의 단일 진실 공급원 - 관리자 편집 UI와 공개 페이지
  * 렌더링이 이 배열 하나만 참조한다. 순서는 기본(미저장 상태) 노출 순서이기도 하다. */
 export const HOME_SECTIONS: SectionDef[] = [
+  // 🔴 예전에는 { key: 'hero', label: '등록 CTA + 통계' } 하나가 둘을 덮었다(CTO 지시로
+  // 분리, 2026-08-14) - CTA만 숨기거나 통계만 옮기는 게 불가능했다. 나머지 섹션은 전부
+  // 개별인데 이것만 묶음이었다.
+  // ⚠️ 옛 키 'hero'로 저장된 레이아웃은 layout.supabase.ts가 읽기 시점에 두 키로
+  // 풀어 준다(고아 방지) - 여기 키를 다시 합치거나 이름을 또 바꾸면 그 매핑도 같이 손봐라.
   {
-    key: 'hero',
-    label: '등록 CTA + 통계',
+    key: 'heroCta',
+    label: '등록 CTA',
     textFields: [{ key: 'ctaLabel', label: 'CTA 버튼 문구', default: '우리 지점 등록하기' }],
+    // 분리 전 hero 내부 간격(gap-3 = 12px)을 미저장 기본값에서 그대로 보존한다 -
+    // page_layouts가 비어 있어(2026-08-14 직접 조회) 기본값이 곧 프로덕션 화면이다.
+    // 공통 기본값 28을 그대로 두면 분리하는 순간 CTA와 통계 사이가 16px 벌어진다.
+    defaultMarginBottom: 12,
   },
+  { key: 'heroStats', label: '홈 통계 (우리 지점/방문자/정리 현황)' },
   { key: 'quickMenu', label: '빠른 메뉴 (내 주변/지도/지역별/회사별)' },
   // SPEC-040 광고 지면. 게재 소재가 없으면 지면 자체가 렌더되지 않으므로, 여기서
   // visible=true여도 빈 박스가 생기지는 않는다.
@@ -77,7 +89,8 @@ export function getDefaultConfig(pageKey: PageKey): SectionConfig[] {
     visible: true,
     locked: false,
     marginTop: 0,
-    marginBottom: index === defs.length - 1 ? 0 : DEFAULT_MARGIN_BOTTOM[pageKey],
+    marginBottom:
+      index === defs.length - 1 ? 0 : (def.defaultMarginBottom ?? DEFAULT_MARGIN_BOTTOM[pageKey]),
     text: def.textFields
       ? Object.fromEntries(def.textFields.map((f) => [f.key, f.default]))
       : undefined,

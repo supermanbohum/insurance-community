@@ -305,6 +305,22 @@
   `PlannerLinkReviewActions`를 재사용(action/audience prop 추가) - 같은 다이얼로그·같은
   사유 필수 규칙이 두 화면에서 저절로 일치한다.
 - 검증: tsc/lint 통과. 배포 후 운영자 계정으로 목록 6건 표시 실화면 확인(아래 실측).
+- 커밋: b4eb177
+
+## 2026-08-14 · J. 홈 「등록 CTA + 통계」 개별 분리
+- 무엇: `HOME_SECTIONS`의 `hero`(등록 CTA + 통계 묶음)를 `heroCta` / `heroStats`로 분리.
+  `HomeRegisterHero` 컴포넌트도 `HomeRegisterCta` / `HomeRegisterStats`로 나눔.
+  이제 편집기에서 CTA만 숨기거나 통계만 옮길 수 있다.
+- 🔴 저장 레이아웃 고아 방지: `layout.supabase.ts`에 읽기 시점 legacy 매핑
+  (`expandLegacyKeys`) - `hero`로 저장된 행이 있으면 두 키에 설정을 물려준다
+  (order는 둘이 같이 물려받아 덩어리 보존, marginBottom은 CTA=12(분리 전 내부 gap-3),
+  통계=hero 값, text는 CTA만). 새 키가 이미 있으면 새 키가 정본이고 옛 행만 걷어낸다.
+- ⚠️ **`page_layouts`는 지금 비어 있다**(직접 조회 2026-08-14) - 기본값이 곧 프로덕션
+  화면이다. 그래서 `heroCta`에 `defaultMarginBottom: 12` 특례를 둬 분리 후에도 CTA↔통계
+  간격(12px)이 그대로다. 공통 기본 28을 쓰면 분리하는 순간 16px 벌어진다.
+  legacy 매핑은 지금 타는 데이터가 없지만 백업 복원·향후 저장을 대비해 넣었다.
+- 사용처 2곳(홈, 디자인 편집기 미리보기) 모두 갱신. ctaLabel 읽기는 heroCta 키로.
+- 검증: tsc/lint 통과. 배포 후 홈 실화면(CTA·통계 순서/간격 동일) 확인.
 
 ## 2026-08-09 · 카카오 로그인 실개통 - /privacy 정정, verify 브랜치 프리뷰 검증, 후속 fix 2건
 - 무엇:

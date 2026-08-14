@@ -7,7 +7,7 @@ import { getPageLayoutConfig } from '@/lib/design/layout';
 import { HOME_SECTIONS, BRANCH_DETAIL_SECTIONS, getSectionDefs, type PageKey } from '@/lib/design/sections';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DesignEditor } from '@/components/admin/design/DesignEditor';
-import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
+import { HomeRegisterCta, HomeRegisterStats } from '@/components/home/HomeRegisterHero';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
 import { GaQualityCard } from '@/components/home/carousel/GaQualityCard';
@@ -37,7 +37,9 @@ async function buildHomePreviewNodes() {
   ]);
 
   const nodesByKey: Record<string, React.ReactNode> = {
-    hero: <HomeRegisterHero stats={stats} />,
+    // hero → heroCta + heroStats 분리(2026-08-14). 미리보기도 공개 페이지와 같은 컴포넌트를 쓴다.
+    heroCta: <HomeRegisterCta />,
+    heroStats: <HomeRegisterStats stats={stats} />,
     quickMenu: <QuickMenuGrid />,
     popularGa: (
       <section className="flex flex-col gap-3">

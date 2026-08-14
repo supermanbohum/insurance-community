@@ -10,7 +10,7 @@ import { HOME_SECTIONS, type Device } from '@/lib/design/sections';
 import { ResponsiveSection } from '@/components/shared/ResponsiveSection';
 import { HomeOpenBanner } from '@/components/home/HomeOpenBanner';
 import { HomeAdSlot } from '@/components/home/HomeAdSlot';
-import { HomeRegisterHero } from '@/components/home/HomeRegisterHero';
+import { HomeRegisterCta, HomeRegisterStats } from '@/components/home/HomeRegisterHero';
 import { getMyBranchSlotState } from '@/lib/public/my-branch-slot';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
@@ -129,10 +129,14 @@ export default async function HomePage() {
   // priority 내림차순 정렬된 목록의 첫 건만 쓴다 - 지면이 하나라 회전은 없다.
   const adBanner = adBanners[0] ?? null;
 
-  const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'hero')?.text?.ctaLabel ?? '우리 지점 등록하기';
+  // 옛 키 'hero'로 저장된 문구는 layout.supabase.ts의 legacy 매핑이 heroCta로 넘겨준다.
+  const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'heroCta')?.text?.ctaLabel ?? '우리 지점 등록하기';
 
   const nodesByKey: Record<(typeof HOME_SECTIONS)[number]['key'], React.ReactNode> = {
-    hero: <HomeRegisterHero stats={stats} ctaLabel={ctaLabel} myBranchSlot={myBranchSlot} />,
+    // 🔴 hero 하나가 CTA+통계를 덮던 것을 분리(CTO 지시 2026-08-14) - 이제 편집기에서
+    // 둘을 따로 숨기고 따로 옮길 수 있다.
+    heroCta: <HomeRegisterCta ctaLabel={ctaLabel} />,
+    heroStats: <HomeRegisterStats stats={stats} myBranchSlot={myBranchSlot} />,
     quickMenu: <QuickMenuGrid />,
     // 🔴 소재가 없으면 null - 빈 지면을 그리지 않는다(SPEC-004 §3, pc_left 폐지 사유).
     adSlot: adBanner ? <HomeAdSlot banner={adBanner} /> : null,

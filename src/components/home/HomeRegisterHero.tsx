@@ -145,26 +145,13 @@ function EarlyBirdSlots({ remaining }: { remaining: number }) {
   );
 }
 
-export function HomeRegisterHero({
-  stats,
-  ctaLabel = '우리 지점 등록하기',
-  myBranchSlot = { kind: 'none' },
-}: {
-  stats: HomeStats;
-  ctaLabel?: string;
-  /** SPEC-042 - 뷰어별 「우리 지점」 상태. 'none'이면 지금까지의 배너가 그대로 나온다. */
-  myBranchSlot?: MyBranchSlotState;
-}) {
-  const showBranchNumber = stats.branchCount >= HOME_STAT_THRESHOLDS.branch;
-  const showPlannerNumber = stats.publicPlannerProfileCount >= HOME_STAT_THRESHOLDS.planner;
-  // 🔴 임계 판정은 **배수 적용 후 값** 기준이다(CTO 확정). 실측 기준으로 재면
-  // 화면에 뜨는 숫자와 뜰지 말지를 정하는 숫자가 달라져, 「109가 100 미만이라 안 뜬다」는
-  // 설명 불가능한 상태가 된다.
-  const displayVisitorCount = toDisplayVisitorCount(stats.todayVisitorCount);
-  // 방문자 카운터는 임계 없이 항상 표시한다(위 HOME_STAT_THRESHOLDS 주석 참고).
-  const showTodayChip = stats.todayCount >= STAT_MIN_TODAY_COUNT;
-  const earlyBirdSlotsRemaining = Math.max(0, EARLY_BIRD_TOTAL_SLOTS - stats.branchCount);
-
+/**
+ * 🔴 2026-08-14 분리(CTO 지시): 예전 `HomeRegisterHero` 하나가 「등록 CTA」와 「통계」를
+ * 같이 그렸고 디자인 편집기의 hero 섹션 하나가 둘을 덮었다 - CTA만 숨기거나 통계만
+ * 옮길 수 없었다. `HomeRegisterCta`(섹션 heroCta) / `HomeRegisterStats`(섹션 heroStats)로
+ * 나눈다. 파일 상단의 임계값·배수 상수는 통계 쪽 전용이다.
+ */
+export function HomeRegisterCta({ ctaLabel = '우리 지점 등록하기' }: { ctaLabel?: string }) {
   return (
     <div className="flex flex-col gap-3">
       {/* 투트랙 CTA(오너 지시, 2026-08-10) - ③ ⓑ 페이지(/branch-planner/register)가
@@ -206,8 +193,30 @@ export function HomeRegisterHero({
       </div>
 
       <GlobalShareButton variant="home" />
+    </div>
+  );
+}
 
-      <div className="flex flex-col gap-1.5">
+export function HomeRegisterStats({
+  stats,
+  myBranchSlot = { kind: 'none' },
+}: {
+  stats: HomeStats;
+  /** SPEC-042 - 뷰어별 「우리 지점」 상태. 'none'이면 지금까지의 배너가 그대로 나온다. */
+  myBranchSlot?: MyBranchSlotState;
+}) {
+  const showBranchNumber = stats.branchCount >= HOME_STAT_THRESHOLDS.branch;
+  const showPlannerNumber = stats.publicPlannerProfileCount >= HOME_STAT_THRESHOLDS.planner;
+  // 🔴 임계 판정은 **배수 적용 후 값** 기준이다(CTO 확정). 실측 기준으로 재면
+  // 화면에 뜨는 숫자와 뜰지 말지를 정하는 숫자가 달라져, 「109가 100 미만이라 안 뜬다」는
+  // 설명 불가능한 상태가 된다.
+  const displayVisitorCount = toDisplayVisitorCount(stats.todayVisitorCount);
+  // 방문자 카운터는 임계 없이 항상 표시한다(위 HOME_STAT_THRESHOLDS 주석 참고).
+  const showTodayChip = stats.todayCount >= STAT_MIN_TODAY_COUNT;
+  const earlyBirdSlotsRemaining = Math.max(0, EARLY_BIRD_TOTAL_SLOTS - stats.branchCount);
+
+  return (
+    <div className="flex flex-col gap-1.5">
         {/* 🔴 SPEC-042 - 내 지점이 있으면 **이 자리를 통째로** 「우리 지점」 카드가 가져간다.
             배너 아래에 따로 붙이지 않는다 - 그러면 이미 등록한 사람에게 등록하라고 계속
             말하게 된다(오너·CTO 확정).
@@ -347,7 +356,6 @@ export function HomeRegisterHero({
               지금까지 GA {stats.gaCount}곳 · {stats.regionCount}개 지역을 정리했습니다
             </span>
         </div>
-      </div>
     </div>
   );
 }
