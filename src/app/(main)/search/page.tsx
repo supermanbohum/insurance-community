@@ -64,17 +64,15 @@ export default async function SearchPage({
 
   const hasFilters =
     Boolean(region) || gaIds.length > 0 || minPlanners > 0 || Boolean(parking) || Boolean(structure) || hasHighIncomePlanners;
-  // 홈의 "인기 GA"/"신규 등록" 더보기 링크가 /search?sort=views, /search?sort=newest처럼
-  // 검색어/필터 없이 sort만 넘겨서 "전체를 이 기준으로 보여달라"는 의도로 진입한다.
-  // sort를 hasFilters/shouldSearch 판단에서 빠뜨리면 이 경우 "검색어를 입력하세요"
-  // 빈 상태만 보이고 실제 목록은 영원히 뜨지 않는다 - sort의 명시적 존재 자체를
-  // "전체 목록을 보여달라"는 신호로 취급한다.
+  // 🔴 검색어·필터가 없어도 **전체 지점을 그대로 보여준다**(오너 지시 2026-08-14:
+  // "회사별 찾기 시 필터를 설정하지 않으면 전체 지점이 나오고"). 예전에는 shouldSearch
+  // 게이트가 있어 무필터 진입 시 「어떤 지점을 찾으시나요?」 빈 상태만 보였다(SPEC-038 B).
+  // 이제 빈 상태 카드는 정말로 0건일 때만 나온다.
   const hasExplicitSort = Boolean(searchParams.sort);
-  const shouldSearch = Boolean(q) || hasFilters || hasExplicitSort;
   const { registeredIds: registeredGaIds, hasUnregisteredOnly } = splitRegisteredGaIds(gaIds);
 
-  const [branchResults, regions, allSigunguRegions, allGaOptions] = await Promise.all([
-    shouldSearch && !hasUnregisteredOnly
+  const [rawBranchResults, regions, allSigunguRegions, allGaOptions] = await Promise.all([
+    !hasUnregisteredOnly
       ? listPublicBranches({
           q: q || undefined,
           sort,
@@ -99,10 +97,22 @@ export default async function SearchPage({
   // 시/도 없이 시/군/구만 오는 조합은 애초에 유효하지 않다).
   const sigungu = sigunguParam && allSigunguRegions.some((s) => s.regionId === sigunguParam && s.sidoCode === region) ? sigunguParam : '';
 
+  // 🔴 전체 지점 뷰(검색어·필터·명시 정렬이 전부 없는 기본 진입)의 정렬은
+  // **1. 메타리치 소속 먼저 → 2. 지점명 가나다순**이다(오너 지시 2026-08-14).
+  // 검색어가 있거나 sort를 명시했으면(newest/views, 홈 더보기 링크 등) 그쪽을 존중한다.
+  // DB 정렬로는 "특정 GA 우선"을 못 표현해서(PostgREST) JS 후처리로 정렬한다 -
+  // 전체 지점 수가 수백 단위라 비용이 없다.
+  const isPlainDirectoryView = !q && !hasFilters && !hasExplicitSort;
+  const branchResults = isPlainDirectoryView
+    ? [...rawBranchResults].sort((a, b) => {
+        const aMeta = a.gaCompanyName === '메타리치' ? 0 : 1;
+        const bMeta = b.gaCompanyName === '메타리치' ? 0 : 1;
+        if (aMeta !== bMeta) return aMeta - bMeta;
+        return a.name.localeCompare(b.name, 'ko');
+      })
+    : rawBranchResults;
+
   const totalCount = branchResults.length;
-  // 사이트 전체 공개 지점 수 - 빈 상태 문구를 "데이터가 없다"와 "내 조건이 안 맞는다"로
-  // 가르는 기준(SPEC-038). regions에 이미 시/도별 집계가 들어 있어 추가 조회가 없다.
-  const siteBranchCount = regions.reduce((sum, group) => sum + group.branchCount, 0);
 
   const gaNameById = new Map(allGaOptions.map((ga) => [ga.id, ga.name]));
   const regionNameByCode = new Map(regions.map((r) => [r.sidoCode, r.sidoName]));
@@ -189,29 +199,16 @@ export default async function SearchPage({
 
       <SearchFilterChips chips={chips} />
 
-      {!shouldSearch ? (
-        // SPEC-038 B - 검색어·필터 없이 들어온 첫 화면.
-        // 🔴 여기서 "검색하거나 필터를 사용해보세요"라고만 안내하면, 등록된 지점이 0인
-        // 오픈 직후에는 거짓 안내가 된다(무엇을 검색해도 계속 0건이라 사용자가 자기
-        // 검색어 탓으로 오해한다). 그래서 전국 지점 수로 갈라 문장을 바꾼다 -
-        // regions는 listSidoGroups() 결과라 시/도별 branchCount가 이미 들어 있어
-        // 추가 조회 없이 합계만 내면 된다(/region 화면과 완전히 같은 집계 기준).
-        siteBranchCount === 0 ? (
-          <EmptyBranchResults
-            icon="building"
-            title="아직 등록된 지점이 없습니다"
-            description="보험맵은 지금 첫 지점들을 모으고 있습니다. 지금 등록하면 지도의 첫 자리를 가져갑니다."
-            secondaryAction={{ label: '지도에서 보기', href: '/map' }}
-          />
-        ) : (
-          <EmptyBranchResults
-            icon="search"
-            title="어떤 지점을 찾으시나요?"
-            description="지점명이나 소속 회사명을 검색하거나, 필터로 지역·규모를 좁혀 보십시오."
-            primaryAction={{ label: '지도에서 보기', href: '/map' }}
-            secondaryAction={{ label: '우리 지점 등록하기', href: '/register' }}
-          />
-        )
+      {/* 🔴 「어떤 지점을 찾으시나요?」 빈 상태(SPEC-038 B)는 없어졌다 - 무필터 진입도
+          전체 지점 목록을 그대로 보여준다(오너 지시 2026-08-14). 빈 카드는 정말 0건일 때만. */}
+      {totalCount === 0 && !q && !hasFilters ? (
+        // 무검색·무필터인데 0건 = 사이트에 공개 지점 자체가 없다.
+        <EmptyBranchResults
+          icon="building"
+          title="아직 등록된 지점이 없습니다"
+          description="보험맵은 지금 첫 지점들을 모으고 있습니다. 지금 등록하면 지도의 첫 자리를 가져갑니다."
+          secondaryAction={{ label: '지도에서 보기', href: '/map' }}
+        />
       ) : totalCount === 0 ? (
         // SPEC-038 C - 질의/필터를 걸었는데 0건.
         // 필터가 걸려 있으면 "조건을 지우는 것"이 1순위 해법이라 그쪽을 solid로 올린다.

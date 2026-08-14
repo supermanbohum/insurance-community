@@ -181,7 +181,22 @@ export function SearchFilterButton({
 
               <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-5 py-4">
                 <section className="flex flex-col gap-2.5">
-                  <h3 className="text-sm font-bold text-ink">GA</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-ink">GA</h3>
+                    {/* 오너 지시(2026-08-14): GA 선택에서 전체 선택 가능해야 한다.
+                        전부 선택된 상태에서 누르면 전체 해제로 토글된다. */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDraftGaIds(
+                          draftGaIds.length === gaOptions.length ? [] : gaOptions.map((ga) => ga.id)
+                        )
+                      }
+                      className="rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-ink-soft transition-colors hover:border-brand-200 hover:text-brand-600"
+                    >
+                      {draftGaIds.length === gaOptions.length ? '전체 해제' : '전체 선택'}
+                    </button>
+                  </div>
                   <div className="flex max-h-52 flex-col gap-0.5 overflow-y-auto rounded-xl border border-line p-2">
                     {gaOptions.map((ga) => (
                       <label
