@@ -7,7 +7,10 @@ import { getSearchSuggestionsAction, type SearchSuggestion } from '@/lib/actions
 import { addRecentSearch, getRecentSearches, removeRecentSearch } from '@/lib/search/recentSearches';
 import { cn } from '@/lib/utils';
 
-const POPULAR_KEYWORDS = ['인카금융서비스', '프라임에셋', '지에이코리아', '피플라이프'];
+// 🔴 1번은 무조건 「메타리치」다 - 오너 지시(2026-08-14). 실측 순위가 아니라 오너가
+// 정하는 목록이고, 자리를 바꾸거나 다른 키워드를 1번에 올리려면 오너 확인이 먼저다.
+// (메타리치는 현재 공개 지점 3곳 전부가 소속된 GA라 검색 결과도 실제로 나온다.)
+const POPULAR_KEYWORDS = ['메타리치', '인카금융서비스', '프라임에셋', '지에이코리아', '피플라이프'];
 
 export function SearchCombobox({
   defaultValue = '',
