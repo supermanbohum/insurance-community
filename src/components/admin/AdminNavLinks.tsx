@@ -23,16 +23,19 @@ import {
   History,
   TrendingUp,
   Bell,
+  UserCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** 사이드바 nav 배지용 승인대기 카운트 - GA/지점(신규등록)/설계사 3종. */
+/** 사이드바 nav 배지용 승인대기 카운트. */
 export interface AdminNavBadges {
   ga: number;
   branchCreate: number;
   planner: number;
   topDesigner: number;
   salaryRanking: number;
+  /** 설계사 지점 연결 심사 대기 - 주체는 지점 관리자, 운영팀은 예비 경로(2026-08-14). */
+  plannerLink: number;
 }
 
 const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; exact?: boolean; badgeKey?: keyof AdminNavBadges }[] = [
@@ -45,6 +48,9 @@ const NAV_ITEMS: { href: string; label: string; icon: typeof LayoutDashboard; ex
   { href: '/admin/change-requests', label: '변경 요청', icon: ClipboardCheck, badgeKey: 'branchCreate' },
   { href: '/admin/planners', label: '고소득 설계사 (Legacy)', icon: Award },
   { href: '/admin/planner-market', label: '설계사 마켓', icon: Users2, badgeKey: 'planner' },
+  // 설계사 지점 연결 심사(운영팀 예비 경로, 2026-08-14). 주체는 지점 관리자다 -
+  // 그래도 대기가 쌓이면 운영팀 눈에 배지로 보여야 한다.
+  { href: '/admin/planner-links', label: '설계사 연결 승인', icon: UserCheck, badgeKey: 'plannerLink' },
   { href: '/admin/planner-market/credits', label: '열람권 관리', icon: Ticket },
   { href: '/admin/top-designer', label: 'TOP 설계사 인증', icon: Award, badgeKey: 'topDesigner' },
   { href: '/admin/salary-ranking', label: '연봉 랭킹', icon: TrendingUp, badgeKey: 'salaryRanking' },

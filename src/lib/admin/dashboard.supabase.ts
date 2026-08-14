@@ -21,6 +21,9 @@ export interface PendingApprovalCounts {
   planner: number;
   topDesigner: number;
   salaryRanking: number;
+  /** 설계사 지점 연결 심사 대기(branch_planner_registrations). 주체는 지점 관리자이고
+   * 운영팀은 예비 경로다(오너 지시 2026-08-14) - 그래도 대기가 쌓이면 운영팀 눈에 보여야 한다. */
+  plannerLink: number;
 }
 
 export interface RecentBranchItem {
@@ -113,7 +116,7 @@ function regionLabel(region: { sido_name: string; sigungu_name: string | null } 
 export async function getPendingApprovalCounts(): Promise<PendingApprovalCounts> {
   const supabase = createAdminClient();
 
-  const [ga, branchCreate, planner, topDesigner, salaryRanking] = await Promise.all([
+  const [ga, branchCreate, planner, topDesigner, salaryRanking, plannerLink] = await Promise.all([
     supabase.from('ga_company').select('id', { count: 'exact', head: true }).eq('approval_status', 'pending'),
     supabase
       .from('branch_registrations')
@@ -127,6 +130,10 @@ export async function getPendingApprovalCounts(): Promise<PendingApprovalCounts>
       .is('withdrawn_at', null),
     supabase.from('top_designer_certifications').select('id', { count: 'exact', head: true }).eq('status', 'pending_review'),
     supabase.from('salary_ranking_submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending_review'),
+    supabase
+      .from('branch_planner_registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending_review'),
   ]);
 
   return {
@@ -135,6 +142,7 @@ export async function getPendingApprovalCounts(): Promise<PendingApprovalCounts>
     planner: planner.count ?? 0,
     topDesigner: topDesigner.count ?? 0,
     salaryRanking: salaryRanking.count ?? 0,
+    plannerLink: plannerLink.count ?? 0,
   };
 }
 

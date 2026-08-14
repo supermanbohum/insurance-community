@@ -5,6 +5,8 @@ const ALERT_CONFIG: { key: keyof PendingApprovalCounts; label: string; href: str
   { key: 'ga', label: '신규 GA 승인요청', href: '/admin/ga?status=pending' },
   { key: 'branchCreate', label: '신규 지점 승인요청', href: '/admin/change-requests' },
   { key: 'planner', label: '신규 설계사 승인요청', href: '/admin/planner-market' },
+  // 주체는 지점 관리자지만(운영팀은 예비 경로) 대기가 쌓이는 것 자체는 운영팀이 알아야 한다.
+  { key: 'plannerLink', label: '설계사 지점 연결 심사', href: '/admin/planner-links' },
 ];
 
 /** 로그인 시 바로 눈에 띄어야 하는 승인 대기 알림 - 0건인 항목은 굳이 보여줄 필요가

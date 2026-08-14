@@ -30,23 +30,31 @@ export function PlannerLinkReviewActions({
   registrationId,
   plannerName,
   status,
+  action = reviewPlannerLinkAction,
+  audience = 'partner',
 }: {
   registrationId: string;
   plannerName: string;
   status: 'pending_review' | 'on_hold' | 'rejected' | 'approved';
+  /** 심사를 실행할 서버 액션. 운영자 화면은 admin 전용 액션을 넘긴다
+   * (branch-planner-review-admin.ts) - 버튼·다이얼로그 UI는 하나만 유지한다. */
+  action?: typeof reviewPlannerLinkAction;
+  /** 문구 분기용. 지점장은 「우리 지점」, 운영팀은 그렇게 말하면 거짓이라 「이 지점」. */
+  audience?: 'partner' | 'admin';
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [dialog, setDialog] = useState<null | 'approve' | 'on_hold' | 'reject'>(null);
   const [reason, setReason] = useState('');
+  const branchWord = audience === 'admin' ? '이 지점' : '우리 지점';
 
   function run(decision: 'approved' | 'on_hold' | 'rejected' | 'pending_review', withReason?: string) {
     startTransition(async () => {
-      const result = await reviewPlannerLinkAction(registrationId, decision, withReason);
+      const result = await action(registrationId, decision, withReason);
       if (result.success) {
         toast.success(
           decision === 'approved'
-            ? `${plannerName}님을 우리 지점 소속으로 승인했습니다.`
+            ? `${plannerName}님을 ${branchWord} 소속으로 승인했습니다.`
             : decision === 'pending_review'
               ? '심사 대기로 되돌렸습니다.'
               : decision === 'on_hold'
@@ -91,9 +99,9 @@ export function PlannerLinkReviewActions({
       <AlertDialog open={dialog === 'approve'} onOpenChange={(open) => !open && setDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{plannerName}님을 우리 지점 소속으로 승인할까요?</AlertDialogTitle>
+            <AlertDialogTitle>{plannerName}님을 {branchWord} 소속으로 승인할까요?</AlertDialogTitle>
             <AlertDialogDescription>
-              승인하면 이 설계사가 우리 지점 소속으로 표시되고, 본인 홈에 우리 지점이 나타납니다.
+              승인하면 이 설계사가 {branchWord} 소속으로 표시되고, 본인 홈에 소속 지점이 나타납니다.
               제출한 명함은 승인과 동시에 삭제됩니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
