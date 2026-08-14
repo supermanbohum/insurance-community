@@ -35,6 +35,7 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
   const photos = [...(main ? [main] : []), ...office];
 
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const [videoOpen, setVideoOpen] = useState(false);
   const open = useCallback((index: number) => setViewerIndex(index), []);
 
   return (
@@ -115,30 +116,95 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
               )}
             </button>
           ))}
-          {video && (
-            <a
-              href={video.source === 'external' ? video.url : undefined}
-              target={video.source === 'external' ? '_blank' : undefined}
-              rel="noreferrer"
-              className="group relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-ink text-white"
-            >
-              {video.source === 'storage' ? (
-                <video src={video.url} className="absolute inset-0 h-full w-full object-cover opacity-50" muted />
-              ) : (
+          {video &&
+            // 🔴 storage 동영상은 링크가 아니라 **오버레이 재생**이다. 예전에는 storage면
+            // href가 undefined인 <a>라서 재생 아이콘이 떠 있는데 **눌러도 무반응**이었다
+            // (맵그룹 3본부 - 운영에 storage 동영상이 실제로 1건 있다). external(유튜브 등)은
+            // 우리가 플레이어를 제어할 수 없으니 기존대로 새 탭으로 나간다.
+            (video.source === 'storage' ? (
+              <button
+                type="button"
+                onClick={() => setVideoOpen(true)}
+                aria-label="지점 동영상 재생"
+                className="group relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-ink text-white"
+              >
+                {/* preload=none: 썸네일 단계에서 동영상 데이터를 미리 내리지 않는다 -
+                    첫 로드 전송량을 지키는 것이 이 파일의 핵심 수리였다(위 preload 참사 참고). */}
+                <video src={video.url} className="absolute inset-0 h-full w-full object-cover opacity-50" muted preload="none" />
+                <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur transition-transform group-hover:scale-110">
+                  <Play className="h-4 w-4 fill-white" strokeWidth={0} />
+                </span>
+                <VideoIcon className="absolute bottom-1.5 right-1.5 h-3.5 w-3.5 text-white/80" />
+              </button>
+            ) : (
+              <a
+                href={video.url}
+                target="_blank"
+                rel="noreferrer"
+                className="group relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-ink text-white"
+              >
                 <span className="absolute inset-0 bg-gradient-to-br from-ink to-ink/70" />
-              )}
-              <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur transition-transform group-hover:scale-110">
-                <Play className="h-4 w-4 fill-white" strokeWidth={0} />
-              </span>
-              <VideoIcon className="absolute bottom-1.5 right-1.5 h-3.5 w-3.5 text-white/80" />
-            </a>
-          )}
+                <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur transition-transform group-hover:scale-110">
+                  <Play className="h-4 w-4 fill-white" strokeWidth={0} />
+                </span>
+                <VideoIcon className="absolute bottom-1.5 right-1.5 h-3.5 w-3.5 text-white/80" />
+              </a>
+            ))}
         </div>
       )}
 
       {viewerIndex !== null && photos.length > 0 && (
         <PhotoViewer photos={photos} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
       )}
+
+      {videoOpen && video && <VideoOverlay url={video.url} onClose={() => setVideoOpen(false)} />}
+    </div>
+  );
+}
+
+/**
+ * storage 동영상 전용 전체화면 재생 오버레이.
+ * 사진 뷰어에 편입하지 않은 이유: 뷰어의 스와이프/줌 제스처가 <video controls>의
+ * 시크바·볼륨 조작과 충돌한다(가로 드래그가 시크인지 다음 사진인지 구분 불가).
+ * 동영상은 소리·재생 위치가 있는 매체라 사진과 같은 인터랙션에 묶지 않는다.
+ */
+function VideoOverlay({ url, onClose }: { url: string; onClose: () => void }) {
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex flex-col bg-black/95"
+      role="dialog"
+      aria-modal="true"
+      aria-label="지점 동영상 재생"
+    >
+      <div className="flex items-center justify-end px-4 py-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+          aria-label="닫기"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+      <div className="flex min-h-0 flex-1 items-center justify-center p-3 sm:p-6">
+        {/* autoPlay: 사용자가 재생 버튼을 눌러 연 화면이라 자동재생이 기대 동작이다.
+            playsInline: iOS가 자체 전체화면으로 뺏어가지 않게 한다. */}
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <video src={url} controls autoPlay playsInline className="max-h-full max-w-full rounded-lg" />
+      </div>
     </div>
   );
 }
