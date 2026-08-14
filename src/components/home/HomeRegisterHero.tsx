@@ -6,7 +6,6 @@ import { MyBranchSlot } from '@/components/home/MyBranchSlot';
 import { StatCountUp } from '@/components/home/StatCountUp';
 import { HeroCtaButton } from '@/components/home/HeroCtaButton';
 import { GlobalShareButton } from '@/components/shared/GlobalShareButton';
-import { cn } from '@/lib/utils';
 
 /**
  * 헤더에 이미 로고+검색창이 있어(BohomMapHeader) 예전 HeroSearch가 그걸 그대로
@@ -73,77 +72,11 @@ function StatChip({ emoji, label, value, unit }: { emoji: string; label: string;
   );
 }
 
-/** 임계값 미만일 때 숫자 대신 보여주는 CTA 카드 - 긴 판(2줄)/짧은 판(1줄)을 둘 다
- * 렌더링해두고 뷰포트 폭으로 전환한다(별도 클라이언트 JS 없이 반응형 처리).
- * href가 없으면 클릭할 수 없는 정보성 카드로 렌더링한다.
- * ⚠️ 2026-08-13부터 두 카드 모두 href가 있다 - 설계사 카드도 /branch-planner-register로
- * 연결됐다. href 없는 분기는 남겨 두지만 지금 그 경로를 타는 호출부는 없다.
- * (옛 메모: ③ 완료 전까지는 홈에서 설계사마켓으로 보낼 유효한 링크가 없었다,
- * 오너 지시: 홈→마켓 경로 전부 제거, 마켓은 햄버거 메뉴에서만). */
-function ReplacementCard({
-  href,
-  longLines,
-  shortLine,
-}: {
-  href?: string;
-  longLines: [React.ReactNode, React.ReactNode];
-  shortLine: React.ReactNode;
-}) {
-  const baseClassName = 'flex flex-col gap-0.5 rounded-xl border border-dashed border-brand-200 bg-brand-50/50 px-3 py-2 text-center';
-  const content = (
-    <>
-      <span className="hidden sm:block">
-        <span className="block text-[11px] text-ink-faint">{longLines[0]}</span>
-        <span className="block text-[13px] font-bold text-ink-soft">{longLines[1]}</span>
-      </span>
-      <span className="text-[13px] font-bold text-ink-soft sm:hidden">{shortLine}</span>
-    </>
-  );
-
-  if (!href) {
-    return <div className={baseClassName}>{content}</div>;
-  }
-
-  return (
-    <Link href={href} className={cn(baseClassName, 'transition-colors hover:bg-brand-50')}>
-      {content}
-    </Link>
-  );
-}
-
-/** "선착순 100개" 실시간 카운트다운(오너 지시 ⑦, 2026-08-10) - 등록될 때마다
- * 자리가 줄어드는 걸 보여준다. 카운팅 기준은 오너 확정대로 "지점 등록 수" -
- * 별도 프로모션 참여 여부를 추적하는 컬럼이 없으므로(카카오 채널처럼 새 테이블을
- * 만들 정도의 무게는 아니라고 판단) 이미 홈/관리자 대시보드가 공유하는
- * get_platform_core_stats()의 승인 지점 수(stats.branchCount)를 그대로 재사용한다.
- * showBranchNumber가 true로 바뀌는 시점(HOME_STAT_THRESHOLDS.branch=10)에 이
- * 카드 자체가 사라지므로 remaining이 90 아래로 내려가는 걸 실제로 보게 될 일은
- * 없다 - 0 밑으로 내려가지 않게 막아만 둔다(방어적 처리, 정상 동작에선 안 걸림). */
-const EARLY_BIRD_TOTAL_SLOTS = 100;
-
-/**
- * 「(선착순 N개 지점)」 - 괄호 구간을 통째로 묶는다.
- *
- * 🔴 `whitespace-nowrap`이 없으면 좁은 폭에서 괄호 안이 쪼개진다(디자인 라이브 실측):
- *     375  … (선착순 100 / 개 지점)      숫자만 떨어진다
- *     360  … (선착순 / 100개 지점)       괄호 안이 갈라진다
- *     320  … 무료(선 / 착순 100개 지점)  단어 중간이 잘린다 - 한글은 word-break가 normal이라
- *                                        글자 사이 어디서나 끊긴다
- *
- * ⚠️ 비용이 0이다. 이 문구는 어차피 좁은 폭에서 2줄이라 **줄 수·높이가 같고**
- * (2줄 · 38.5px) 끊기는 자리만 우리가 고르는 것이다. PC(640+)는 어떤 폭에서도 1줄이라
- * nowrap이 있어도 무해하다 - 그래서 두 변형에 같이 건다.
- *
- * `break-keep`(word-break: keep-all)은 안전망이다. 없어도 위 결과가 나오지만, 앞쪽
- * 「6개월 무료」가 단어 중간에서 끊기는 것을 막아 준다.
- */
-function EarlyBirdSlots({ remaining }: { remaining: number }) {
-  return (
-    <span className="whitespace-nowrap break-keep">
-      (선착순 <StatCountUp value={remaining} />개 지점)
-    </span>
-  );
-}
+/* 🔴 여기 있던 ReplacementCard(임계 미달 대체 카드)·EarlyBirdSlots(선착순 카운트다운)·
+   EARLY_BIRD_TOTAL_SLOTS는 **오너 지시(2026-08-14, 전체회의 안건 ①)로 삭제**됐다.
+   「지역 1호」·「첫 번째 등록」·「선착순 100개」류 후크는 홈에서 아예 안 보여주기로 한
+   결정이다(승인 설계사 7명·공개 지점 3개가 생기며 문구가 거짓이 됐고, 오너가 교체 대신
+   제거를 택했다). 되살리려면 오너 결정부터 뒤집어야 한다 - 코드만 복원하면 안 된다. */
 
 /**
  * 🔴 2026-08-14 분리(CTO 지시): 예전 `HomeRegisterHero` 하나가 「등록 CTA」와 「통계」를
@@ -213,7 +146,6 @@ export function HomeRegisterStats({
   const displayVisitorCount = toDisplayVisitorCount(stats.todayVisitorCount);
   // 방문자 카운터는 임계 없이 항상 표시한다(위 HOME_STAT_THRESHOLDS 주석 참고).
   const showTodayChip = stats.todayCount >= STAT_MIN_TODAY_COUNT;
-  const earlyBirdSlotsRemaining = Math.max(0, EARLY_BIRD_TOTAL_SLOTS - stats.branchCount);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -226,83 +158,30 @@ export function HomeRegisterStats({
             가는 길**이 전체 통계보다 우선이라고 봤다 - 통계만 보이고 갈 데가 없으면
             「내 지점이 어디 있지」가 된다. 다만 지금 지점 0건이라 **어느 쪽으로 짜도 화면이
             같아서 확인할 수 없다.** 디자인·CTO 확인이 필요한 자리로 남긴다. */}
+        {/* 🔴 임계 미달 시 뜨던 대체 카드 2장(「지역 1호 지점으로 등록하세요 - 6개월
+            무료(선착순 N개)」·「우리 지점 설계사로 첫 번째 등록 - 완전 무료」)은
+            **오너 지시(2026-08-14, 전체회의 안건 ① 결정)로 전부 삭제**했다. 아예 안
+            나온다. 배경: 승인 설계사 7명·공개 지점 3개가 생기며 「첫 번째」「지역 1호」가
+            거짓이 됐고, 오너가 문구 교체가 아니라 **카드 자체 제거**를 택했다.
+            임계(10) 미달 구간에서는 이 자리가 그냥 빈다 - 대체 문구를 넣지 않는다.
+            임계 이상이면 실제 숫자 통계 칩이 뜬다(이건 삭제 대상이 아니다). */}
         {myBranchSlot.kind !== 'none' ? (
           <MyBranchSlot state={myBranchSlot} />
         ) : showBranchNumber ? (
           <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
             <StatChip emoji="📍" label="등록 지점" value={stats.branchCount} unit="개" />
           </div>
-        ) : (
-          <ReplacementCard
-            href="/register"
-            longLines={[
-              // 🔴 「지점장님의 지역」이라고 개인화하면 안 된다 - 이 카드가 뜨는 조건은
-              // **전국 전체 지점 수**(branchCount < 10)이고 지역을 보지 않는다. 지점이
-              // 있는 지역의 지점장에게도 "당신 지역은 비어 있다"고 말하게 된다.
-              // 오너가 조건을 바꾸는 대신 문구를 조건에 맞추는 쪽으로 확정했다(2026-08-13).
-              //
-              // 🔴 정적 문자열로 두지 않는다. 「등록된 지점이 없습니다」를 박아 두면
-              // **첫 지점이 승인돼도 사람이 배포할 때까지 화면이 거짓말을 한다.**
-              // 아래 「지금까지 GA N곳」 줄이 이미 쓰는 것과 같은 바인딩 방식이다.
-              //
-              // ⚠️ 아랫줄 「지역 1호 지점을 선점하세요」는 **지역을 보지 않는다.** 전국에
-              // N건이 있어도 「지역 1호」라고 말한다. 이번 범위가 아니라 그대로 두지만,
-              // 고치려면 지역별 카운트 배선이 필요하고 지금 그 배선이 없다.
-              // G1(첫 지점 승인) 시점에 아랫줄까지 함께 판단한다 - 콘텐츠에 대체 후크가
-              // 준비돼 있다.
-              stats.branchCount === 0 ? (
-                '지금까지 등록된 지점이 없습니다'
-              ) : (
-                <>
-                  이미 <span className="text-brand-600">{stats.branchCount}</span>개 지점이 등록됐습니다
-                </>
-              ),
-              // "6개월 무료(선착순 N개)"는 진행 중인 실제 이벤트(event_popups, 상시 노출)에
-              // 맞춘 문구다 - 해당 프로모션이 종료되면 이 문구도 함께 걷어내야 한다. N은
-              // 더는 고정 100이 아니라 실시간 잔여 슬롯이다(오너 지시 ⑦).
-              <>
-                <strong className="text-brand-600">지역 1호 지점으로 등록하세요</strong> — 6개월 무료
-                <EarlyBirdSlots remaining={earlyBirdSlotsRemaining} />
-              </>,
-            ]}
-            shortLine={
-              <>
-                <strong className="text-brand-600">지역 1호 지점을 선점하세요</strong> — 6개월 무료
-                <EarlyBirdSlots remaining={earlyBirdSlotsRemaining} />
-              </>
-            }
-          />
-        )}
+        ) : null}
 
+        {/* ⚠️ 이 통계의 기준은 **설계사마켓**(publicPlannerProfileCount)이다. 「우리 지점
+            설계사」(branch_planner_registrations)와 아예 다른 시스템이다 - 설계사마켓은
+            이직을 원하는 설계사가 따로 등록하는 것(오너 확정 2026-08-14, 안건 ②).
+            지점 연결 설계사 수를 여기 합치지 마라. */}
         {showPlannerNumber ? (
           <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
             <StatChip emoji="👨‍💼" label="등록 설계사" value={stats.publicPlannerProfileCount} unit="명" />
           </div>
-        ) : (
-          <ReplacementCard
-            // 🔴 링크가 없으면 「등록해보세요」라고 말하는 카드가 안 눌린다. 바로 위
-            // 쌍둥이 카드(지점)는 /register로 연결돼 있어 **비대칭이 버그로 읽힌다**
-            // (콘텐츠·CTO 상신 → 승인 2026-08-13). 도착지는 이 카드가 가리키는 등록이다.
-            href="/branch-planner-register"
-            longLines={[
-              '지점장님이 설계사님을 찾고 있어요',
-              // 「등록해보세요」 단독은 어느 등록인지 안 갈린다 - 이 사이트에는 등록이 셋이다
-              // (설계사마켓 / 우리 지점 설계사 / TOP 인증). 이 카드가 가리키는 것은 두 번째다.
-              // 🔴 「첫 번째」는 검증 가능한 사실 주장이다. 지금은 등록 설계사 0명이라 참이지만
-              // 첫 등록이 생기면 그 지점에서 거짓이 된다. 홈의 「지역 1호 지점을 선점하세요」와
-              // 같은 계열이라 **같은 트리거(G1: 첫 지점/설계사 등록)로 함께 교체**한다(콘텐츠 확정).
-              <>
-                <strong className="text-brand-600">우리 지점 설계사로 첫 번째 등록</strong> — 완전 무료
-              </>,
-            ]}
-            // 「설계사 등록」만 쓰면 어느 등록인지 안 갈린다 - 이 사이트에는 설계사마켓
-            // 등록(/planner-market/register)과 우리 지점 설계사 등록
-            // (/branch-planner-register)이 따로 있고, 이 카드가 가리키는 것은 후자다.
-            // ⚠️ 위 longLines(넓은 화면용)는 「첫 번째로 등록해보세요」라 같은 모호함이
-            // 남아 있다. 그쪽은 문구 자체가 달라 임의로 못 고쳤다 - 콘텐츠 확인 대기.
-            shortLine={<strong className="text-brand-600">우리 지점 설계사 등록, 완전 무료</strong>}
-          />
-        )}
+        ) : null}
 
         {/* 🔴 예전에는 이 자리가 「방문자 카운터 **또는** 우리 작업량 줄」이었다.
             visitor 임계가 사라지면서 카운터가 항상 뜨는데, 그렇다고 아래 「지금까지 GA
