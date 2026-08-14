@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Building2, Clock, Undo2, ChevronRight } from 'lucide-react';
+import { Building2, Clock, Undo2, ChevronRight, AlertCircle } from 'lucide-react';
 import type { MyBranchSlotState } from '@/lib/public/my-branch-slot';
 
 /**
@@ -146,6 +146,59 @@ export function MyBranchSlot({ state }: { state: MyBranchSlotState }) {
           지점 관리자가 명함을 확인하고 있습니다.{' '}
           <b className="font-bold">확인이 끝나면 이 자리에 우리 지점이 표시됩니다.</b>
         </p>
+        {/* 🔴 「승인되면 알려드립니다」가 아니다 - 보낼 수단이 없다. 「여기에서 확인할 수
+            있다」는 화면 상태 서술이라 따로 보내지 않아도 항상 참이다. */}
+        <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
+          승인되면 이 자리가 우리 지점 바로가기로 바뀌고, 내 프로필을 수정할 수 있게 됩니다.
+          보류·반려되면 그 사유가 여기에 그대로 표시됩니다. <b className="font-bold">상태는 언제든
+          이 화면에서 확인하실 수 있습니다.</b>
+        </p>
+      </div>
+    );
+  }
+
+  if (state.kind === 'plannerLinkOnHold') {
+    // 🔴 보류는 「심사 중」이 아니다. 지점 관리자가 **무언가를 보완하라고 사유를 적어**
+    // 되돌려 보낸 상태이고, 신청자에게 **할 일이 있다.** 예전에는 이 상태가 심사 중 카드에
+    // 묻혀 있어서 그 사유가 신청자에게 한 번도 도달하지 않았다.
+    // 🔴 반려(빨강)와 같은 색을 쓰지 않는다 - 끝난 것이 아니라 진행 중이다.
+    return (
+      <div className="rounded-2xl border border-[#F5DDA8] bg-[#FFFBF0] p-3.5">
+        <div className="flex items-center gap-3">
+          <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[10px] bg-[#FBEFD3] text-[#B5730B]">
+            <AlertCircle className="h-6 w-6" strokeWidth={1.75} />
+          </span>
+          <p className="flex flex-wrap items-center gap-1.5 text-sm font-extrabold leading-snug text-ink">
+            소속 지점 연결이 보류되었습니다
+            <span className="rounded-full bg-[#FBEFD3] px-1.5 py-0.5 text-[10px] font-extrabold text-[#B5730B]">
+              보류
+            </span>
+          </p>
+        </div>
+        {state.reason ? (
+          <>
+            <p className="mt-2.5 text-[11px] font-bold text-ink-soft">지점 관리자가 남긴 사유</p>
+            <p className="mt-1 rounded-lg bg-white/80 px-3 py-2 text-xs leading-relaxed text-ink-soft">
+              {state.reason}
+            </p>
+          </>
+        ) : (
+          // 사유는 RPC가 필수로 받지만(0112) 옛 데이터에는 비어 있을 수 있다.
+          // 없는 것을 있는 것처럼 쓰지 않는다.
+          <p className="mt-2.5 text-xs leading-relaxed text-ink-soft">
+            남겨진 사유가 없습니다. 지점 관리자에게 직접 확인해주세요.
+          </p>
+        )}
+        <p className="mt-2.5 text-[11px] leading-relaxed text-ink-faint">
+          사유를 확인하고 다시 신청하시면 지점 관리자가 다시 검토합니다. 승인되면 이 자리가 우리 지점
+          바로가기로 바뀝니다.
+        </p>
+        <Link
+          href="/branch-planner/register"
+          className="mt-2.5 block rounded-[10px] bg-brand-500 py-2.5 text-center text-[13px] font-extrabold text-white transition-colors hover:bg-brand-600"
+        >
+          다시 신청하기
+        </Link>
       </div>
     );
   }
@@ -163,11 +216,21 @@ export function MyBranchSlot({ state }: { state: MyBranchSlotState }) {
           </span>
           <p className="text-sm font-extrabold leading-snug text-ink">소속 지점 연결이 반려되었습니다</p>
         </div>
-        {state.reason && (
-          <p className="mt-2.5 rounded-lg bg-white/70 px-3 py-2 text-xs leading-relaxed text-ink-soft">
-            {state.reason}
+        {state.reason ? (
+          <>
+            <p className="mt-2.5 text-[11px] font-bold text-ink-soft">지점 관리자가 남긴 사유</p>
+            <p className="mt-1 rounded-lg bg-white/70 px-3 py-2 text-xs leading-relaxed text-ink-soft">
+              {state.reason}
+            </p>
+          </>
+        ) : (
+          <p className="mt-2.5 text-xs leading-relaxed text-ink-soft">
+            남겨진 사유가 없습니다. 지점 관리자에게 직접 확인해주세요.
           </p>
         )}
+        <p className="mt-2.5 text-[11px] leading-relaxed text-ink-faint">
+          다시 신청하시면 지점 관리자가 다시 검토합니다. 승인되면 이 자리가 우리 지점 바로가기로 바뀝니다.
+        </p>
         <Link
           href="/branch-planner/register"
           className="mt-2.5 block rounded-[10px] bg-brand-500 py-2.5 text-center text-[13px] font-extrabold text-white transition-colors hover:bg-brand-600"

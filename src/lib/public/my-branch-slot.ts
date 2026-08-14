@@ -76,6 +76,16 @@ export type MyBranchSlotState =
    * 등록하려 든다.
    */
   | { kind: 'plannerLinkPending' }
+  /**
+   * 본인 연결이 **보류(on_hold)**됐다 - 지점 관리자가 사유를 적어 되돌려 보낸 상태다.
+   *
+   * 🔴 2026-08-14 이전에는 이 상태가 `plannerLinkPending`에 묻혀 있었다. 그래서 신청자는
+   * 「확인하고 있습니다」만 보고, **보완하라고 적어 보낸 사유가 아예 도달하지 않았다.**
+   * 사유는 심사 RPC가 필수로 받는 값인데(0112) 받는 사람이 못 보면 받은 적이 없는 것이다.
+   * `pending_review`(할 일 없음)와 `on_hold`(할 일 있음)는 **행동 유무가 정반대**라
+   * 같은 카드를 쓰면 안 된다.
+   */
+  | { kind: 'plannerLinkOnHold'; reason: string | null }
   /** 본인 연결이 반려됐다. 지점은 멀쩡하므로 ⑤(지점 반려)와 다른 카드여야 한다. */
   | { kind: 'plannerLinkRejected'; reason: string | null };
 
@@ -164,8 +174,13 @@ export async function getMyBranchSlotState(): Promise<MyBranchSlotState> {
 
   // 🔴 본인 연결 상태를 **하나씩 명시**한다. else로 묶으면 「지점이 없다」와
   // 「내 연결이 아직 안 됐다」가 같은 화면이 되고, 그게 실제로 5명에게 났던 오류다.
-  if (link.status === 'pending_review' || link.status === 'on_hold') {
+  if (link.status === 'pending_review') {
     return { kind: 'plannerLinkPending' };
+  }
+  // 🔴 on_hold를 pending_review와 묶지 않는다. 보류는 **신청자가 할 일이 있는** 상태이고
+  // 사유가 함께 온다 - 묶으면 그 사유가 어디에도 표시되지 않는다(2026-08-14 수정).
+  if (link.status === 'on_hold') {
+    return { kind: 'plannerLinkOnHold', reason: link.review_reason };
   }
   if (link.status === 'rejected') {
     return { kind: 'plannerLinkRejected', reason: link.review_reason };
