@@ -873,3 +873,42 @@
 - 검증: tsc/lint/build 통과. SPEC-016 ⑨는 운영 curl(캐시 우회 쿼리스트링)로 /map·
   /search 직접 확인. 0079는 트랜잭션 롤백 시뮬레이션으로 테이블 생성+시드 확인.
 - 커밋: 064830c(SPEC-016 ⑨), ee718d4(W-2/W-3+헤딩모순), b57a614(홈 오픈 배너)
+
+## 2026-08-18 · 아이폰 HEIC 업로드 지원을 나머지 업로드 폼 12곳에 확산
+- 무엇: OnboardingForm에 먼저 적용된 HEIC→JPEG 변환 패턴(`src/lib/images/heic.ts`의
+  `normalizeImageFiles`/`HEIC_ACCEPT`)을 나머지 업로드 폼 전부에 적용.
+  대상: BannerForm, PlannerMarketRegisterForm, TopDesignerApplyFields,
+  TopDesignerEditForm, BranchPlannerRegistrationForm, PlannerIncomeBadgeUploadForm,
+  SalaryRankingApplyForm, GaInfoTab, PlannerCertificationForm,
+  RenewCertificationButton, TopPlannerApplicationForm, post/ImageUploader.
+  각 pick/handle 함수를 async화해 파일 획득 직후 normalizeImageFiles를 태우고,
+  변환 실패는 toast(또는 ImageUploader는 기존 인라인 에러)로 파일명+이유 노출.
+  에러 문구에 "아이폰 사진(HEIC)" 추가, input accept에 `.heic,.heif` 추가.
+- 왜: 아이폰 기본 카메라가 HEIC로 찍어 기존 IMAGE_TYPES/DOC_TYPES 검사에서
+  입구 거부되던 것(오너 지시 2026-08-18). 조용한 실패 금지 원칙 유지.
+- 결과: 12파일 수정. `validateImageFile`(validation/post.ts)은 서버 액션과 공유되고
+  변환 후 JPEG가 그대로 통과하므로 건드리지 않음(서버는 의도적으로 HEIC 거부 유지).
+  PlannerCertificationForm/TopPlannerApplicationForm은 인라인 setDoc이라 pickDoc
+  함수를 신설해 변환을 태움. 커밋 안 함 - CTO 검토 대기.
+- 검증: `npm run typecheck` 통과, `npm run lint` 통과(기존 OnboardingForm useMemo
+  경고 1건만 잔존). 각 onChange 호출부에서 File/FileList가 await 이전에 동기로
+  추출되는 것 눈으로 확인(이벤트 재사용 문제 없음). 실기기 HEIC 업로드는 미확인.
+
+## 2026-08-18 · HEIC 변환 실파일 검증 (CTO 요구: 가짜 파일 금지)
+- 검증 자산: Nokia 공식 HEIF 샘플 `autumn_1440x960.heic` (293,608B, `file` 판정
+  "ISO Media, HEIF Image" - 확장자만 바꾼 가짜가 아님을 확인).
+- 방법: 프로덕션 `heic.ts`와 **동일 로직**(① createImageBitmap 네이티브 → ② heic2any
+  폴백 → canvas 2048px/q0.85)을 재현한 테스트 페이지를 로컬 http 서버로 띄우고
+  실브라우저(크로미움)에서 실행.
+- 결과:
+  ```
+  ① 네이티브 디코드   실패 (InvalidStateError)  ← 데스크톱 크로미움, 설계 예상대로
+  ② heic2any 폴백     성공 → 492,814B JPEG
+     리사이즈          1440×960 (2048 이하라 원치수 유지) · 490,768B · image/jpeg
+  화면 렌더            변환 결과 <img> 표시 확인
+  ```
+- **확인한 것**: 데스크톱(크로미움) 폴백 경로 전체 - 진짜 HEIF 디코드→JPEG→리사이즈→렌더.
+  **확인 못 한 것**: ⓐ iOS Safari 네이티브 경로(아이폰 실기기 없음 - 오너 확인 필요.
+  단, 코드가 실패 시 자동으로 ②로 내려가므로 네이티브가 안 돼도 heic2any가 받는다)
+  ⓑ 실기기 아이폰에서 실제 폼 업로드 종단(로그인 필요).
+- 검증: tsc/lint/build(103/103) 전부 통과.

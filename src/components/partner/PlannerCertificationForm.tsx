@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { PlannerIncomeTier } from '@/types/database';
+import { normalizeImageFiles } from '@/lib/images/heic';
 
 export function PlannerCertificationForm({ branches }: { branches: { id: string; name: string }[] }) {
   const router = useRouter();
@@ -27,6 +28,21 @@ export function PlannerCertificationForm({ branches }: { branches: { id: string;
   const [doc, setDoc] = useState<File | null>(null);
 
   const canSubmit = branchId && plannerName.trim() && plannerPhone.trim() && plannerCompany.trim() && jobTitle.trim() && doc;
+
+  async function pickDoc(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) {
+      setDoc(null);
+      return;
+    }
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
+      return;
+    }
+    setDoc(ok[0]);
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -137,9 +153,9 @@ export function PlannerCertificationForm({ branches }: { branches: { id: string;
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
+                accept="image/jpeg,image/png,image/webp,application/pdf,.heic,.heif"
                 className="hidden"
-                onChange={(e) => setDoc(e.target.files?.[0] ?? null)}
+                onChange={(e) => pickDoc(e.target.files)}
               />
             </label>
           )}

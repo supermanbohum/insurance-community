@@ -7,6 +7,7 @@ import {
   IMAGE_MAX_COUNT,
   validateImageFile,
 } from '@/lib/validation/post';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 
 export interface ExistingImage {
   id: string;
@@ -39,7 +40,7 @@ export function ImageUploader({ name, existingImages = [] }: ImageUploaderProps)
     setPreviews(nextFiles.map((file) => URL.createObjectURL(file)));
   }
 
-  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const incoming = Array.from(event.target.files ?? []);
     const remainingSlots = IMAGE_MAX_COUNT - remainingExistingCount - files.length;
 
@@ -49,9 +50,13 @@ export function ImageUploader({ name, existingImages = [] }: ImageUploaderProps)
       return;
     }
 
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    // 변환 후 JPEG는 아래 validateImageFile(jpg/png/webp)을 그대로 통과한다.
+    const { ok, failed } = await normalizeImageFiles(incoming);
+
     const accepted: File[] = [];
-    let firstError: string | null = null;
-    for (const file of incoming) {
+    let firstError: string | null = failed.length > 0 ? `${failed[0].name}: ${failed[0].reason}` : null;
+    for (const file of ok) {
       if (accepted.length >= remainingSlots) break;
       const invalidReason = validateImageFile(file);
       if (invalidReason) {
@@ -129,7 +134,7 @@ export function ImageUploader({ name, existingImages = [] }: ImageUploaderProps)
           ref={inputRef}
           type="file"
           name={name}
-          accept={ALLOWED_IMAGE_MIME_TYPES.join(',')}
+          accept={`${ALLOWED_IMAGE_MIME_TYPES.join(',')},${HEIC_ACCEPT}`}
           multiple
           onChange={handleChange}
           className="hidden"

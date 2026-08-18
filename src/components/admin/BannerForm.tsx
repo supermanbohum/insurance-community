@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ImagePlus, X } from 'lucide-react';
 import { saveBannerAction, uploadBannerImageAction } from '@/lib/actions/banner-admin';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 import type { AdminBannerRow } from '@/lib/admin/banners';
 import type { BannerSlot } from '@/types/database';
 import { Button } from '@/components/ui/button';
@@ -72,14 +73,21 @@ export function BannerForm({ initial }: { initial: AdminBannerRow | null }) {
 
   async function pickImage(file: File | undefined, target: 'pc' | 'mobile') {
     if (!file) return;
-    if (!IMAGE_TYPES.includes(file.type)) {
-      toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
+      return;
+    }
+    const picked = ok[0];
+    if (!IMAGE_TYPES.includes(picked.type)) {
+      toast.error('jpg, png, webp, 아이폰 사진(HEIC)만 업로드할 수 있습니다.');
       return;
     }
     const setUploading = target === 'pc' ? setIsUploadingPc : setIsUploadingMobile;
     setUploading(true);
     const fd = new FormData();
-    fd.set('file', file);
+    fd.set('file', picked);
     const result = await uploadBannerImageAction(fd);
     setUploading(false);
     if (!result.success) {
@@ -257,7 +265,7 @@ function ImageSlot({
           {uploading ? '업로드 중...' : '이미지 선택'}
           <input
             type="file"
-            accept={IMAGE_TYPES.join(',')}
+            accept={`${IMAGE_TYPES.join(',')},${HEIC_ACCEPT}`}
             className="hidden"
             disabled={uploading}
             onChange={(e) => onPick(e.target.files?.[0])}

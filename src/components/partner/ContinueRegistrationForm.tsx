@@ -10,6 +10,7 @@ import {
   completeBranchRegistrationAction,
 } from '@/lib/actions/partner';
 import { deleteBranchMediaAction } from '@/lib/actions/branch-media-admin';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 import type { Database } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,10 +44,24 @@ export function ContinueRegistrationForm({
 
   async function handleMainPhoto(files: FileList | null) {
     const file = files?.[0];
-    if (!file || !IMAGE_TYPES.includes(file.type)) return;
+    if (!file) return;
     setIsUploading(true);
+    // 아이폰 HEIC는 여기서 JPEG로 변환된다(오너 지시 2026-08-18). 변환 실패는 조용히
+    // 버리지 않고 토스트로 띄운다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      setIsUploading(false);
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
+      return;
+    }
+    const picked = ok[0];
+    if (!IMAGE_TYPES.includes(picked.type)) {
+      setIsUploading(false);
+      toast.error(`${picked.name}: jpg, png, webp, 아이폰 사진(HEIC)만 올릴 수 있습니다`);
+      return;
+    }
     const fd = new FormData();
-    fd.set('file', file);
+    fd.set('file', picked);
     const result = await uploadPartnerBranchPhotoAction(branchId, fd, true, 0);
     setIsUploading(false);
     if (!result.success) {
@@ -65,10 +80,12 @@ export function ContinueRegistrationForm({
     // 화면에는 아무 말도 안 나와서 **지점장은 10장이 올라간 줄 안다.**
     // 실패한 장수와 이유를 반드시 눈에 보이게 남긴다.
     const failures: string[] = [];
-    for (const file of Array.from(files)) {
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 변환 실패도 failures로 합류한다.
+    const { ok: pickedFiles, failed: convertFailed } = await normalizeImageFiles(Array.from(files));
+    for (const f of convertFailed) failures.push(`${f.name}: ${f.reason}`);
+    for (const file of pickedFiles) {
       if (!IMAGE_TYPES.includes(file.type)) {
-        // 아이폰 기본 포맷(HEIC)이 여기로 떨어진다 - 가장 흔한 조용한 탈락 지점이다.
-        failures.push(`${file.name}: jpg, png, webp 형식만 올릴 수 있습니다`);
+        failures.push(`${file.name}: jpg, png, webp, 아이폰 사진(HEIC)만 올릴 수 있습니다`);
         continue;
       }
       const fd = new FormData();
@@ -154,7 +171,7 @@ export function ContinueRegistrationForm({
               {isUploading ? '업로드 중...' : '대표사진을 눌러서 선택하세요'}
               <input
                 type="file"
-                accept={IMAGE_TYPES.join(',')}
+                accept={`${IMAGE_TYPES.join(',')},${HEIC_ACCEPT}`}
                 className="hidden"
                 disabled={isUploading}
                 onChange={(e) => handleMainPhoto(e.target.files)}
@@ -209,7 +226,7 @@ export function ContinueRegistrationForm({
             {isUploading ? '업로드 중...' : `사진을 눌러서 선택하세요 (${officePhotos.length}/${MIN_OFFICE_PHOTOS}장 이상 필요)`}
             <input
               type="file"
-              accept={IMAGE_TYPES.join(',')}
+              accept={`${IMAGE_TYPES.join(',')},${HEIC_ACCEPT}`}
               multiple
               className="hidden"
               disabled={isUploading}

@@ -13,6 +13,7 @@ import {
 import type { GaOperationType } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { deleteBranchMediaAction } from '@/lib/actions/branch-media-admin';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 import type { BranchRow, InsurerRow, RegionRow, BranchContactRow, BranchRecruitRow, BranchMediaRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
 import { InsurerMultiSelect } from '@/components/admin/InsurerMultiSelect';
@@ -212,11 +213,19 @@ export function PartnerBranchEditForm({
     });
   }
 
-  function addNewOfficePhotos(files: FileList | null) {
+  async function addNewOfficePhotos(files: FileList | null) {
     if (!files) return;
-    const accepted = Array.from(files).filter((f) => IMAGE_TYPES.includes(f.type));
-    if (accepted.length < files.length) {
-      toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 파일명과 함께 띄운다.
+    const { ok, failed } = await normalizeImageFiles(Array.from(files));
+    const accepted = ok.filter((f) => IMAGE_TYPES.includes(f.type));
+    const rejectedCount = failed.length + (ok.length - accepted.length);
+    if (rejectedCount > 0) {
+      toast.error(`${rejectedCount}장을 추가하지 못했습니다.`, {
+        description: [
+          ...failed.map((f) => `${f.name}: ${f.reason}`),
+          ...ok.filter((f) => !IMAGE_TYPES.includes(f.type)).map((f) => `${f.name}: jpg, png, webp, 아이폰 사진(HEIC)만 가능`),
+        ].join('\n'),
+      });
     }
     setNewOfficePhotos((prev) => [...prev, ...accepted].slice(0, MAX_PENDING_PHOTOS));
   }
@@ -458,7 +467,7 @@ export function PartnerBranchEditForm({
             <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground hover:border-brand-300 hover:text-brand-600">
               <ImagePlus className="h-4 w-4" />
               사진 선택
-              <input type="file" accept={IMAGE_TYPES.join(',')} multiple className="hidden" onChange={(e) => addNewOfficePhotos(e.target.files)} />
+              <input type="file" accept={`${IMAGE_TYPES.join(',')},${HEIC_ACCEPT}`} multiple className="hidden" onChange={(e) => addNewOfficePhotos(e.target.files)} />
             </label>
           </div>
 

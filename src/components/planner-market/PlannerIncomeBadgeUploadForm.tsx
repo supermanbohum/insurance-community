@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { FileText, X } from 'lucide-react';
 import { submitPlannerBadgeApplicationAction } from '@/lib/actions/planner-market';
 import { Button } from '@/components/ui/button';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 
 const DOC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
@@ -29,11 +30,18 @@ export function PlannerIncomeBadgeUploadForm({
   const [isPending, startTransition] = useTransition();
   const [file, setFile] = useState<File | null>(null);
 
-  function pick(files: FileList | null) {
-    const picked = files?.[0];
-    if (!picked) return;
+  async function pick(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
+      return;
+    }
+    const picked = ok[0];
     if (!DOC_TYPES.includes(picked.type)) {
-      toast.error('jpg, png, webp, pdf 형식만 업로드할 수 있습니다.');
+      toast.error('jpg, png, webp, pdf, 아이폰 사진(HEIC)만 업로드할 수 있습니다.');
       return;
     }
     if (picked.size > 10 * 1024 * 1024) {
@@ -82,7 +90,7 @@ export function PlannerIncomeBadgeUploadForm({
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-4 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600">
           <FileText className="h-4 w-4" />
           파일 선택 (jpg/png/pdf)
-          <input type="file" accept={DOC_TYPES.join(',')} className="hidden" onChange={(e) => pick(e.target.files)} />
+          <input type="file" accept={`${DOC_TYPES.join(',')},${HEIC_ACCEPT}`} className="hidden" onChange={(e) => pick(e.target.files)} />
         </label>
       )}
 

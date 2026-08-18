@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { normalizeImageFiles } from '@/lib/images/heic';
 import { UploadCloud, Trash2, Video, Link as LinkIcon, Star } from 'lucide-react';
 import {
   addBranchVideoUrlAction,
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp';
+const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,.heic,.heif';
 const VIDEO_ACCEPT = 'video/mp4,video/webm,video/quicktime';
 
 function Dropzone({
@@ -95,9 +96,16 @@ export function BranchMediaTab({
   const images = media.filter((m) => m.media_type === 'image_main' || m.media_type === 'image_office');
   const videos = media.filter((m) => m.media_type === 'video');
 
-  function handleImageDrop(files: FileList) {
+  async function handleImageDrop(files: FileList) {
     setUploadingSlot('photo');
-    const uploads = Array.from(files).map((file) => {
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 변환 실패는 파일명과 함께 띄운다.
+    const { ok, failed: convertFailed } = await normalizeImageFiles(Array.from(files));
+    if (convertFailed.length > 0) {
+      toast.error(`${convertFailed.length}장을 변환하지 못했습니다.`, {
+        description: convertFailed.map((f) => `${f.name}: ${f.reason}`).join('\n'),
+      });
+    }
+    const uploads = ok.map((file) => {
       const formData = new FormData();
       formData.set('file', file);
       return uploadBranchImageAction(branchId, gaCompanyId, formData);
@@ -108,7 +116,7 @@ export function BranchMediaTab({
         const failed = results.filter((r) => !r.success);
         if (failed.length > 0) {
           toast.error((failed[0] as { success: false; error: string }).error);
-        } else {
+        } else if (ok.length > 0) {
           toast.success('업로드했습니다.');
         }
       })

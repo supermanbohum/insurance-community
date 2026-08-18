@@ -30,6 +30,7 @@ import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 import type { BranchPreviewData } from '@/components/branch/types';
 import type { PublicBranchSummary, GaOperationType } from '@/types/database';
 import { triggerHaptic } from '@/lib/native/haptics';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 import {
   SHORT_TAGLINE_MAX_LENGTH,
   SHORT_TAGLINE_HELP,
@@ -372,35 +373,59 @@ export function OnboardingForm({
   const step2Complete = Boolean(businessCard);
   const canSubmit = step1Complete && step2Complete && Boolean(mainPhoto) && officePhotos.length >= MIN_OFFICE_PHOTOS;
 
-  function pickMainPhoto(files: FileList | null) {
+  // 아이폰 HEIC는 고르는 즉시 JPEG로 변환해서 state에 담는다(오너 지시 2026-08-18).
+  // 제출 시점이 아니라 선택 시점에 변환하는 이유: 미리보기(URL.createObjectURL)가
+  // HEIC를 못 그리는 브라우저에서도 변환본은 그려지고, 실패를 그 자리에서 알 수 있다.
+  async function pickMainPhoto(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
-    if (!IMAGE_TYPES.includes(file.type)) {
-      toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
       return;
     }
-    setMainPhoto(file);
+    const picked = ok[0];
+    if (!IMAGE_TYPES.includes(picked.type)) {
+      toast.error('jpg, png, webp, 아이폰 사진(HEIC)만 업로드할 수 있습니다.');
+      return;
+    }
+    setMainPhoto(picked);
   }
 
-  function pickDoc(files: FileList | null, setFile: (f: File) => void) {
+  async function pickDoc(files: FileList | null, setFile: (f: File) => void) {
     const file = files?.[0];
     if (!file) return;
-    if (!DOC_TYPES.includes(file.type)) {
-      toast.error('jpg, png, webp, pdf 형식만 업로드할 수 있습니다.');
+    // 명함도 아이폰으로 찍는 경우가 흔하다 - 같은 변환을 태운다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
+    const picked = ok[0];
+    if (!DOC_TYPES.includes(picked.type)) {
+      toast.error('jpg, png, webp, pdf, 아이폰 사진(HEIC)만 업로드할 수 있습니다.');
+      return;
+    }
+    if (picked.size > 10 * 1024 * 1024) {
       toast.error('파일은 최대 10MB까지 업로드할 수 있습니다.');
       return;
     }
-    setFile(file);
+    setFile(picked);
   }
 
-  function addOfficePhotos(files: FileList | null) {
+  async function addOfficePhotos(files: FileList | null) {
     if (!files) return;
-    const accepted = Array.from(files).filter((f) => IMAGE_TYPES.includes(f.type));
-    if (accepted.length < files.length) {
-      toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
+    const { ok, failed } = await normalizeImageFiles(Array.from(files));
+    const accepted = ok.filter((f) => IMAGE_TYPES.includes(f.type));
+    const rejectedCount = failed.length + (ok.length - accepted.length);
+    if (rejectedCount > 0) {
+      // 🔴 몇 장이 왜 빠졌는지 말한다 - "10장 올렸는데 9장" 사고의 재발 방지.
+      toast.error(`${rejectedCount}장을 추가하지 못했습니다.`, {
+        description: [
+          ...failed.map((f) => `${f.name}: ${f.reason}`),
+          ...ok.filter((f) => !IMAGE_TYPES.includes(f.type)).map((f) => `${f.name}: jpg, png, webp, 아이폰 사진(HEIC)만 가능`),
+        ].join('\n'),
+      });
     }
     // 상한 없음(오너 지시 2026-08-11) - 0099/0100도 상한 검사를 두지 않는다.
     setOfficePhotos((prev) => [...prev, ...accepted]);
@@ -970,7 +995,7 @@ export function OnboardingForm({
                     <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-4 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600">
                       <ScanFace className="h-4 w-4" />
                       파일 선택 (jpg/png/pdf)
-                      <input type="file" accept={DOC_TYPES.join(',')} className="hidden" onChange={(e) => pickDoc(e.target.files, setBusinessCard)} />
+                      <input type="file" accept={`${DOC_TYPES.join(',')},${HEIC_ACCEPT}`} className="hidden" onChange={(e) => pickDoc(e.target.files, setBusinessCard)} />
                     </label>
                   )}
                 </div>
@@ -1051,7 +1076,7 @@ export function OnboardingForm({
                 >
                   <ImagePlus className="h-6 w-6" />
                   대표사진을 드래그하거나 눌러서 선택하세요
-                  <input type="file" accept={IMAGE_TYPES.join(',')} className="hidden" onChange={(e) => pickMainPhoto(e.target.files)} />
+                  <input type="file" accept={`${IMAGE_TYPES.join(',')},${HEIC_ACCEPT}`} className="hidden" onChange={(e) => pickMainPhoto(e.target.files)} />
                 </label>
               )}
             </CardContent>
@@ -1080,7 +1105,7 @@ export function OnboardingForm({
                 사진을 드래그하거나 눌러서 선택하세요 ({officePhotos.length}장 선택됨)
                 <input
                   type="file"
-                  accept={IMAGE_TYPES.join(',')}
+                  accept={`${IMAGE_TYPES.join(',')},${HEIC_ACCEPT}`}
                   multiple
                   className="hidden"
                   onChange={(e) => addOfficePhotos(e.target.files)}

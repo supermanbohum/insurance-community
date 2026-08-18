@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 
 const DOC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -62,11 +63,18 @@ export function TopDesignerEditForm({
   const [businessCardFile, setBusinessCardFile] = useState<File | null>(null);
   const [isSavingRevision, startRevisionTransition] = useTransition();
 
-  function pickPhoto(files: FileList | null) {
-    const picked = files?.[0];
-    if (!picked) return;
+  async function pickPhoto(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
+      return;
+    }
+    const picked = ok[0];
     if (!IMAGE_TYPES.includes(picked.type)) {
-      toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
+      toast.error('jpg, png, webp, 아이폰 사진(HEIC)만 업로드할 수 있습니다.');
       return;
     }
     if (picked.size > 5 * 1024 * 1024) {
@@ -77,11 +85,18 @@ export function TopDesignerEditForm({
     setPhotoPublic(null);
   }
 
-  function pickDoc(files: FileList | null, setFile: (f: File | null) => void) {
-    const picked = files?.[0];
-    if (!picked) return;
+  async function pickDoc(files: FileList | null, setFile: (f: File | null) => void) {
+    const file = files?.[0];
+    if (!file) return;
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
+      return;
+    }
+    const picked = ok[0];
     if (!DOC_TYPES.includes(picked.type)) {
-      toast.error('jpg, png, webp, pdf 형식만 업로드할 수 있습니다.');
+      toast.error('jpg, png, webp, pdf, 아이폰 사진(HEIC)만 업로드할 수 있습니다.');
       return;
     }
     if (picked.size > 10 * 1024 * 1024) {
@@ -203,7 +218,7 @@ export function TopDesignerEditForm({
             <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-full border-2 border-dashed border-line text-center text-xs text-muted-foreground hover:border-amber-300 hover:text-amber-600">
               <ImagePlus className="h-5 w-5" />
               {certification.photoPath ? '사진 교체' : '사진 선택'}
-              <input type="file" accept={IMAGE_TYPES.join(',')} className="hidden" onChange={(e) => pickPhoto(e.target.files)} />
+              <input type="file" accept={`${IMAGE_TYPES.join(',')},${HEIC_ACCEPT}`} className="hidden" onChange={(e) => pickPhoto(e.target.files)} />
             </label>
           )}
           {!photoFile && certification.photoPath && (
@@ -304,7 +319,7 @@ export function TopDesignerEditForm({
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line bg-white py-4 text-center text-sm text-muted-foreground transition-colors hover:border-amber-300 hover:text-amber-600">
                 <FileText className="h-4 w-4" />
                 파일 선택 (jpg/png/pdf)
-                <input type="file" accept={DOC_TYPES.join(',')} className="hidden" onChange={(e) => pickDoc(e.target.files, setIncomeDocFile)} />
+                <input type="file" accept={`${DOC_TYPES.join(',')},${HEIC_ACCEPT}`} className="hidden" onChange={(e) => pickDoc(e.target.files, setIncomeDocFile)} />
               </label>
             )}
             <p className="mt-1 text-[11px] leading-relaxed text-ink-faint">
@@ -329,7 +344,7 @@ export function TopDesignerEditForm({
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line bg-white py-4 text-center text-sm text-muted-foreground transition-colors hover:border-amber-300 hover:text-amber-600">
                 <FileText className="h-4 w-4" />
                 파일 선택 (jpg/png/pdf)
-                <input type="file" accept={DOC_TYPES.join(',')} className="hidden" onChange={(e) => pickDoc(e.target.files, setBusinessCardFile)} />
+                <input type="file" accept={`${DOC_TYPES.join(',')},${HEIC_ACCEPT}`} className="hidden" onChange={(e) => pickDoc(e.target.files, setBusinessCardFile)} />
               </label>
             )}
           </div>

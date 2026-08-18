@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 
 const DOC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
@@ -26,11 +27,18 @@ export function SalaryRankingApplyForm({ plannerProfileId }: { plannerProfileId:
 
   const canSubmit = jobTitle.trim() && displayName.trim() && declaredIncome && consent && file;
 
-  function pickFile(files: FileList | null) {
-    const picked = files?.[0];
-    if (!picked) return;
+  async function pickFile(files: FileList | null) {
+    const selected = files?.[0];
+    if (!selected) return;
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    const { ok, failed } = await normalizeImageFiles([selected]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
+      return;
+    }
+    const picked = ok[0];
     if (!DOC_TYPES.includes(picked.type)) {
-      toast.error('jpg, png, webp, pdf 형식만 업로드할 수 있습니다.');
+      toast.error('jpg, png, webp, pdf, 아이폰 사진(HEIC)만 업로드할 수 있습니다.');
       return;
     }
     if (picked.size > 10 * 1024 * 1024) {
@@ -109,7 +117,7 @@ export function SalaryRankingApplyForm({ plannerProfileId }: { plannerProfileId:
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-4 text-center text-sm text-muted-foreground transition-colors hover:border-brand-300 hover:text-brand-600">
             <FileText className="h-4 w-4" />
             파일 선택 (jpg/png/pdf)
-            <input type="file" accept={DOC_TYPES.join(',')} className="hidden" onChange={(e) => pickFile(e.target.files)} />
+            <input type="file" accept={`${DOC_TYPES.join(',')},${HEIC_ACCEPT}`} className="hidden" onChange={(e) => pickFile(e.target.files)} />
           </label>
         )}
       </div>

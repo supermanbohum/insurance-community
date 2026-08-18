@@ -16,6 +16,7 @@ import { RegionSelect } from '@/components/admin/RegionSelect';
 import { GaSearchSelect } from '@/components/auth/GaSearchSelect';
 import { PlannerMarketConsentCheckboxes, EMPTY_CONSENTS, type PlannerMarketConsents } from '@/components/planner-market/PlannerMarketConsentCheckboxes';
 import { trackPlannerRegisterComplete } from '@/lib/analytics/track';
+import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -148,14 +149,21 @@ export function PlannerMarketRegisterForm({
     setContactableTimes((prev) => (prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]));
   }
 
-  function pickPhoto(files: FileList | null) {
+  async function pickPhoto(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
-    if (!IMAGE_TYPES.includes(file.type)) {
-      toast.error('jpg, png, webp 형식만 업로드할 수 있습니다.');
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
       return;
     }
-    setPhoto(file);
+    const picked = ok[0];
+    if (!IMAGE_TYPES.includes(picked.type)) {
+      toast.error('jpg, png, webp, 아이폰 사진(HEIC)만 업로드할 수 있습니다.');
+      return;
+    }
+    setPhoto(picked);
     setPhotoPublic(null);
   }
 
@@ -266,7 +274,7 @@ export function PlannerMarketRegisterForm({
             <label className="flex h-28 w-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-full border-2 border-dashed border-line text-center text-xs text-muted-foreground hover:border-brand-300 hover:text-brand-600">
               <ImagePlus className="h-5 w-5" />
               사진 선택
-              <input type="file" accept={IMAGE_TYPES.join(',')} className="hidden" onChange={(e) => pickPhoto(e.target.files)} />
+              <input type="file" accept={`${IMAGE_TYPES.join(',')},${HEIC_ACCEPT}`} className="hidden" onChange={(e) => pickPhoto(e.target.files)} />
             </label>
           )}
           {hasPhoto && (

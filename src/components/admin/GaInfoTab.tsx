@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Trash2, UploadCloud } from 'lucide-react';
 import { updateGaCompanyAction, uploadGaLogoAction, deleteGaLogoAction } from '@/lib/actions/ga-admin';
+import { normalizeImageFiles } from '@/lib/images/heic';
 import type { GaCompanyRow } from '@/lib/admin/ga';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +20,17 @@ function GaLogoCard({ ga }: { ga: GaCompanyRow }) {
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function handleFile(file: File) {
+  async function handleFile(file: File) {
+    // 아이폰 HEIC → JPEG 변환(오너 지시 2026-08-18). 실패는 조용히 버리지 않는다.
+    const { ok, failed } = await normalizeImageFiles([file]);
+    if (failed.length > 0) {
+      toast.error(`${failed[0].name}: ${failed[0].reason}`);
+      return;
+    }
+    const picked = ok[0];
     setIsUploading(true);
     const formData = new FormData();
-    formData.set('logo', file);
+    formData.set('logo', picked);
     uploadGaLogoAction(ga.id, formData)
       .then(async (result) => {
         if (!result.success || !result.path) {
@@ -81,11 +89,11 @@ function GaLogoCard({ ga }: { ga: GaCompanyRow }) {
           >
             <UploadCloud className="h-6 w-6" />
             <p className="text-sm font-medium">{isUploading ? '업로드 중...' : '로고 업로드'}</p>
-            <p className="text-xs">클릭해서 선택 (jpg/png/webp, 2MB 이하)</p>
+            <p className="text-xs">클릭해서 선택 (jpg/png/webp/아이폰 HEIC, 2MB 이하)</p>
             <input
               ref={inputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,.heic,.heif"
               className="hidden"
               disabled={isUploading}
               onChange={(e) => {
