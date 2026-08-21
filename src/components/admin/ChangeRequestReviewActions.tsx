@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { reviewChangeRequestAction } from '@/lib/actions/change-requests-admin';
+import { reviewChangeRequestAction, forceApproveChangeRequestAction } from '@/lib/actions/change-requests-admin';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -26,11 +26,33 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-export function ChangeRequestReviewActions({ requestId, targetName }: { requestId: string; targetName: string }) {
+export function ChangeRequestReviewActions({
+  requestId,
+  targetName,
+  requestType,
+}: {
+  requestId: string;
+  targetName: string;
+  /** 🔴 서류 검사는 신규 등록(create)에만 걸린다. 수정 요청엔 강제 승인 버튼을 띄우지 않는다. */
+  requestType: 'create' | 'update';
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [reason, setReason] = useState('');
+
+  function runForce() {
+    startTransition(async () => {
+      const result = await forceApproveChangeRequestAction(requestId);
+      if (result.success) {
+        toast.success('필수 항목 없이 승인했습니다.');
+        router.push('/admin/change-requests');
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
 
   function run(decision: 'approved' | 'rejected', reasonText?: string) {
     startTransition(async () => {
@@ -64,6 +86,31 @@ export function ChangeRequestReviewActions({ requestId, targetName }: { requestI
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {requestType === 'create' && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="secondary" disabled={isPending}>
+              서류 없이 승인
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{targetName}을 필수 항목 없이 승인할까요?</AlertDialogTitle>
+              <AlertDialogDescription>
+                명함 · 대표사진 · 사무실사진 5장 · 소개글 50자 검사를 건너뜁니다. 승인 즉시 지점이 공개됩니다.
+                <br />
+                사진이 없으면 목록·지도 카드의 썸네일이 빈 칸으로 나옵니다.
+                <br />
+                강제 승인이었다는 기록과 무엇이 비어 있었는지가 이력에 남습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={runForce}>서류 없이 승인</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
       <Button variant="outline" disabled={isPending} onClick={() => setReasonDialogOpen(true)}>
         반려
       </Button>

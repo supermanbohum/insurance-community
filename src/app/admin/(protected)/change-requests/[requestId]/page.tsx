@@ -44,7 +44,7 @@ export default async function AdminChangeRequestDetailPage({ params }: { params:
           </p>
         </div>
         {request.status === 'pending' && (
-          <ChangeRequestReviewActions requestId={request.id} targetName={request.targetName} />
+          <ChangeRequestReviewActions requestId={request.id} targetName={request.targetName} requestType={request.requestType} />
         )}
       </div>
 

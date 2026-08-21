@@ -2080,6 +2080,13 @@ export interface Database {
         Args: { p_registration_id: string; p_decision: string; p_reason?: string | null };
         Returns: void;
       };
+      /** 0114 - 필수 서류·사진 검사를 건너뛰고 승인한다(운영진 전용, 신규 등록만).
+       *  🔴 review_branch_registration의 검사는 그대로 남는다. 인자를 추가하는 대신
+       *  이름이 다른 전용 RPC로 만든 것이다(0108의 시그니처 충돌 재발 방지). */
+      force_approve_branch_registration: {
+        Args: { p_registration_id: string; p_reason?: string | null };
+        Returns: void;
+      };
       /** 0101 - 반려된 지점 등록을 심사 대기로 되돌린다(파트너 본인). */
       resubmit_branch_registration: {
         Args: { p_registration_id: string };
