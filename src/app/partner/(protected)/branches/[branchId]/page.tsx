@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { BarChart3 } from 'lucide-react';
 import { requirePartner } from '@/lib/partner/session';
 import { getManageableBranchIds } from '@/lib/partner/manageable';
+import { listMyBranchManagers } from '@/lib/actions/branch-managers-partner';
+import { PartnerBranchManagers } from '@/components/partner/PartnerBranchManagers';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
   getBranchById,
@@ -45,7 +47,7 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
     .limit(1)
     .maybeSingle();
 
-  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media, { data: openRegistrationRows }, { data: rejectedRegistration }] = await Promise.all([
+  const [company, regions, insurers, selectedInsurerIds, contacts, recruits, media, { data: openRegistrationRows }, { data: rejectedRegistration }, branchManagers] = await Promise.all([
     getGaCompanyById(branch.ga_company_id),
     listRegions(),
     listInsurers(),
@@ -55,6 +57,7 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
     getBranchMedia(branch.id),
     supabase.rpc('get_open_branch_update', { p_branch_id: branch.id }),
     rejectedRegistrationPromise,
+    listMyBranchManagers(branch.id),
   ]);
 
   const activeRecruit = recruits.find((r) => r.is_active) ?? null;
@@ -135,6 +138,10 @@ export default async function PartnerBranchDetailPage({ params }: { params: { br
             : null
         }
       />
+
+      {/* 🔴 지점 관리자가 **직접** 함께 관리할 사람을 넣는다. 운영팀 승인을 거치지 않는다.
+          운영자 화면만 있으면 사람 바뀔 때마다 운영팀이 병목이 된다(오너 2026-08-24). */}
+      <PartnerBranchManagers branchId={branch.id} branchName={branch.name} managers={branchManagers} />
     </div>
   );
 }

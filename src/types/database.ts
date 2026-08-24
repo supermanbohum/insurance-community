@@ -1600,7 +1600,13 @@ export interface Database {
         Args: Record<string, never>;
         Returns: string | null;
       };
-      /** 0115 - 이메일로 계정을 찾아 그 지점의 매니저로 등록한다(운영팀 전용). 반환: ga_admin_users.id */
+      /** 0115 - 지점 매니저 목록. 운영팀 또는 그 지점을 관리할 수 있는 사람만 읽는다. */
+      list_branch_managers: {
+        Args: { p_branch_id: string };
+        Returns: { ga_admin_user_id: string; email: string; display_name: string | null; created_at: string }[];
+      };
+      /** 0115 → 0116 - 이메일로 계정을 찾아 그 지점의 매니저로 등록한다.
+       *  0116부터 **운영팀뿐 아니라 그 지점 관리자도** 호출할 수 있다(승인 절차 없음). */
       grant_branch_manager: {
         Args: { p_branch_id: string; p_email: string };
         Returns: string;
