@@ -562,8 +562,17 @@ export async function submitBranchChangeAction(
   if (!branch || branch.ga_company_id !== partner.ga_company_id) {
     return { success: false, error: '접근 권한이 없습니다.' };
   }
-  if (partner.branch_id && partner.branch_id !== branchId) {
-    return { success: false, error: '접근 권한이 없습니다.' };
+  // 🔴 여기서 `partner.branch_id !== branchId`로 직접 비교하면 안 된다.
+  //    판정이 두 군데가 되면 반드시 어긋난다 — 실제로 어긋났다(2026-08-24):
+  //    이 검사는 통과 못 시키고, 페이지 가드는 회사 단위라 폼은 열려서
+  //    「되는 화면인데 버튼만 죽은」 상태가 됐다.
+  //    저장 RPC들이 쓰는 is_ga_admin_for_branch를 그대로 물어본다(0115의 위임까지 본다).
+  const { data: canManage } = await supabase.rpc('is_ga_admin_for_branch', { p_branch_id: branchId });
+  if (!canManage) {
+    return {
+      success: false,
+      error: '이 지점을 관리할 권한이 없습니다. 운영팀에 지점 관리자 등록을 요청해주세요.',
+    };
   }
 
   if (input.insurers) {
@@ -761,6 +770,24 @@ export async function submitBranchTrustUpdateAction(
     },
   });
   if (error || !registrationId) {
+    // 🔴 권한 실패를 「잠시 후 다시 시도」로 뭉뚱그리지 않는다.
+    //    실제 사고(2026-08-24): 권한 문제인데 이 문구가 나와서 지점 관리자가
+    //    몇 번이고 다시 눌렀고, 원인을 찾는 데 하루가 걸렸다. 재시도해도 안 되는 건 그렇게 말한다.
+    // 코드는 pg_proc에서 실제로 확인한 것만 분기한다.
+    // submit_branch_update가 던지는 것: NOT_GA_ADMIN_FOR_BRANCH / MISSING_REGISTRANT_INFO / EMPTY_PAYLOAD
+    const m = error?.message ?? '';
+    if (m.includes('NOT_GA_ADMIN_FOR_BRANCH')) {
+      return {
+        success: false,
+        error: '이 지점을 관리할 권한이 없습니다. 운영팀에 지점 관리자 등록을 요청해주세요.',
+      };
+    }
+    if (m.includes('MISSING_REGISTRANT_INFO')) {
+      return { success: false, error: '신청자 정보(성함·직책·연락처·소속)를 모두 입력해주세요.' };
+    }
+    if (m.includes('EMPTY_PAYLOAD')) {
+      return { success: false, error: '변경된 내용이 없습니다.' };
+    }
     return { success: false, error: '제출하지 못했습니다. 잠시 후 다시 시도해주세요.' };
   }
 
@@ -815,6 +842,14 @@ export async function uploadPendingBranchPhotoAction(
   });
   if (registerError || !mediaId) {
     await createAdminClient().storage.from('branch-images').remove([path]);
+    // 🔴 권한 실패를 「이미 대표사진이 있어…」로 말하면 안 된다 — 원인이 아닌 걸 원인이라고 하는 것이다.
+    //    add_branch_media가 던지는 것: NOT_AUTHORIZED_FOR_BRANCH / INVALID_INPUT (pg_proc 확인)
+    if (registerError?.message?.includes('NOT_AUTHORIZED_FOR_BRANCH')) {
+      return {
+        success: false,
+        error: '이 지점을 관리할 권한이 없습니다. 운영팀에 지점 관리자 등록을 요청해주세요.',
+      };
+    }
     return { success: false, error: isMain ? '이미 대표사진이 있어 승인 대기 중인 지점만 새 대표사진을 추가할 수 있습니다.' : '등록하지 못했습니다.' };
   }
 
