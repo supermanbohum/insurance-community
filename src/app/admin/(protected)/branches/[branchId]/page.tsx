@@ -13,6 +13,7 @@ import { computeBranchCompleteness } from '@/lib/admin/completeness';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { BranchCompletenessCard } from '@/components/admin/BranchCompletenessCard';
 import { BranchEditWorkspace } from '@/components/admin/BranchEditWorkspace';
+import { listBranchManagers } from '@/lib/actions/branch-managers-admin';
 import { Badge } from '@/components/ui/badge';
 
 export default async function AdminBranchDetailPage({ params }: { params: { branchId: string } }) {
@@ -21,7 +22,7 @@ export default async function AdminBranchDetailPage({ params }: { params: { bran
     notFound();
   }
 
-  const [gaCompany, regions, insurers, media, contacts, recruits, insurerIds, gaBranches] = await Promise.all([
+  const [gaCompany, regions, insurers, media, contacts, recruits, insurerIds, gaBranches, managers] = await Promise.all([
     getGaCompanyById(branch.ga_company_id),
     listRegions(),
     listInsurers(),
@@ -30,6 +31,7 @@ export default async function AdminBranchDetailPage({ params }: { params: { bran
     getBranchRecruits(branch.id),
     getBranchInsurerIds(branch.id),
     getBranchesByGaCompanyId(branch.ga_company_id),
+    listBranchManagers(branch.id),
   ]);
   const gaBranchCount = gaBranches.filter((b) => b.status === 'visible').length;
 
@@ -73,6 +75,7 @@ export default async function AdminBranchDetailPage({ params }: { params: { bran
         recruits={recruits}
         insurerIds={insurerIds}
         imageBaseUrl={imageBaseUrl}
+        managers={managers}
       />
     </div>
   );

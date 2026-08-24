@@ -5,6 +5,8 @@ import type { BranchContactRow, BranchMediaRow, BranchRecruitRow, BranchRow, Ins
 import { BranchInfoTab, type BranchInfoDraft } from '@/components/admin/BranchInfoTab';
 import { BranchMediaTab } from '@/components/admin/BranchMediaTab';
 import { BranchContactsTab } from '@/components/admin/BranchContactsTab';
+import { BranchManagersTab } from '@/components/admin/BranchManagersTab';
+import type { BranchManager } from '@/lib/actions/branch-managers-admin';
 import { BranchRecruitTab } from '@/components/admin/BranchRecruitTab';
 import { BranchExposureTab } from '@/components/admin/BranchExposureTab';
 import { BranchDetailView } from '@/components/branch/BranchDetailView';
@@ -25,6 +27,7 @@ export function BranchEditWorkspace({
   recruits,
   insurerIds,
   imageBaseUrl,
+  managers,
 }: {
   branch: BranchRow;
   gaCompanyName: string;
@@ -38,6 +41,7 @@ export function BranchEditWorkspace({
   recruits: BranchRecruitRow[];
   insurerIds: string[];
   imageBaseUrl: string;
+  managers: BranchManager[];
 }) {
   const region = regions.find((r) => r.id === branch.region_id) ?? null;
   const [draft, setDraft] = useState<BranchInfoDraft>({
@@ -123,6 +127,7 @@ export function BranchEditWorkspace({
           <TabsTrigger value="media">미디어</TabsTrigger>
           <TabsTrigger value="contacts">연락처</TabsTrigger>
           <TabsTrigger value="recruit">채용</TabsTrigger>
+          <TabsTrigger value="managers">매니저</TabsTrigger>
           <TabsTrigger value="exposure">노출설정</TabsTrigger>
         </TabsList>
         <TabsContent value="info" className="max-w-2xl">
@@ -136,6 +141,9 @@ export function BranchEditWorkspace({
         </TabsContent>
         <TabsContent value="recruit" className="max-w-xl">
           <BranchRecruitTab branchId={branch.id} recruits={recruits} />
+        </TabsContent>
+        <TabsContent value="managers" className="max-w-xl">
+          <BranchManagersTab branchId={branch.id} branchName={branch.name} managers={managers} />
         </TabsContent>
         <TabsContent value="exposure" className="max-w-xl">
           <BranchExposureTab branch={branch} insurers={insurers} initialInsurerIds={insurerIds} />

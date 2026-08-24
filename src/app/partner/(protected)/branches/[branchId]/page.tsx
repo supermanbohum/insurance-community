@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart3 } from 'lucide-react';
 import { requirePartner } from '@/lib/partner/session';
+import { getManageableBranchIds } from '@/lib/partner/manageable';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
   getBranchById,
@@ -20,9 +21,16 @@ import { Card, CardContent } from '@/components/ui/card';
 export default async function PartnerBranchDetailPage({ params }: { params: { branchId: string } }) {
   const partner = await requirePartner();
   const branch = await getBranchById(params.branchId);
-  if (!branch || branch.ga_company_id !== partner.ga_company_id) {
-    notFound();
-  }
+  if (!branch) notFound();
+
+  // 🔴 화면 가드를 저장 가드와 같은 기준으로 맞춘다.
+  //    예전에는 회사 단위(`ga_company_id` 비교)라 **열리는데 저장만 실패**하는 지점이 있었다.
+  //    0115 미적용이면 null이 오므로 그때는 예전 기준으로 되돌아간다.
+  const manageableIds = await getManageableBranchIds();
+  const allowed = manageableIds
+    ? manageableIds.has(branch.id)
+    : branch.ga_company_id === partner.ga_company_id;
+  if (!allowed) notFound();
 
   const supabase = createServerSupabaseClient();
   // 반려된 신규등록 건 - 사유(review_reason)를 재제출 "전에" 보여줘야 한다(0101).

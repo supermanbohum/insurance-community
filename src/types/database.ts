@@ -727,11 +727,25 @@ export interface Database {
           email: string;
           display_name: string;
           is_active: boolean;
+          /** 0115 - 회사의 모든 지점을 관리한다. 예전의 암묵 규칙(branch_id null = 회사 전체)을 대체한다. */
+          is_company_owner: boolean;
           created_at: string;
           updated_at: string;
         };
         Insert: Partial<Database['public']['Tables']['ga_admin_users']['Row']>;
         Update: Partial<Database['public']['Tables']['ga_admin_users']['Row']>;
+        Relationships: [];
+      };
+      /** 0115 - 지점 매니저 위임. 계정이 달라도 여기 행이 있으면 그 지점을 관리한다. */
+      ga_branch_admins: {
+        Row: {
+          ga_admin_user_id: string;
+          branch_id: string;
+          granted_by_admin_id: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['ga_branch_admins']['Row']>;
+        Update: Partial<Database['public']['Tables']['ga_branch_admins']['Row']>;
         Relationships: [];
       };
       users: {
@@ -1585,6 +1599,21 @@ export interface Database {
       current_admin_id: {
         Args: Record<string, never>;
         Returns: string | null;
+      };
+      /** 0115 - 이메일로 계정을 찾아 그 지점의 매니저로 등록한다(운영팀 전용). 반환: ga_admin_users.id */
+      grant_branch_manager: {
+        Args: { p_branch_id: string; p_email: string };
+        Returns: string;
+      };
+      /** 0115 - 지점 매니저 해제(운영팀 전용). */
+      revoke_branch_manager: {
+        Args: { p_branch_id: string; p_ga_admin_user_id: string };
+        Returns: void;
+      };
+      /** 0115 - 내가 관리할 수 있는 지점 id 목록. 화면과 저장이 같은 기준을 쓰게 한다. */
+      my_manageable_branch_ids: {
+        Args: Record<string, never>;
+        Returns: string[];
       };
       is_ga_admin_for_branch: {
         Args: { p_branch_id: string };

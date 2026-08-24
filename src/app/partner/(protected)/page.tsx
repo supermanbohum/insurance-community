@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requirePartner } from '@/lib/partner/session';
+import { getManageableBranchIds } from '@/lib/partner/manageable';
 import { getGaCompanyById, getBranchesByGaCompanyId } from '@/lib/admin/ga';
 import { listChangeRequests, countPendingChangeRequests } from '@/lib/change-requests';
 import { getMyIncompleteBranchRegistrationAction } from '@/lib/actions/partner';
@@ -18,12 +19,18 @@ export default async function PartnerDashboardPage() {
   const company = await getGaCompanyById(partner.ga_company_id!);
   if (!company) notFound();
 
-  const [branches, pendingCount, recentHistory, incompleteRegistration] = await Promise.all([
+  const [companyBranches, pendingCount, recentHistory, incompleteRegistration, manageableIds] = await Promise.all([
     getBranchesByGaCompanyId(company.id),
     countPendingChangeRequests(company.id),
     listChangeRequests({ gaCompanyId: company.id }),
     getMyIncompleteBranchRegistrationAction(),
+    getManageableBranchIds(),
   ]);
+
+  // 🔴 관리할 수 있는 지점만 보여준다. 못 고치는 지점을 목록에 세워 두면
+  //    눌러서 폼을 열고 저장에서 실패한다 — 2026-08-24에 실제로 그렇게 막혔다.
+  //    manageableIds가 null이면 0115 미적용이므로 예전대로 회사 전체를 보여준다.
+  const branches = manageableIds ? companyBranches.filter((b) => manageableIds.has(b.id)) : companyBranches;
 
   const missingItems = incompleteRegistration
     ? [
