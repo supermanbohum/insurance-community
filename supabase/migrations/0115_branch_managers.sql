@@ -75,8 +75,13 @@ as $function$
   );
 $function$;
 
-revoke execute on function public.is_ga_admin_for_branch(uuid) from public, anon;
-grant  execute on function public.is_ga_admin_for_branch(uuid) to authenticated;
+-- 🔴🔴 이 함수의 실행 권한을 **좁히지 마라.** 2026-08-24에 좁혔다가 사이트를 내렸다.
+--     `ga_branch`·`branch_media` 등 **RLS 정책 14개가 이 함수를 호출**하고,
+--     그 정책들은 `public` 롤에 걸려 있다. anon 의 EXECUTE 를 뺀 순간
+--     비로그인 방문자가 지점을 읽을 때 권한 오류가 나고 **홈·지도·지역별·GA검색이 전부 죽는다.**
+--     안전한 이유: 이 함수는 auth.uid() 로 판정하므로 비로그인에게는 언제나 false 다.
+--     확인 방법: select * from pg_policies where qual like '%is_ga_admin_for_branch%';
+grant execute on function public.is_ga_admin_for_branch(uuid) to public, anon, authenticated;
 
 -- ── 4. 내가 관리할 수 있는 지점 목록 ─────────────────────────
 -- 파트너 화면이 「회사의 모든 지점」을 보여주던 것을 이걸로 바꾼다.
