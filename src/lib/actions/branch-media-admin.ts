@@ -164,3 +164,38 @@ export async function deleteBranchMediaAction(
   revalidateBranch(branchId);
   return { success: true };
 }
+
+/**
+ * 이미 올린 사진 중 하나를 대표사진으로 지정한다(0118).
+ *
+ * 🔴 왜 필요한가: 대표사진은 원래 **업로드 순서로만** 정해졌다. 바꾸려면 지우는 수밖에 없었고,
+ *    실제로 컴패니언 7곳이 「사무실사진만 있고 대표 0장」 상태로 남아 CTO가 DB를 직접 고쳤다.
+ *    같은 요청이 또 오면 또 불려간다 — 당사자가 화면에서 하게 만든다.
+ *
+ * 권한 판정은 RPC(is_ga_admin_for_branch)가 한다. 여기서 따로 비교하지 않는다 —
+ * 판정이 두 군데면 반드시 어긋난다(2026-08-24 사고).
+ */
+export async function setBranchMainMediaAction(mediaId: string): Promise<ActionResult> {
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.rpc('set_branch_main_media', { p_media_id: mediaId });
+
+  if (error) {
+    const m = error.message ?? '';
+    if (error.code === 'PGRST202' || /Could not find the function/i.test(m)) {
+      return { success: false, error: '아직 서버에 적용되지 않은 기능입니다. 마이그레이션 0118을 실행해야 동작합니다.' };
+    }
+    // 분기 코드는 0118 정의에 실제로 있는 것만 쓴다
+    if (m.includes('NOT_AUTHORIZED_FOR_BRANCH')) {
+      return { success: false, error: '이 지점의 사진을 바꿀 권한이 없습니다.' };
+    }
+    if (m.includes('MEDIA_NOT_FOUND')) return { success: false, error: '사진을 찾을 수 없습니다.' };
+    if (m.includes('NOT_AN_IMAGE')) return { success: false, error: '사진만 대표로 지정할 수 있습니다.' };
+    return { success: false, error: '대표사진을 바꾸지 못했습니다.' };
+  }
+
+  revalidatePath('/admin/branches');
+  revalidatePath('/partner');
+  revalidatePath('/');
+  revalidatePath('/search');
+  return { success: true };
+}

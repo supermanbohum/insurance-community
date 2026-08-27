@@ -7,6 +7,7 @@ import { UploadCloud, Trash2, Video, Link as LinkIcon, Star } from 'lucide-react
 import {
   addBranchVideoUrlAction,
   deleteBranchMediaAction,
+  setBranchMainMediaAction,
   uploadBranchImageAction,
   uploadBranchVideoAction,
 } from '@/lib/actions/branch-media-admin';
@@ -159,12 +160,22 @@ export function BranchMediaTab({
     });
   }
 
+  function handleSetMain(mediaRow: BranchMediaRow) {
+    startTransition(async () => {
+      const result = await setBranchMainMediaAction(mediaRow.id);
+      if (result.success) toast.success('대표사진을 바꿨습니다.');
+      else toast.error(result.error);
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">지점 사진</CardTitle>
-          <CardDescription>가장 먼저 업로드한 사진이 자동으로 대표사진이 됩니다. 대표사진을 삭제하면 다음 사진이 대표사진이 됩니다.</CardDescription>
+          <CardDescription>
+            첫 번째로 올린 사진이 대표사진이 됩니다. 바꾸려면 원하는 사진 위에서 <b>대표로 지정</b>을 누르세요 — 사진을 지울 필요가 없습니다.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {images.length > 0 && (
@@ -175,6 +186,7 @@ export function BranchMediaTab({
                   src={`${imageBaseUrl}/${item.value}`}
                   isMain={item.media_type === 'image_main'}
                   onDelete={() => handleDelete(item)}
+                  onSetMain={() => handleSetMain(item)}
                   disabled={isPending}
                 />
               ))}
@@ -241,11 +253,14 @@ function MediaThumb({
   src,
   isMain,
   onDelete,
+  onSetMain,
   disabled,
 }: {
   src: string;
   isMain?: boolean;
   onDelete: () => void;
+  /** 🔴 0118 - 대표사진을 지우지 않고 바꾸는 유일한 수단이다. 없으면 순서를 맞추려 사진을 지우게 된다. */
+  onSetMain?: () => void;
   disabled?: boolean;
 }) {
   return (
@@ -267,6 +282,17 @@ function MediaThumb({
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
+      {!isMain && onSetMain && (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onSetMain}
+          className="absolute inset-x-1 bottom-1 rounded-md bg-black/70 py-1 text-[11px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100"
+          aria-label="이 사진을 대표사진으로 지정"
+        >
+          대표로 지정
+        </button>
+      )}
     </div>
   );
 }

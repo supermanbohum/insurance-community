@@ -12,7 +12,7 @@ import {
 } from '@/lib/actions/partner';
 import type { GaOperationType } from '@/types/database';
 import { cn } from '@/lib/utils';
-import { deleteBranchMediaAction } from '@/lib/actions/branch-media-admin';
+import { deleteBranchMediaAction, setBranchMainMediaAction } from '@/lib/actions/branch-media-admin';
 import { normalizeImageFiles, HEIC_ACCEPT } from '@/lib/images/heic';
 import type { BranchRow, InsurerRow, RegionRow, BranchContactRow, BranchRecruitRow, BranchMediaRow } from '@/lib/admin/branch';
 import { RegionSelect } from '@/components/admin/RegionSelect';
@@ -87,6 +87,7 @@ export function PartnerBranchEditForm({
   const [isSubmittingTrust, startTrustTransition] = useTransition();
   const [isSavingDraft, startDraftTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [settingMainId, setSettingMainId] = useState<string | null>(null);
   const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
   const router = useRouter();
   const p = openRegistration?.payload ?? {};
@@ -285,6 +286,22 @@ export function PartnerBranchEditForm({
         }
       })
       .finally(() => setDeletingId(null));
+  }
+
+  /** 🔴 대표사진 교체. 승인 큐를 타지 않고 즉시 반영된다 —
+   *  이미 공개 중인 사진들 사이의 순서만 바꾸는 일이라 새로 심사할 내용이 없다. */
+  function handleSetMain(item: BranchMediaRow) {
+    setSettingMainId(item.id);
+    setBranchMainMediaAction(item.id)
+      .then((result) => {
+        if (result.success) {
+          toast.success('대표사진을 바꿨습니다.');
+          router.refresh();
+        } else {
+          toast.error(result.error);
+        }
+      })
+      .finally(() => setSettingMainId(null));
   }
 
   return (
@@ -496,7 +513,9 @@ export function PartnerBranchEditForm({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">지점 사진</CardTitle>
-            <CardDescription>현재 공개 중인 사진입니다. 대표사진은 정확히 1장이며, 새 사진 추가는 위 승인 요청으로 처리됩니다.</CardDescription>
+            <CardDescription>
+              현재 공개 중인 사진입니다. 대표사진을 바꾸려면 원하는 사진 위에서 <b>대표로 지정</b>을 누르세요 — <b>바로 반영되고 사진을 지울 필요가 없습니다.</b> 새 사진 추가는 위 승인 요청으로 처리됩니다.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {images.length > 0 ? (
@@ -520,6 +539,18 @@ export function PartnerBranchEditForm({
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
+                    {/* 🔴 0118 - 대표사진을 지우지 않고 바꾸는 유일한 수단. 없으면 순서를 맞추려 사진을 지우게 된다. */}
+                    {item.media_type !== 'image_main' && (
+                      <button
+                        type="button"
+                        disabled={settingMainId !== null}
+                        onClick={() => handleSetMain(item)}
+                        className="absolute inset-x-1 bottom-1 rounded-md bg-black/70 py-1 text-[11px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label="이 사진을 대표사진으로 지정"
+                      >
+                        {settingMainId === item.id ? '바꾸는 중…' : '대표로 지정'}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

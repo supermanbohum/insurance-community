@@ -1600,6 +1600,12 @@ export interface Database {
         Args: Record<string, never>;
         Returns: string | null;
       };
+      /** 0118 - 이미 올린 사진 중 하나를 대표사진으로 지정한다.
+       *  기존 대표는 사무실사진으로 내려가고 삭제되지 않는다. */
+      set_branch_main_media: {
+        Args: { p_media_id: string };
+        Returns: void;
+      };
       /** 0115 - 지점 매니저 목록. 운영팀 또는 그 지점을 관리할 수 있는 사람만 읽는다. */
       list_branch_managers: {
         Args: { p_branch_id: string };
