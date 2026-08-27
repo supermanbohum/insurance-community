@@ -195,6 +195,13 @@ export function PartnerBranchEditForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // 🔴 「채용중으로 표시」만 켜고 제목·내용이 비면 서버 RPC가 INVALID_INPUT 으로 400 을 낸다.
+    //    실제 사고(2026-08-27): 그 400 이 조용히 삼켜져서 지점 관리자는 이유를 모른 채
+    //    저장을 네 번 반복했다. 보내기 전에 여기서 막고 무엇이 빠졌는지 말한다.
+    if (recruitOpen && (!recruitTitle.trim() || !recruitContent.trim())) {
+      toast.error('채용중으로 표시하려면 공고 제목과 내용을 모두 입력해주세요.');
+      return;
+    }
     startTransition(async () => {
       const result = await submitBranchChangeAction(branch.id, {
         insurers: { insurerIds },

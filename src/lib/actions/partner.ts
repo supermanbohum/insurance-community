@@ -612,11 +612,24 @@ export async function submitBranchChangeAction(
           p_content: input.recruit.content,
         });
       } else {
-        await supabase.rpc('create_branch_recruit', {
+        // 🔴 RPC 에러를 버리지 마라. 여기서 삼켜서 「저장되었습니다」가 뜨는데
+        //    실제로는 400 이 나던 것이 2026-08-27 사고의 원인이다.
+        const { error: recruitError } = await supabase.rpc('create_branch_recruit', {
           p_branch_id: branchId,
           p_title: input.recruit.title,
           p_content: input.recruit.content,
         });
+        if (recruitError) {
+          const m = recruitError.message ?? '';
+          // create_branch_recruit 가 던지는 것: NOT_AUTHORIZED_FOR_BRANCH / INVALID_INPUT (pg_proc 확인)
+          if (m.includes('INVALID_INPUT')) {
+            return { success: false, error: '채용 공고의 제목과 내용을 모두 입력해주세요.' };
+          }
+          if (m.includes('NOT_AUTHORIZED_FOR_BRANCH')) {
+            return { success: false, error: '이 지점을 관리할 권한이 없습니다. 운영팀에 지점 관리자 등록을 요청해주세요.' };
+          }
+          return { success: false, error: '채용 정보를 저장하지 못했습니다.' };
+        }
       }
     } else if (active) {
       await supabase.rpc('close_branch_recruit', { p_recruit_id: active.id });
