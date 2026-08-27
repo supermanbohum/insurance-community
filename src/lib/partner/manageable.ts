@@ -13,8 +13,14 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
  * 유지한다 — 마이그레이션 전에 목록이 텅 비어 아무것도 못 하게 만들지 않기 위해서다.
  */
 export async function getManageableBranchIds(): Promise<Set<string> | null> {
-  const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase.rpc('my_manageable_branch_ids');
-  if (error || !data) return null;
-  return new Set(data as string[]);
+  // 🔴 예외가 새어 나가면 파트너 화면 전체가 죽는다. null 을 돌려주면 호출부가
+  //    예전 동작(회사 단위)으로 안전하게 되돌아간다 — 화면이 죽는 것보다 낫다.
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase.rpc('my_manageable_branch_ids');
+    if (error || !data) return null;
+    return new Set(data as string[]);
+  } catch {
+    return null;
+  }
 }

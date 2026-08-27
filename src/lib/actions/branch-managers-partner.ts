@@ -24,16 +24,24 @@ export type PartnerBranchManager = {
  * 판정이 두 군데면 반드시 어긋난다(2026-08-24에 실제로 그랬다).
  */
 export async function listMyBranchManagers(branchId: string): Promise<PartnerBranchManager[]> {
-  const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase.rpc('list_branch_managers', { p_branch_id: branchId });
-  if (error || !data) return [];
-  type Row = { ga_admin_user_id: string; email: string; display_name: string | null; created_at: string };
-  return (data as unknown as Row[]).map((r) => ({
-    gaAdminUserId: r.ga_admin_user_id,
-    email: r.email,
-    displayName: r.display_name,
-    createdAt: r.created_at,
-  }));
+  // 🔴 여기서 예외가 새어 나가면 **지점 편집 페이지 전체가 죽는다.**
+  //    실제 사고(2026-08-27): 마이그레이션에서 list_branch_managers 를 빠뜨려 RPC가 404였고,
+  //    지점 관리자가 사진을 저장하다 「일시적인 오류가 발생했습니다」를 반복해서 맞았다.
+  //    매니저 목록은 **부가 기능**이다. 이것 때문에 사진·연락처 편집이 막히면 안 된다.
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase.rpc('list_branch_managers', { p_branch_id: branchId });
+    if (error || !data) return [];
+    type Row = { ga_admin_user_id: string; email: string; display_name: string | null; created_at: string };
+    return (data as unknown as Row[]).map((r) => ({
+      gaAdminUserId: r.ga_admin_user_id,
+      email: r.email,
+      displayName: r.display_name,
+      createdAt: r.created_at,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 function mapError(error: { code?: string; message?: string } | null, email?: string): string {
