@@ -119,6 +119,7 @@ export function NaverMapView({
   initialCenter = DEFAULT_CENTER,
   initialZoom = DEFAULT_ZOOM,
   myLocation,
+  showZoomControl = true,
 }: {
   branches: MapBranch[];
   /** ⑪ 아직 등록되지 않은(외부 수집) 지점 - 회색 도트로만 그리고 클러스터에 넣는다. */
@@ -134,6 +135,11 @@ export function NaverMapView({
   /** 사용자의 현재 위치 - 있으면 지도 위에 별도 점 마커로 표시한다(Leaflet 버전엔 없던
    * 기능으로 이번에 추가). */
   myLocation?: { lat: number; lng: number } | null;
+  /** 🔴 확대/축소 슬라이더 노출(기본 켬 = /map 의 기존 동작 그대로).
+   *  홈에 끼워 넣은 작은 지도에서는 끈다 — 지도 면적이 작아 슬라이더가 화면을 잡아먹는다
+   *  (오너 2026-08-27: 「저 막대가 너무 거슬려」). 꺼도 **휠·핀치 확대와 드래그 이동은
+   *  네이버 지도 기본 동작이라 그대로 작동한다** — 조작을 뺏는 게 아니라 막대만 감춘다. */
+  showZoomControl?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<naver.maps.Map | null>(null);
@@ -154,7 +160,7 @@ export function NaverMapView({
         const map = new naverNs.maps.Map(containerRef.current, {
           center: new naverNs.maps.LatLng(initialCenter[0], initialCenter[1]),
           zoom: initialZoom,
-          zoomControl: isDesktopViewport(),
+          zoomControl: showZoomControl && isDesktopViewport(),
           zoomControlOptions: { position: naverNs.maps.Position.BOTTOM_RIGHT },
         });
         mapRef.current = map;
@@ -164,7 +170,7 @@ export function NaverMapView({
         // 시점의 화면 폭 기준으로 고정돼버려, PC↔모바일 전환 시 슬라이더가 없어야
         // 할 화면에 남아있거나 있어야 할 화면에서 사라지는 문제가 생긴다.
         const handleViewportChange = () => {
-          map.setOptions('zoomControl', isDesktopViewport());
+          map.setOptions('zoomControl', showZoomControl && isDesktopViewport());
         };
         window.addEventListener('resize', handleViewportChange);
         zoomControlResizeHandlerRef.current = handleViewportChange;

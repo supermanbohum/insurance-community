@@ -50,9 +50,9 @@ export function HomeMapSection({ branches }: { branches: MapBranch[] }) {
         </div>
         <Link
           href="/map"
-          className="flex shrink-0 items-center gap-1 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-soft"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2.5 text-sm font-bold text-ink-soft shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
         >
-          <Maximize2 className="h-3.5 w-3.5" />
+          <Maximize2 className="h-[18px] w-[18px]" />
           크게 보기
         </Link>
       </div>
@@ -64,6 +64,7 @@ export function HomeMapSection({ branches }: { branches: MapBranch[] }) {
           onSelect={handleSelect}
           onBoundsChanged={handleBoundsChanged}
           flyToTarget={null}
+          showZoomControl={false}
           onMapReady={(c) => {
             mapRef.current = c;
           }}
