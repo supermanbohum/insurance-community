@@ -217,9 +217,10 @@ export async function submitBranchRegistrationAction(input: {
   }
 
   const partner = await requirePartner();
-  if (partner.ga_company_id) {
-    return { success: false, error: '이미 등록된 지점이 있습니다.' };
-  }
+  // 🔴 예전에는 여기서 「이미 등록된 지점이 있습니다」로 막았다 — **계정당 지점 하나**였다.
+  //    컴패니언처럼 사무실이 10곳인 곳은 두 번째부터 못 올려서 운영팀이 대신 만들어야 했다.
+  //    0119부터 RPC가 **자기 회사에 한해** 추가 등록을 허용한다(다른 GA 이름이면 GA_NAME_MISMATCH).
+  //    판정은 RPC 한 곳에서만 한다 — 여기서 또 막으면 판정이 두 군데가 된다(2026-08-24 사고).
 
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase
@@ -252,6 +253,14 @@ export async function submitBranchRegistrationAction(input: {
     .single();
 
   if (error || !data) {
+    // 분기 코드는 0119 정의에 실제로 있는 것만 쓴다
+    const m = error?.message ?? '';
+    if (m.includes('GA_NAME_MISMATCH')) {
+      return { success: false, error: '이미 다른 GA에 소속된 계정입니다. 같은 GA 이름으로만 지점을 추가할 수 있습니다.' };
+    }
+    if (m.includes('MISSING_REGISTRANT_INFO')) {
+      return { success: false, error: '등록자 정보를 모두 입력해주세요.' };
+    }
     return { success: false, error: '지점 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
   }
 
@@ -323,9 +332,10 @@ export async function saveIncompleteBranchRegistrationAction(input: {
   }
 
   const partner = await requirePartner();
-  if (partner.ga_company_id) {
-    return { success: false, error: '이미 등록된 지점이 있습니다.' };
-  }
+  // 🔴 예전에는 여기서 「이미 등록된 지점이 있습니다」로 막았다 — **계정당 지점 하나**였다.
+  //    컴패니언처럼 사무실이 10곳인 곳은 두 번째부터 못 올려서 운영팀이 대신 만들어야 했다.
+  //    0119부터 RPC가 **자기 회사에 한해** 추가 등록을 허용한다(다른 GA 이름이면 GA_NAME_MISMATCH).
+  //    판정은 RPC 한 곳에서만 한다 — 여기서 또 막으면 판정이 두 군데가 된다(2026-08-24 사고).
 
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase
@@ -358,6 +368,14 @@ export async function saveIncompleteBranchRegistrationAction(input: {
     .single();
 
   if (error || !data) {
+    // 분기 코드는 0119 정의에 실제로 있는 것만 쓴다
+    const m = error?.message ?? '';
+    if (m.includes('GA_NAME_MISMATCH')) {
+      return { success: false, error: '이미 다른 GA에 소속된 계정입니다. 같은 GA 이름으로만 지점을 추가할 수 있습니다.' };
+    }
+    if (m.includes('MISSING_REGISTRANT_INFO')) {
+      return { success: false, error: '등록자 정보를 모두 입력해주세요.' };
+    }
     return { success: false, error: '지점 등록에 실패했습니다. 잠시 후 다시 시도해주세요.' };
   }
 

@@ -137,6 +137,7 @@ export function OnboardingForm({
   initialDraft,
   signupContact,
   signupGaCompanyId,
+  lockGaCompany,
 }: {
   regions: RegionRow[];
   gaOptions: GaFilterOption[];
@@ -145,6 +146,9 @@ export function OnboardingForm({
    * 묻지 않고 미리 채워서 보여준다(수정은 계속 가능). */
   signupContact?: string | null;
   signupGaCompanyId?: string | null;
+  /** 🔴 이미 소속 GA가 있는 계정의 **추가 지점 등록**(0119). GA를 바꾸지 못하게 잠근다 —
+   *  다른 GA 이름으로 넘기면 RPC가 GA_NAME_MISMATCH 로 막으므로, 애초에 못 고르게 하는 게 맞다. */
+  lockGaCompany?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -174,7 +178,9 @@ export function OnboardingForm({
   // 예전 세션에서 복원돼 자기도 모르게 켜져 있으면 안 된다.
   const [publishRegistrantPhone, setPublishRegistrantPhone] = useState(false);
   const [businessCard, setBusinessCard] = useState<File | null>(null);
-  const [gaCompanyId, setGaCompanyId] = useState<string | null>(initialDraft?.gaCompanyId ?? signupGaCompanyId ?? null);
+  const [gaCompanyId, setGaCompanyId] = useState<string | null>(
+    lockGaCompany ? (signupGaCompanyId ?? null) : (initialDraft?.gaCompanyId ?? signupGaCompanyId ?? null)
+  );
   const gaName = gaOptions.find((g) => g.id === gaCompanyId)?.name ?? '';
   const [regionId, setRegionId] = useState<string | null>(initialDraft?.regionId ?? null);
   const [addressValue, setAddressValue] = useState<AddressValue>({
@@ -693,7 +699,15 @@ export function OnboardingForm({
               </p>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="onb-ga-select">소속 GA</Label>
-                <GaSearchSelect options={gaOptions} value={gaCompanyId} onChange={setGaCompanyId} placeholder="소속 GA를 검색하세요" />
+                {lockGaCompany ? (
+                  // 추가 지점 등록(0119): 소속은 이미 정해져 있다. 바꾸면 RPC가 막으므로 고정해서 보여준다.
+                  <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                    <span className="font-medium">{gaName || '소속 GA'}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">이미 소속된 GA로 지점을 추가합니다</span>
+                  </div>
+                ) : (
+                  <GaSearchSelect options={gaOptions} value={gaCompanyId} onChange={setGaCompanyId} placeholder="소속 GA를 검색하세요" />
+                )}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {REGISTRANT_FIELDS.map((field) =>
