@@ -13,6 +13,8 @@ import { HomeAdSlot } from '@/components/home/HomeAdSlot';
 import { HomeRegisterCta, HomeRegisterStats } from '@/components/home/HomeRegisterHero';
 import { getMyBranchSlotState } from '@/lib/public/my-branch-slot';
 import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
+import { HomeMapSection } from '@/components/home/HomeMapSection';
+import type { MapBranch } from '@/components/map/types';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
 import { GaQualityCard } from '@/components/home/carousel/GaQualityCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
@@ -103,11 +105,14 @@ function Section({
 }
 
 export default async function HomePage() {
-  const [gaQuality, latest, stats, layoutConfig, openBanner, topDesignerRanking, adBanners, myBranchSlot] =
+  const [gaQuality, latest, mapBranchRows, stats, layoutConfig, openBanner, topDesignerRanking, adBanners, myBranchSlot] =
     await Promise.all([
     // "인기 GA"(조회수) → "우수 GA"(TOP 설계사 등급 합산 점수)로 대체(오너 지시 ⑤).
     listGaQualityRanking(10),
     listPublicBranches({ sort: 'newest', limit: 10 }),
+    // 홈 상단 지도용 — 좌표가 있는 공개 지점 전부. 지도는 목록이 아니라 위치를 보여주는
+    // 것이라 최신 10건이 아니라 **전부** 받아야 한다.
+    listPublicBranches({ sort: 'recommended', limit: 500 }),
     getHomeStats(),
     getPageLayoutConfig('home'),
     getActiveHomeOpenBanner(),
@@ -132,9 +137,35 @@ export default async function HomePage() {
   // 옛 키 'hero'로 저장된 문구는 layout.supabase.ts의 legacy 매핑이 heroCta로 넘겨준다.
   const ctaLabel = layoutConfig.desktop.find((s) => s.key === 'heroCta')?.text?.ctaLabel ?? '우리 지점 등록하기';
 
+  // 🔴 좌표가 없는 지점은 지도에 못 찍는다 — 넘기면 마커가 (0,0) 근처에 몰린다.
+  const mapBranches: MapBranch[] = mapBranchRows
+    .filter((b) => typeof b.lat === 'number' && typeof b.lng === 'number')
+    .map((b) => ({
+      id: b.id,
+      slug: b.slug,
+      name: b.name,
+      gaCompanyName: b.gaCompanyName,
+      isGaVerified: b.isGaVerified,
+      isPro: b.isPro,
+      sidoName: b.sidoName,
+      sigunguName: b.sigunguName,
+      address: b.address,
+      lat: b.lat,
+      lng: b.lng,
+      operationType: b.operationType,
+      hasActiveRecruit: b.hasActiveRecruit,
+      viewCount: b.viewCount,
+      mainImageUrl: b.mainImageUrl,
+      kakaoContactHref: b.kakaoContactHref,
+      contactClickCount: b.contactClickCount,
+      tagline: b.tagline,
+      plannerBadgeTotal: b.plannerBadgeTotal,
+    }));
+
   const nodesByKey: Record<(typeof HOME_SECTIONS)[number]['key'], React.ReactNode> = {
     // 🔴 hero 하나가 CTA+통계를 덮던 것을 분리(CTO 지시 2026-08-14) - 이제 편집기에서
     // 둘을 따로 숨기고 따로 옮길 수 있다.
+    homeMap: mapBranches.length > 0 ? <HomeMapSection branches={mapBranches} /> : null,
     heroCta: <HomeRegisterCta ctaLabel={ctaLabel} />,
     heroStats: <HomeRegisterStats stats={stats} myBranchSlot={myBranchSlot} />,
     quickMenu: <QuickMenuGrid />,

@@ -165,44 +165,18 @@ export function HomeRegisterStats({
             거짓이 됐고, 오너가 문구 교체가 아니라 **카드 자체 제거**를 택했다.
             임계(10) 미달 구간에서는 이 자리가 그냥 빈다 - 대체 문구를 넣지 않는다.
             임계 이상이면 실제 숫자 통계 칩이 뜬다(이건 삭제 대상이 아니다). */}
-        {myBranchSlot.kind !== 'none' ? (
-          <MyBranchSlot state={myBranchSlot} />
-        ) : showBranchNumber ? (
-          <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
-            <StatChip emoji="📍" label="등록 지점" value={stats.branchCount} unit="개" />
-          </div>
-        ) : null}
+        {/* 🔴 오너 확정(2026-08-27): 홈 상단은 **[오늘 방문자] → [지도] → [등록 CTA]** 만 둔다.
+            여기 있던 것들을 지운 이유를 남긴다 — 지운 줄을 나중에 「실수로 빠졌나」 하고
+            되살리지 않기 위해서다.
+              · 「전국 4,288개 GA…」 배너   → home_open_banner(오너 영역)에서 껐다. 코드가 아니라 데이터다
+              · 「등록 지점 N개」 칩        → 지점이 15개가 되며 임계(10)를 넘어 이번에 뜨기 시작한 것. 오너가 뺐다
+              · 「등록 설계사 N명」 칩       → 같은 계열이라 함께 뺐다
+              · 「지금까지 GA N곳 · M개 지역을 정리했습니다」 → 오너가 준 최종 목록에 없다
+            🔴 되살리려면 오너 확인을 받아라. 특히 마지막 줄은 콘텐츠팀이 8/12에 확정한 문구다.
+            「우리 지점」 카드(MyBranchSlot)는 남긴다 — 이미 지점을 가진 사람에게는
+            전체 통계보다 **자기 지점으로 가는 길**이 우선이다. */}
+        {myBranchSlot.kind !== 'none' ? <MyBranchSlot state={myBranchSlot} /> : null}
 
-        {/* ⚠️ 이 통계의 기준은 **설계사마켓**(publicPlannerProfileCount)이다. 「우리 지점
-            설계사」(branch_planner_registrations)와 아예 다른 시스템이다 - 설계사마켓은
-            이직을 원하는 설계사가 따로 등록하는 것(오너 확정 2026-08-14, 안건 ②).
-            지점 연결 설계사 수를 여기 합치지 마라. */}
-        {showPlannerNumber ? (
-          <div className="rounded-2xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-4 py-3">
-            <StatChip emoji="👨‍💼" label="등록 설계사" value={stats.publicPlannerProfileCount} unit="명" />
-          </div>
-        ) : null}
-
-        {/* 🔴 예전에는 이 자리가 「방문자 카운터 **또는** 우리 작업량 줄」이었다.
-            visitor 임계가 사라지면서 카운터가 항상 뜨는데, 그렇다고 아래 「지금까지 GA
-            N곳 · M개 지역을 정리했습니다」를 버리면 **콘텐츠가 따로 확정한 문구가 조용히
-            사라진다**(8/12 확정, 디자인이 재캡처 대기 중이던 줄이다). 둘은 같은 것의
-            두 모양이 아니라 서로 다른 정보라, 분기를 풀어 **둘 다 표시**한다. */}
-        {/* 🔴 이 카드만 위 두 통계 카드(등록 지점·등록 설계사)와 규격이 다르다. 의도한 것이다.
-            바로 아래 「지금까지 GA N곳」 줄과 **한 세트로 읽혀야** 하는데, 나란히 놓고 재보니
-            어긋나 있었다(디자인 실측): radius 16 vs 12 · 정렬 좌 vs 중앙 · padding 12/16 vs 8/12.
-            특히 **정렬축이 좌/중앙으로 갈리면 두 줄이 한 그룹으로 안 묶인다.**
-            → 아래 줄이 이미 쓰는 값(12px radius · 8/12 padding · 중앙)에 맞춘다. 새 값을
-              만들지 않고 있는 값에 붙이는 쪽이라 변경이 적다.
-            mb-2는 부모의 gap-1.5(6px)에 더해져 이 두 카드 사이만 14px가 된다 - 6px면 둘이
-            하나로 뭉개 보이고, 더 벌리면 관계가 끊긴다(실측 판단).
-            높이 36 vs 37.5의 1.5px 차이는 글자 크기에서 오는 것이라 그대로 둔다 - 억지로
-            맞추면 한쪽에 빈 공간이 생긴다.
-
-            ⚠️ 지점·설계사 통계 카드(위 두 개)는 지금 화면에 없다(임계 미달). 그것들이
-            뜨는 시점(지점 10건·설계사 10명)에는 이 카드만 모양이 달라 보일 수 있다 -
-            그때 셋을 어떻게 묶을지 디자인에 다시 물어야 한다. 지금 같이 바꾸지 않은 것은
-            **보이지 않는 카드의 모양을 상상해서 고치지 않기 위해서**다. */}
         <div className="mb-2 rounded-xl border border-line bg-gradient-to-r from-brand-50/70 via-white to-white px-3 py-2">
             <span className="flex items-center justify-center gap-1 text-[12px] font-bold text-ink-soft">
               👣 오늘 방문자 <span className="text-brand-600"><StatCountUp value={displayVisitorCount} /></span>명
@@ -215,26 +189,6 @@ export function HomeRegisterStats({
             </span>
         </div>
 
-        <div className="flex flex-col items-center gap-0.5 rounded-xl border border-line bg-surface-sunken px-3 py-2 text-center">
-            {/* 🔴 완료형으로 쓴다. 「정리 중」·「정리하고 있습니다」는 **미완성 신호**라
-                심사자에게는 「덜 만든 앱」, 사용자에게는 「아직 쓸 게 없다」로 읽힌다
-                (「준비 중」 라벨을 금지한 것과 같은 계열, 콘텐츠 확정 2026-08-12).
-                🔴 「지금까지」를 빼지 말 것 - 완료형만 쓰면 「50곳이 전부」로 닫힌다.
-                「지금까지」가 계속 늘어난다는 뜻을 담으면서 미완성 신호는 안 준다.
-                ⚠️ 상단 배너의 「전국 4,288개 GA」와 숫자가 달라 보이는 문제도 여기서
-                갈린다 - 배너는 「받고 있습니다」(대상 범위), 이 줄은 「정리했습니다」
-                (우리 작업량)로 동사가 달라야 같은 것의 두 숫자로 안 읽힌다.
-                상단 배너는 오너 영역(home_open_banner)이라 건드리지 않는다. */}
-            <span className="hidden sm:block">
-              <span className="block text-[13px] font-bold text-ink-soft">
-                지금까지 GA <span className="text-brand-600">{stats.gaCount}</span>곳 · <span className="text-brand-600">{stats.regionCount}</span>개 지역을 정리했습니다
-              </span>
-              <span className="block text-[11px] text-ink-faint">내 지역부터 확인해 보세요</span>
-            </span>
-            <span className="text-[13px] font-bold text-ink-soft sm:hidden">
-              지금까지 GA {stats.gaCount}곳 · {stats.regionCount}개 지역을 정리했습니다
-            </span>
-        </div>
     </div>
   );
 }
