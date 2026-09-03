@@ -912,3 +912,68 @@
   단, 코드가 실패 시 자동으로 ②로 내려가므로 네이티브가 안 돼도 heic2any가 받는다)
   ⓑ 실기기 아이폰에서 실제 폼 업로드 종단(로그인 필요).
 - 검증: tsc/lint/build(103/103) 전부 통과.
+
+---
+
+## 2026-09-03 · 사이트 전 이미지가 HTTP 402로 죽어 있던 것 복구
+
+**무엇**
+오너 신고는 「더블유에셋 새 지점 사진이 안 보인다」였다. **그 지점만의 문제가 아니었다** —
+`/_next/image` 가 전부 402로 떨어져 **사이트의 모든 이미지**가 나오지 않고 있었다.
+
+**왜 (원인)**
+Vercel Hobby 플랜의 **Image Optimization Transformations 5,000/월 소진**(콘솔 실측 `5K / 5K`).
+소진되면 최적화 요청이 `402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED` 로 떨어진다.
+
+**어떻게 좁혔나 (한 층씩 배제)**
+```
+DB        branch_media 6행 정상 (대표1+사무실5, source=storage, pending_registration_id null)
+스토리지   storage.objects 6개 실물 존재, 108KB~3.07MB
+원본 URL   HTTP 200 · image/jpeg · 바이트 일치        ← 여기까지 전부 정상
+브라우저   6칸 회색, document.images 6장 naturalWidth=0 (네이버 지도 타일은 정상)
+요청      /_next/image?url=... → HTTP 402
+범위 확인  포항지점·맵그룹, 그리고 자체 /icon.png 까지 402 → 지점 무관, 전역
+콘솔      Vercel Usage: Transformations 5K / 5K
+```
+
+**결과 (무엇을 했나)**
+1. `next/image` 커스텀 로더로 변환을 **Supabase render/image** 로 이전 → Vercel 변환 0회
+   - `src/lib/images/loader.ts` 신규. Supabase 공개 오브젝트 URL만 변환 경로로 바꾸고
+     로컬 아이콘·static import·picsum 은 **손대지 않고 그대로 반환**한다.
+2. `deviceSizes`/`imageSizes` 를 실제 쓰는 구간만 남겨 변환 가짓수 축소.
+3. 입구도 막았다 — `normalizeImageFiles` 가 지금까지 **HEIC만** 줄이고 일반 JPEG/PNG는
+   원본 그대로 통과시켰다. 1.2MB 초과는 2048px로 리사이즈한다.
+
+**왜 `unoptimized: true` 로 끝내지 않았나**
+실측: branch-images **97장 / 214MB / 평균 2.26MB**, 68장이 2MB 초과, 최대 4.24MB.
+원본 직행이면 지점 상세 한 페이지가 사진 6장 = **13MB**, 88px 썸네일에 2MB를 받는다.
+Supabase Free egress 5GB/월은 그런 페이지 400회에 바닥난다.
+「안 보인다」를 「보이지만 대역폭이 터진다」로 바꾸는 것이라 채택하지 않았다.
+
+**검증**
+```
+tsc --noEmit           0건
+next build             성공
+Supabase 변환 실측      원본 3.07MB → 128px 50KB · 800px 289KB · WebP 협상 150KB
+                       (폭에 비례해 실제 리사이즈됨 = 변환이 진짜 동작)
+배포 후 지점 상세       사진 6/6 naturalWidth>0, 요청 7건 전부 200
+                       그리드 실측 grid-cols-4 640x316, 각 칸 154x154 object-cover → 회귀 없음
+배포 후 홈             스크롤 후 실제 사진 표시(스크린샷), currentSrc width=256 @ 208px 칸
+```
+
+**함정 2개 (다음 사람이 같은 데서 헤매지 않게)**
+- 🔴 `img.naturalWidth===0` 은 **실패가 아니라 「아직 디코딩 전」일 수 있다.**
+  배포 직후 지점 상세에서 5장이 0으로 나왔지만 네트워크는 전부 200이었고,
+  몇 초 뒤 재측정에서 6/6 성공이었다. **응답 코드로 가르고, 그다음에 다시 재본다.**
+- 🔴 `img.src` 는 srcset 선택 전의 **가장 큰 폭**이다. 실제 로드된 것은 `currentSrc` 다.
+  `src` 만 보고 「208px 칸에 1920을 받고 있다」고 오판했다. 실제는 256이었다.
+
+**남는 것 (오너 판단)**
+- Vercel Pro($20/월)로 올리면 Vercel 최적화로 되돌릴 수 있다. 지금은 필요 없다.
+- Supabase 조직은 **Free Plan** 이다. 공식 문서는 이미지 변환을 Pro 이상으로 안내하는데
+  실제로는 200으로 동작한다(위 수치가 근거). 만약 막히면 증상은 이미지 전역 실패로 똑같다.
+  대피로는 `src/lib/images/loader.ts` 에서 `src` 를 그대로 반환하는 것 하나뿐이다.
+- 기존 97장은 이미 올라간 대용량 원본 그대로다. 스토리지 쓰기 권한이 없어 손대지 않았다.
+  전달은 Supabase 변환이 막아 주므로 사용자 영향은 없다.
+
+**관련** `next.config.mjs` · `src/lib/images/loader.ts` · `src/lib/images/heic.ts` · 커밋 b093dbe
