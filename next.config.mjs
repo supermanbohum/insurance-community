@@ -2,6 +2,16 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
+    // 🔴 이미지 변환을 Vercel이 아니라 Supabase에서 한다 (2026-09-03).
+    //    Vercel Hobby 의 Image Optimization 변환 한도 5,000/월을 소진해
+    //    `/_next/image` 가 전부 HTTP 402 로 떨어졌고 **사이트 전 이미지가 죽었다.**
+    //    사유·실측·대피로는 src/lib/images/loader.ts 주석에 전부 적어 뒀다.
+    loader: 'custom',
+    loaderFile: './src/lib/images/loader.ts',
+
+    // 커스텀 로더를 쓰면 remotePatterns 검사와 formats 협상은 Next가 하지 않는다.
+    // 포맷은 Supabase가 Accept 헤더를 보고 WebP로 내려준다(실측 289KB → 150KB).
+    // 남겨 두는 이유: 로더를 되돌릴 때(원본 직행/Vercel 복귀) 이 목록이 다시 필요하다.
     remotePatterns: [
       {
         protocol: 'https',
@@ -18,10 +28,14 @@ const nextConfig = {
         hostname: 'fastly.picsum.photos',
       },
     ],
-    // AVIF를 우선 시도하고 미지원 브라우저는 WebP로 폴백 - next/image가 원본보다
-    // 훨씬 작은 포맷을 자동으로 골라준다.
-    formats: ['image/avif', 'image/webp'],
+
+    // 변환 1회 = Supabase 요청 1회다. 폭 후보가 많을수록 같은 사진을 여러 번 변환한다.
+    // 기본값(8단계 + 8단계)에서 실제로 쓰는 구간만 남겨 변환 가짓수를 줄인다.
+    // 3840은 뺀다 - 원본이 그보다 작아 어차피 원본 크기로 수렴한다(실측).
+    deviceSizes: [640, 828, 1080, 1920],
+    imageSizes: [128, 256, 384],
   },
+
   experimental: {
     serverActions: {
       // 게시글 이미지 최대 5장 x 5MB 첨부를 감당하기 위해 기본 body 크기 제한을 상향한다.

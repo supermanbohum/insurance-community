@@ -97,19 +97,85 @@ export async function convertHeicToJpeg(file: File): Promise<File> {
   }
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * 큰 사진 줄이기 (2026-09-03 추가)
+ *
+ * 지금까지 이 파일은 **HEIC만** 손댔다. 아이폰 HEIC는 2048px/q0.85로 줄어들었지만
+ * **일반 JPEG/PNG는 원본 그대로 통과**했다. 그 결과가 실측으로 남아 있다:
+ *   branch-images 97장 / 214MB / 평균 2.26MB, 68장이 2MB 초과, 최대 4.24MB
+ * 이 사진들이 지점 상세 한 페이지에 6장씩 붙는다.
+ *
+ * 전달 단계는 Supabase 변환(src/lib/images/loader.ts)이 막아 주지만, **애초에 큰 파일이
+ * 들어오지 않게 하는 것**이 원본 스토리지·업로드 시간·egress 모두에 이득이다.
+ * 같은 종류의 문제가 다시 안 생기게 입구에서 잡는다.
+ *
+ * 🔴 PNG는 JPEG로 바꾸지 않는다. 이 함수는 지점 사진뿐 아니라 **회사 로고·배너**
+ *    업로드도 지난다(GaInfoTab·BannerForm). PNG를 JPEG로 바꾸면 **투명 배경이
+ *    검게 칠해진다.** 그래서 PNG는 포맷을 유지한 채 크기만 줄인다.
+ *
+ * 🔴 실패하면 원본을 그대로 쓴다. 이건 화질·용량 최적화이지 업로드의 전제가 아니다 —
+ *    여기서 failed 로 올리면 「사진이 큰 사람은 업로드가 아예 안 되는」 더 나쁜 회귀가 된다.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** 이 용량을 넘는 사진만 다시 인코딩한다. 작은 파일까지 건드리면 화질만 손해다. */
+const RECOMPRESS_OVER_BYTES = 1_200_000;
+
+/** 크기를 줄여도 되는 포맷. HEIC는 위쪽 경로가 이미 처리한다. */
+const DOWNSCALABLE = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+async function downscaleLargeImage(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('CANVAS_UNAVAILABLE');
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  // PNG는 PNG로 유지한다(투명도). 그 외는 JPEG로 재인코딩한다.
+  const keepPng = file.type === 'image/png';
+  const mime = keepPng ? 'image/png' : 'image/jpeg';
+  const blob = await new Promise<Blob | null>((resolve) =>
+    keepPng ? canvas.toBlob(resolve, mime) : canvas.toBlob(resolve, mime, JPEG_QUALITY),
+  );
+  if (!blob) throw new Error('ENCODE_FAILED');
+
+  // 🔴 줄인 결과가 더 크면(이미 잘 압축된 원본) 원본을 쓴다. 재인코딩이 손해인 경우다.
+  if (blob.size >= file.size) return file;
+
+  const name = keepPng ? file.name : file.name.replace(/\.[^.]+$/, '') + '.jpg';
+  return new File([blob], name, { type: mime });
+}
+
 export interface NormalizeResult {
-  /** 업로드 가능한 파일들(HEIC는 JPEG로 변환됨, 그 외는 원본 그대로). 입력 순서 유지. */
+  /** 업로드 가능한 파일들(HEIC는 JPEG 변환, 1.2MB 초과는 리사이즈). 입력 순서 유지. */
   ok: File[];
   /** 변환에 실패한 파일들. 🔴 호출부는 이것을 반드시 화면에 띄운다 - 조용히 버리지 않는다. */
   failed: { name: string; reason: string }[];
 }
 
-/** 파일 목록에서 HEIC만 JPEG로 변환하고, 실패를 파일별로 수집한다. */
+/** 파일 목록에서 HEIC는 JPEG로 변환하고, 그 외 큰 사진은 크기를 줄인다. 실패는 파일별로 수집한다. */
 export async function normalizeImageFiles(files: File[]): Promise<NormalizeResult> {
   const ok: File[] = [];
   const failed: { name: string; reason: string }[] = [];
   for (const file of files) {
     if (!isHeicFile(file)) {
+      // HEIC가 아니어도 **큰 사진은 줄여서** 올린다(위 주석 참고).
+      if (DOWNSCALABLE.has(file.type) && file.size > RECOMPRESS_OVER_BYTES) {
+        try {
+          ok.push(await downscaleLargeImage(file));
+        } catch (err) {
+          // 최적화 실패는 업로드를 막지 않는다 - 원본 그대로 올린다.
+          console.warn('[images] 리사이즈 실패, 원본으로 올린다', file.name, err);
+          ok.push(file);
+        }
+        continue;
+      }
       ok.push(file);
       continue;
     }
