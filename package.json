@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "check:branches": "node scripts/check-branch-pages.mjs",
     "seed": "node seed/_seed_tmp.mjs",
     "seed:dry": "node seed/_seed_tmp.mjs --dry-run"
   },
