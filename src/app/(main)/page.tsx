@@ -16,6 +16,7 @@ import { QuickMenuGrid } from '@/components/home/QuickMenuGrid';
 import { HomeMapSection } from '@/components/home/HomeMapSection';
 import type { MapBranch } from '@/components/map/types';
 import { InfiniteCarousel } from '@/components/home/carousel/InfiniteCarousel';
+import { SnapCarousel } from '@/components/home/carousel/SnapCarousel';
 import { GaQualityCard } from '@/components/home/carousel/GaQualityCard';
 import { NewBranchCard } from '@/components/home/carousel/NewBranchCard';
 import { TopDesignerHomeRanking } from '@/components/home/TopDesignerHomeRanking';
@@ -209,11 +210,9 @@ export default async function HomePage() {
         {latest.length === 0 ? (
           <EmptyRow text="신규 등록된 지점이 없습니다." />
         ) : (
-          <InfiniteCarousel
-            durationSec={38}
-            itemClassName="w-[190px] sm:w-[210px]"
-            items={latest.map((b) => ({ key: b.id, node: <NewBranchCard branch={b} /> }))}
-          />
+          // 🔴 한 장씩 넘긴다(오너 제안 2026-09-04). 자동으로 흐르지 않는다 -
+          //    움직이는 카드는 눌러도 링크가 열리지 않는다(SnapCarousel 주석 참고).
+          <SnapCarousel items={latest.map((b) => ({ key: b.id, node: <NewBranchCard branch={b} /> }))} />
         )}
       </Section>
     ),

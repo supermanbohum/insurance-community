@@ -23,7 +23,15 @@ export function NewBranchCard({ branch }: { branch: PublicBranchSummary }) {
         )}
       >
         {branch.mainImageUrl ? (
-          <FitPhoto src={branch.mainImageUrl} alt={branch.name} sizes="220px" />
+          <FitPhoto
+            src={branch.mainImageUrl}
+            alt={branch.name}
+            // 한 장씩 보여주므로 카드가 화면 폭에 가깝다 - 사진도 그만큼 크게 받는다.
+            sizes="(min-width: 1024px) 55vw, (min-width: 640px) 70vw, 90vw"
+            // 상한을 화면 높이 기준으로 둔다. 세로로 긴 사진이 최대한 크게 들어가되
+            // 카드 하나가 화면을 넘지 않는 선이다.
+            maxHeightClass="max-h-[58vh]"
+          />
         ) : (
           <div
             className={cn(
