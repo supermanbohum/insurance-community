@@ -7,7 +7,7 @@ import { avatarGradient, cn } from '@/lib/utils';
 import { HighlightText } from '@/components/search/HighlightText';
 import { BranchBadges } from '@/components/branch/BranchBadges';
 import { INCOME_TIER_BADGE } from '@/lib/planners/tier';
-import { SafeBranchImage } from '@/components/shared/SafeBranchImage';
+import { WholePhoto } from '@/components/shared/WholePhoto';
 
 const RANK_STYLE: Record<number, string> = {
   1: 'bg-gradient-to-br from-amber-300 to-gold-500',
@@ -39,11 +39,11 @@ export function BranchCard({
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-sunken">
         {branch.mainImageUrl ? (
-          <SafeBranchImage
+          <WholePhoto
             src={branch.mainImageUrl}
             alt={branch.name}
             sizes="(min-width: 1024px) 220px, 45vw"
-            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+            className="transition-transform duration-500 ease-out group-hover:scale-[1.06]"
           />
         ) : (
           <div

@@ -6,7 +6,7 @@ import { MapPin, Building2 } from 'lucide-react';
 import type { PublicBranchSummary } from '@/types/database';
 import { avatarGradient, cn } from '@/lib/utils';
 import { fitsShortTaglineInCard } from '@/lib/branch/short-tagline';
-import { SafeBranchImage } from '@/components/shared/SafeBranchImage';
+import { WholePhoto } from '@/components/shared/WholePhoto';
 
 export function NewBranchCard({ branch }: { branch: PublicBranchSummary }) {
   return (
@@ -16,7 +16,7 @@ export function NewBranchCard({ branch }: { branch: PublicBranchSummary }) {
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-sunken">
         {branch.mainImageUrl ? (
-          <SafeBranchImage src={branch.mainImageUrl} alt={branch.name} sizes="220px" className="object-cover" />
+          <WholePhoto src={branch.mainImageUrl} alt={branch.name} sizes="220px" />
         ) : (
           <div
             className={cn(

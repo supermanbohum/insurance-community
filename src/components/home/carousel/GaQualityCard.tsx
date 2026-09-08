@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { WholePhoto } from '@/components/shared/WholePhoto';
 import { Award } from 'lucide-react';
 import type { GaQualityRankingRow } from '@/lib/public/top-designer.supabase';
 import { avatarGradient, cn } from '@/lib/utils';
@@ -29,26 +29,14 @@ export function GaQualityCard({ ga, rank }: { ga: GaQualityRankingRow; rank?: nu
         )}
       >
         {ga.topBranchPhotoUrl ? (
-          ga.topBranchPhotoSource === 'storage' ? (
-            // 카드 폭 190~210px → 4:3에서 420×315(DPR2 여유)면 충분하다.
-            <Image
-              src={ga.topBranchPhotoUrl}
-              alt={`${ga.gaCompanyName} 대표 지점 사진`}
-              width={420}
-              height={315}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          ) : (
-            // external은 remotePatterns 밖 도메인이면 next/image 최적화가 실패하므로 원본.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={ga.topBranchPhotoUrl}
-              alt={`${ga.gaCompanyName} 대표 지점 사진`}
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )
+          // 🔴 사진을 자르지 않는다 - WholePhoto 주석 참고(오너 지시 2026-09-04).
+          //    호스트 판정은 SafeBranchImage가 하므로 여기서 source를 다시 보지 않는다.
+          //    카드 폭 190~210px → sizes="220px".
+          <WholePhoto
+            src={ga.topBranchPhotoUrl}
+            alt={`${ga.gaCompanyName} 대표 지점 사진`}
+            sizes="220px"
+          />
         ) : (
           <Award className="h-8 w-8" strokeWidth={1.5} />
         )}
