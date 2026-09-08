@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { WholePhoto } from '@/components/shared/WholePhoto';
 import { Video as VideoIcon, ImageOff, Play, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { BranchMediaItem } from '@/components/branch/types';
 
@@ -50,11 +49,15 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
             className="absolute inset-0 h-full w-full cursor-zoom-in"
             aria-label={`대표사진 크게 보기 (사진 ${photos.length}장)`}
           >
-            {/* 🔴 대표사진은 자르지 않는다 - 4:3 틀에 cover를 쓰면 세로로 긴 사진이나
-                로고 이미지가 잘려 나간다(더블유에셋 HC본부에서 「HC본부」 글자가 잘렸다).
-                호스트 판정은 SafeBranchImage가 하므로 여기서 source를 다시 보지 않는다.
-                자세한 근거는 WholePhoto 주석에 있다. */}
-            <WholePhoto src={main.url} alt="대표사진" sizes="(min-width: 640px) 672px, 100vw" priority />
+            {main.source === 'storage' ? (
+              // Supabase Storage 호스팅 사진만 next/image로 최적화한다 - source가 external인
+              // 경우 파트너가 임의 도메인 URL을 입력할 수 있어 next.config의 remotePatterns에
+              // 없는 도메인이면 최적화 요청이 그대로 실패하므로 원본 <img>를 그대로 쓴다.
+              <Image src={main.url} alt="대표사진" fill sizes="(min-width: 640px) 672px, 100vw" className="object-cover" priority />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={main.url} alt="대표사진" className="h-full w-full object-cover" />
+            )}
           </button>
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-ink-faint">
