@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 import { FitPhoto } from '@/components/shared/FitPhoto';
 import { Video as VideoIcon, ImageOff, Play, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { BranchMediaItem } from '@/components/branch/types';
@@ -42,18 +43,29 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-surface-sunken sm:aspect-video">
+      {/* 🔴 대표사진은 원본 비율 그대로 그린다(고정 틀 없음) - FitPhoto 주석 참고.
+          4:3 에 가두면 세로로 긴 사진·로고 이미지가 잘리거나 여백이 남았다.
+          사진이 없을 때만 자리를 잡는다. 상세는 폭이 넓어 상한을 화면 높이 기준으로 둔다. */}
+      <div
+        className={cn(
+          'relative w-full overflow-hidden rounded-2xl bg-surface-sunken',
+          main ? 'min-h-[200px]' : 'aspect-[4/3] sm:aspect-video'
+        )}
+      >
         {main ? (
           <button
             type="button"
             onClick={() => open(0)}
-            className="absolute inset-0 h-full w-full cursor-zoom-in"
+            className="block w-full cursor-zoom-in"
             aria-label={`대표사진 크게 보기 (사진 ${photos.length}장)`}
           >
-            {/* 비율에 따라 cover/contain 을 자동으로 고른다 - FitPhoto 주석 참고.
-                더블유에셋 HC본부처럼 대표사진이 로고/긴 이미지면 cover 에서 글자가 잘렸다.
-                호스트 판정은 SafeBranchImage가 하므로 여기서 source를 다시 보지 않는다. */}
-            <FitPhoto src={main.url} alt="대표사진" sizes="(min-width: 640px) 672px, 100vw" priority />
+            <FitPhoto
+              src={main.url}
+              alt="대표사진"
+              sizes="(min-width: 640px) 672px, 100vw"
+              priority
+              maxHeightClass="max-h-[70vh]"
+            />
           </button>
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-ink-faint">

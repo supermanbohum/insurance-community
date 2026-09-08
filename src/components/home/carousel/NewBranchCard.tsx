@@ -14,7 +14,14 @@ export function NewBranchCard({ branch }: { branch: PublicBranchSummary }) {
       href={`/branch/${branch.slug}`}
       className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-card transition-shadow duration-300 hover:shadow-card-hover"
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-sunken">
+      {/* 🔴 사진이 있으면 높이는 사진이 정한다(aspect 고정 없음) - FitPhoto 주석 참고.
+            사진이 없을 때만 4:3 자리를 잡는다. min-h 는 로드 전 레이아웃이 튀는 것을 줄인다. */}
+      <div
+        className={cn(
+          'relative w-full overflow-hidden bg-surface-sunken',
+          branch.mainImageUrl ? 'min-h-[120px]' : 'aspect-[4/3]'
+        )}
+      >
         {branch.mainImageUrl ? (
           <FitPhoto src={branch.mainImageUrl} alt={branch.name} sizes="220px" />
         ) : (

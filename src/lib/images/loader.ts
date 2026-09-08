@@ -42,7 +42,13 @@ const PUBLIC_OBJECT = '/storage/v1/object/public/';
 /** Supabase가 받는 quality 범위. 벗어나면 400이 나므로 호출부 값을 그대로 믿지 않는다. */
 const MIN_QUALITY = 20;
 const MAX_QUALITY = 100;
-const DEFAULT_QUALITY = 70;
+/**
+ * 오너 지시(2026-09-04): 「사진 화질을 제일 좋게」
+ * 70 → 90. 지점 사진은 사무실을 보여주는 것이 목적이라 압축 자국이 바로 티가 난다.
+ * 100 은 쓰지 않는다 - 눈에 보이는 차이 없이 용량만 크게 늘어난다.
+ * 🔴 이 값은 **전송량과 직결**된다. 올릴 때는 Supabase egress(무료 5GB/월)를 함께 본다.
+ */
+const DEFAULT_QUALITY = 90;
 
 export default function supabaseImageLoader({
   src,

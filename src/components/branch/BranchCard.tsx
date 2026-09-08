@@ -37,7 +37,12 @@ export function BranchCard({
         className
       )}
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-sunken">
+      <div
+        className={cn(
+          'relative w-full overflow-hidden bg-surface-sunken',
+          branch.mainImageUrl ? 'min-h-[120px]' : 'aspect-[4/3]'
+        )}
+      >
         {branch.mainImageUrl ? (
           <FitPhoto
             src={branch.mainImageUrl}

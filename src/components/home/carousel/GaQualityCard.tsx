@@ -24,7 +24,8 @@ export function GaQualityCard({ ga, rank }: { ga: GaQualityRankingRow; rank?: nu
     >
       <div
         className={cn(
-          'relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-gradient-to-br text-white/85',
+          'relative flex w-full items-center justify-center overflow-hidden bg-gradient-to-br text-white/85',
+          ga.topBranchPhotoUrl ? 'min-h-[120px]' : 'aspect-[4/3]',
           avatarGradient(ga.gaCompanyName)
         )}
       >
