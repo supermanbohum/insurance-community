@@ -25,18 +25,39 @@ export function SafeBranchImage({
   sizes,
   className,
   priority,
+  onLoad,
 }: {
   src: string;
   alt: string;
   sizes: string;
   className?: string;
   priority?: boolean;
+  /** 실제로 그려진 <img>의 로드 완료. `e.currentTarget.naturalWidth/Height`로 원본 비율을
+   *  알 수 있다 - **이미 받은 이미지**를 재는 것이라 추가 요청이 없다(FitPhoto가 쓴다). */
+  onLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
 }) {
   if (isOptimizableHost(src)) {
     return (
-      <Image src={src} alt={alt} fill loading={priority ? undefined : 'lazy'} priority={priority} sizes={sizes} className={className} />
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        loading={priority ? undefined : 'lazy'}
+        priority={priority}
+        sizes={sizes}
+        className={className}
+        onLoad={onLoad}
+      />
     );
   }
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} loading={priority ? undefined : 'lazy'} className={`absolute inset-0 h-full w-full ${className ?? ''}`} />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      loading={priority ? undefined : 'lazy'}
+      onLoad={onLoad}
+      className={`absolute inset-0 h-full w-full ${className ?? ''}`}
+    />
+  );
 }

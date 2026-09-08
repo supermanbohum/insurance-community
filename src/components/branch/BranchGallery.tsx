@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import { FitPhoto } from '@/components/shared/FitPhoto';
 import { Video as VideoIcon, ImageOff, Play, Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { BranchMediaItem } from '@/components/branch/types';
 
@@ -49,15 +50,10 @@ export function BranchGallery({ media }: { media: BranchMediaItem[] }) {
             className="absolute inset-0 h-full w-full cursor-zoom-in"
             aria-label={`대표사진 크게 보기 (사진 ${photos.length}장)`}
           >
-            {main.source === 'storage' ? (
-              // Supabase Storage 호스팅 사진만 next/image로 최적화한다 - source가 external인
-              // 경우 파트너가 임의 도메인 URL을 입력할 수 있어 next.config의 remotePatterns에
-              // 없는 도메인이면 최적화 요청이 그대로 실패하므로 원본 <img>를 그대로 쓴다.
-              <Image src={main.url} alt="대표사진" fill sizes="(min-width: 640px) 672px, 100vw" className="object-cover" priority />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={main.url} alt="대표사진" className="h-full w-full object-cover" />
-            )}
+            {/* 비율에 따라 cover/contain 을 자동으로 고른다 - FitPhoto 주석 참고.
+                더블유에셋 HC본부처럼 대표사진이 로고/긴 이미지면 cover 에서 글자가 잘렸다.
+                호스트 판정은 SafeBranchImage가 하므로 여기서 source를 다시 보지 않는다. */}
+            <FitPhoto src={main.url} alt="대표사진" sizes="(min-width: 640px) 672px, 100vw" priority />
           </button>
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-ink-faint">
