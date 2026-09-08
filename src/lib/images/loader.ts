@@ -50,6 +50,26 @@ const MAX_QUALITY = 100;
  */
 const DEFAULT_QUALITY = 90;
 
+/**
+ * 🔴🔴 `height` 를 반드시 함께 보낸다. **`width` 만 보내면 Supabase 가 사진을 잘라낸다.**
+ *
+ * 사고(2026-09-04): 홈 사진이 이상하다는 신고를 받고 카드 렌더링을 여섯 번 바꿨는데,
+ * 원인은 렌더링이 아니라 **이 로더**였다. `width` 만 준 요청의 실측:
+ *
+ *   원본            1632x890  (가로 사진, 비율 1.83)
+ *   width=384  →     384x890  (비율 0.43)  ← 높이는 그대로 두고 **폭만 잘라냈다**
+ *   width=1080 →    1080x890  (비율 1.21)  ← 역시 잘림
+ *   width=1920 →    1632x890  (비율 1.83)  ← 원본보다 커서 그대로 = 유일하게 안 잘림
+ *
+ * 그래서 화면에서는 「세로로 5.9배 긴 사진」처럼 보였고, 나는 그 잘린 결과를 재서
+ * **「지점들이 세로 홍보물을 올렸다」고 잘못 진단**했다. 실제로는 셋 다 정상 사진이었다
+ * (1.83 가로 / 0.82 살짝 세로 / 1.33 정확히 4:3).
+ *
+ * `width` + 넉넉한 `height` + `resize=contain` 이면 **모든 폭에서 비율이 정확히 유지**되고,
+ * 상한에 걸려도 잘리지 않고 축소만 된다(실측: w=640,h=200 → 164x200, 비율 0.82 그대로).
+ */
+const MAX_HEIGHT_MULTIPLIER = 8;
+
 export default function supabaseImageLoader({
   src,
   width,
@@ -72,5 +92,9 @@ export default function supabaseImageLoader({
 
   const q = Math.min(MAX_QUALITY, Math.max(MIN_QUALITY, Math.round(quality ?? DEFAULT_QUALITY)));
 
-  return `${origin}/storage/v1/render/image/public/${path}?width=${width}&quality=${q}`;
+  // 🔴 height 와 resize=contain 을 빼지 마라. 위 주석의 실측을 보고 판단해라.
+  //    height 는 「세로로 이만큼까지는 잘리지 않고 통과」라는 상한일 뿐이고,
+  //    실제 반환 크기는 width 가 정한다 - 값이 커도 전송량이 늘지 않는다.
+  const maxHeight = width * MAX_HEIGHT_MULTIPLIER;
+  return `${origin}/storage/v1/render/image/public/${path}?width=${width}&height=${maxHeight}&resize=contain&quality=${q}`;
 }
